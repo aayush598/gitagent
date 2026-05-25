@@ -45,6 +45,7 @@ function createChannel<T>(): Channel<T> {
 
 	return {
 		push(v: T) {
+			if (done) return;
 			if (resolve) {
 				resolve({ value: v, done: false });
 				resolve = null;
