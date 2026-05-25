@@ -9,7 +9,7 @@ export interface EnvConfig {
 }
 
 function deepMerge(base: Record<string, any>, override: Record<string, any>): Record<string, any> {
-	const result = { ...base };
+	const result = structuredClone(base);
 	for (const key of Object.keys(override)) {
 		if (
 			result[key] &&
