@@ -532,7 +532,12 @@ export function query(options: QueryOptions): Query {
 			ac.abort();
 		},
 
-		steer(_message: string) {
+		steer(message: string) {
+			channel.push({
+				type: "system",
+				subtype: "steer",
+				content: message,
+			} satisfies GCMessage);
 		},
 
 		sessionId() {
@@ -563,8 +568,14 @@ export function query(options: QueryOptions): Query {
 		},
 
 		throw(err?: any) {
+			const msg = err?.message || String(err || "Unknown error");
+			channel.push({
+				type: "system",
+				subtype: "error",
+				content: msg,
+			} satisfies GCMessage);
 			channel.finish();
-			return Promise.reject(err);
+			return Promise.resolve({ done: true as const, value: undefined });
 		},
 
 		[Symbol.asyncIterator]() {
