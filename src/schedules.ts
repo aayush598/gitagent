@@ -1,4 +1,4 @@
-import { readFile, readdir, stat, writeFile, unlink } from "fs/promises";
+import { readFile, readdir, rename, stat, writeFile, unlink } from "fs/promises";
 import { join } from "path";
 import { mkdirSync } from "fs";
 import yaml from "js-yaml";
@@ -100,7 +100,9 @@ export async function saveSchedule(agentDir: string, schedule: ScheduleDefinitio
 		...(schedule.lastRunAt ? { lastRunAt: schedule.lastRunAt } : {}),
 		...(schedule.lastResult ? { lastResult: schedule.lastResult } : {}),
 	}, { lineWidth: 120 });
-	await writeFile(filePath, content, "utf-8");
+	const tmpPath = filePath + ".tmp";
+	await writeFile(tmpPath, content, "utf-8");
+	await rename(tmpPath, filePath);
 	return filePath;
 }
 
@@ -115,5 +117,7 @@ export async function updateScheduleMeta(agentDir: string, id: string, updates: 
 	const data = yaml.load(raw) as Record<string, any>;
 	Object.assign(data, updates);
 	const content = yaml.dump(data, { lineWidth: 120 });
-	await writeFile(filePath, content, "utf-8");
+	const tmpPath = filePath + ".tmp";
+	await writeFile(tmpPath, content, "utf-8");
+	await rename(tmpPath, filePath);
 }
