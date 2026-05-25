@@ -1,0 +1,3 @@
+title = "GitAgent Secret Scanner"
+[extend]
+useDefault = true

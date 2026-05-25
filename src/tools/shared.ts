@@ -41,6 +41,7 @@ export const memorySchema = Type.Object({
 	action: Type.Union([Type.Literal("load"), Type.Literal("save")], { description: "Whether to load or save memory" }),
 	content: Type.Optional(Type.String({ description: "Memory content to save (required for save)" })),
 	message: Type.Optional(Type.String({ description: "Commit message describing why this memory changed (required for save)" })),
+	allowSecrets: Type.Optional(Type.Boolean({ description: "Skip secret scanning and allow saving content as-is (default: false)" })),
 });
 
 export const taskTrackerSchema = Type.Object({

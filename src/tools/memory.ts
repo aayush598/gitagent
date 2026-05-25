@@ -6,6 +6,7 @@ import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { memorySchema, DEFAULT_MEMORY_PATH } from "./shared.js";
 import yaml from "js-yaml";
 import type { MemoryLayerDef } from "../plugin-types.js";
+import { scanSecrets } from "../secret-scanner.js";
 
 interface MemoryLayer {
 	name: string;
@@ -17,6 +18,19 @@ interface MemoryLayer {
 interface MemoryConfig {
 	layers: MemoryLayer[];
 	archive_policy?: { max_entries?: number; compress_after?: string };
+}
+
+async function scanForSecrets(content: string, allowSecrets?: boolean): Promise<{ found: boolean; details: string }> {
+	const result = await scanSecrets(content, { allowSecrets });
+	if (!result.found) {
+		return { found: false, details: "" };
+	}
+
+	const details = result.leaks
+		.map((l) => `[${l.ruleId}] ${l.description} at line ${l.startLine}`)
+		.join("; ");
+
+	return { found: true, details };
 }
 
 async function loadMemoryConfig(cwd: string, pluginLayers?: MemoryLayerDef[]): Promise<MemoryConfig | null> {
@@ -61,6 +75,7 @@ async function archiveOverflow(
 	cwd: string,
 	content: string,
 	maxLines: number,
+	allowSecrets?: boolean,
 ): Promise<string> {
 	const lines = content.split("\n");
 	if (lines.length <= maxLines) return content;
@@ -75,7 +90,15 @@ async function archiveOverflow(
 
 	await mkdir(dirname(archivePath), { recursive: true });
 
+	// Check overflow content for secrets before archiving
+	const { found } = await scanForSecrets(overflow, allowSecrets);
+	if (found) {
+		// Don't archive content with secrets to prevent credential leakage
+		return kept;
+	}
+
 	// Append to archive
+
 	let existing = "";
 	try {
 		existing = await readFile(archivePath, "utf-8");
@@ -108,7 +131,7 @@ export function createMemoryTool(cwd: string, pluginLayers?: MemoryLayerDef[]): 
 			rawParams: unknown,
 			signal?: AbortSignal,
 		) => {
-			const { action, content, message } = rawParams as Static<typeof memorySchema>;
+			const { action, content, message, allowSecrets } = rawParams as Static<typeof memorySchema>;
 			if (signal?.aborted) throw new Error("Operation aborted");
 
 			const config = await loadMemoryConfig(cwd, pluginLayers);
@@ -147,7 +170,19 @@ export function createMemoryTool(cwd: string, pluginLayers?: MemoryLayerDef[]): 
 			// Apply max_lines archiving if configured
 			let finalContent = content;
 			if (maxLines) {
-				finalContent = await archiveOverflow(cwd, content, maxLines);
+				finalContent = await archiveOverflow(cwd, content, maxLines, allowSecrets);
+			}
+
+			// Check for secrets before saving to prevent credential leakage in git history
+			const { found, details } = await scanForSecrets(finalContent, allowSecrets);
+			if (found && !allowSecrets) {
+				return {
+					content: [{
+						type: "text",
+						text: `Memory contains potential secrets (${details}). Memory was NOT saved. If this is intentional, retry with allowSecrets: true.`,
+					}],
+					details: undefined,
+				};
 			}
 
 			await mkdir(dirname(memoryFile), { recursive: true });

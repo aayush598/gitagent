@@ -2,6 +2,7 @@ import { type Static } from "@sinclair/typebox";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import type { SandboxContext } from "../sandbox.js";
 import { memorySchema, DEFAULT_MEMORY_PATH, resolveSandboxPath } from "./shared.js";
+import { scanSecrets } from "../secret-scanner.js";
 import yaml from "js-yaml";
 
 interface MemoryLayer {
@@ -82,7 +83,7 @@ export function createSandboxMemoryTool(ctx: SandboxContext): AgentTool<typeof m
 			rawParams: unknown,
 			signal?: AbortSignal,
 		) => {
-			const { action, content, message } = rawParams as Static<typeof memorySchema>;
+			const { action, content, message, allowSecrets } = rawParams as Static<typeof memorySchema>;
 			if (signal?.aborted) throw new Error("Operation aborted");
 
 			const config = await loadMemoryConfig(ctx);
@@ -121,6 +122,21 @@ export function createSandboxMemoryTool(ctx: SandboxContext): AgentTool<typeof m
 			let finalContent = content;
 			if (maxLines) {
 				finalContent = await archiveOverflow(ctx, content, maxLines);
+			}
+
+			// Check for secrets before saving
+			const scanResult = await scanSecrets(finalContent, { allowSecrets });
+			if (scanResult.found) {
+				const detail = scanResult.leaks
+					.map((l) => `[${l.ruleId}] ${l.description} at line ${l.startLine}`)
+					.join("; ");
+				return {
+					content: [{
+						type: "text",
+						text: `Memory contains potential secrets (${detail}). Memory was NOT saved. If this is intentional, retry with allowSecrets: true.`,
+					}],
+					details: undefined,
+				};
 			}
 
 			// Ensure parent directory exists
