@@ -400,8 +400,8 @@ export function query(options: QueryOptions): Query {
 						const durationMs =
 							_llmCallStart > 0 ? Date.now() - _llmCallStart : 0;
 						recordGenAiCall(msg, { durationMs });
-					} catch {
-						/* never let telemetry break the agent */
+					} catch (genAiErr) {
+						console.error(`[telemetry] GenAI recording error: ${genAiErr instanceof Error ? genAiErr.message : String(genAiErr)}`);
 					}
 					_llmCallStart = 0;
 

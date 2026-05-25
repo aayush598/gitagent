@@ -47,6 +47,12 @@ export interface TelemetryOptions {
 	_testProvider?: unknown;
 }
 
+// ── Helpers ────────────────────────────────────────────────────────────
+
+function telemetryCatch(err?: unknown): void {
+	console.error(`[telemetry] ${err instanceof Error ? err.message : String(err || "unknown error")}`);
+}
+
 // ── Module state ───────────────────────────────────────────────────────
 
 let _initialized = false;
@@ -145,9 +151,9 @@ export async function initTelemetry(opts: TelemetryOptions): Promise<void> {
 				sdkConfig.metricReader = new PeriodicExportingMetricReader({
 					exporter: metricExporter,
 				});
-			} catch {
-				// Metrics packages not installed — continue with traces only.
-			}
+	} catch (metricErr) {
+			telemetryCatch(metricErr);
+		}
 		}
 
 		_sdk = new NodeSDK(sdkConfig);
@@ -361,8 +367,8 @@ export function wrapToolWithOtel<T extends AgentTool<any>>(tool: T): T {
 					try {
 						span.setAttribute("tool.status", "ok");
 						span.setStatus({ code: SpanStatusCode.OK });
-					} catch {
-						/* ignore */
+					} catch (spanStatusErr) {
+						telemetryCatch(spanStatusErr);
 					}
 					return result;
 				} catch (err) {
@@ -374,24 +380,24 @@ export function wrapToolWithOtel<T extends AgentTool<any>>(tool: T): T {
 							code: SpanStatusCode.ERROR,
 							message,
 						});
-					} catch {
-						/* ignore */
+					} catch (spanErrStatusErr) {
+						telemetryCatch(spanErrStatusErr);
 					}
 					throw err;
 				} finally {
 					const durationMs = Date.now() - startedAt;
 					try {
 						span.end();
-					} catch {
-						/* ignore */
+					} catch (spanEndErr) {
+						telemetryCatch(spanEndErr);
 					}
 					try {
 						getToolCallCounter().add(1, { "tool.name": tool.name });
 						getToolDurationHistogram().record(durationMs, {
 							"tool.name": tool.name,
 						});
-					} catch {
-						/* ignore */
+					} catch (metricErr) {
+						telemetryCatch(metricErr);
 					}
 				}
 			},
