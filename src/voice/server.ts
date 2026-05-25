@@ -70,6 +70,11 @@ export function logToBuffer(source: string, level: "info" | "warn" | "error", me
 	return entry;
 }
 
+const KNOWN_LOG_SOURCES = new Set([
+	"scheduler", "voice", "loader", "composio", "audit", "hook", "memory",
+	"gitagent", "plugin", "server", "session", "config", "tool",
+]);
+
 function installConsoleIntercept() {
 	const origLog = console.log.bind(console);
 	const origError = console.error.bind(console);
@@ -82,6 +87,7 @@ function installConsoleIntercept() {
 			const clean = stripAnsi(raw);
 			if (!clean.trim()) return;
 			const { source, cleaned } = extractSource(clean);
+			if (!KNOWN_LOG_SOURCES.has(source)) return;
 			const entry = logBuffer.push(source, level, cleaned);
 			if (logBroadcast) logBroadcast(entry);
 		} catch { /* non-fatal */ }
