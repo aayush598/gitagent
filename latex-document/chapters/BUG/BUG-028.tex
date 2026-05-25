@@ -12,7 +12,7 @@
 \end{tabular}
 
 \subsection*{Executive Summary}
-The \texttt{discoverAndLoadPlugins} function in \texttt{src/plugins.ts:311-367} performs a full directory scan every time it is called — scanning local (\texttt{<agent-dir>/plugins/}), global (\texttt{\textasciitilde{}/.gitclaw/plugins/}), and installed (\texttt{<agent-dir>/.gitagent/plugins/}) directories, parsing every \texttt{plugin.yaml} manifest, validating and loading each plugin. There is \textbf{zero caching} of discovered plugins, manifest metadata, or resolved configurations between invocations.
+The \texttt{discoverAndLoadPlugins} function in \texttt{src/plugins.ts:311-367} performs a full directory scan every time it is called — scanning local (\texttt{<agent-dir>/plugins/}), global (\texttt{$\sim$/.gitclaw/plugins/}), and installed (\texttt{<agent-dir>/.gitagent/plugins/}) directories, parsing every \texttt{plugin.yaml} manifest, validating and loading each plugin. There is \textbf{zero caching} of discovered plugins, manifest metadata, or resolved configurations between invocations.
 
 Every session start, every agent reload, and every test run repeats this entire I/O-heavy process. For an agent with 5-10 plugins, this adds 200-500ms to startup. For environments with many plugins (20+), or with plugins on network filesystems, the overhead multiplies. The \texttt{listAllPlugins} function (line 408-448) has the same problem — it re-reads the entire filesystem on every CLI invocation.
 
@@ -172,14 +172,14 @@ Every single call to \texttt{loadPlugin} re-reads the manifest, re-validates, re
 
 | Operation | Cost per Plugin | 10 Plugins | 20 Plugins |
 |---|---|---|---|
-| \texttt{dirExists} (stat) × 3 | \textasciitilde{}3ms | \textasciitilde{}30ms | \textasciitilde{}60ms |
-| \texttt{fileExists} (stat) | \textasciitilde{}1ms | \textasciitilde{}10ms | \textasciitilde{}20ms |
-| \texttt{readFile} (plugin.yaml) | \textasciitilde{}2ms | \textasciitilde{}20ms | \textasciitilde{}40ms |
-| \texttt{yaml.load} | \textasciitilde{}5ms | \textasciitilde{}50ms | \textasciitilde{}100ms |
-| Validation + config | \textasciitilde{}2ms | \textasciitilde{}20ms | \textasciitilde{}40ms |
-| Declarative tool loading | \textasciitilde{}10-50ms | \textasciitilde{}100-500ms | \textasciitilde{}200-1000ms |
-| Programmatic entry import | \textasciitilde{}50-200ms | \textasciitilde{}500-2000ms | \textasciitilde{}1000-4000ms |
-| \textbf{Total (estimated)} | \textbf{\textasciitilde{}70-260ms} | \textbf{\textasciitilde{}700-2600ms} | \textbf{\textasciitilde{}1400-5200ms} |
+| \texttt{dirExists} (stat) × 3 | $\sim$3ms | $\sim$30ms | $\sim$60ms |
+| \texttt{fileExists} (stat) | $\sim$1ms | $\sim$10ms | $\sim$20ms |
+| \texttt{readFile} (plugin.yaml) | $\sim$2ms | $\sim$20ms | $\sim$40ms |
+| \texttt{yaml.load} | $\sim$5ms | $\sim$50ms | $\sim$100ms |
+| Validation + config | $\sim$2ms | $\sim$20ms | $\sim$40ms |
+| Declarative tool loading | $\sim$10-50ms | $\sim$100-500ms | $\sim$200-1000ms |
+| Programmatic entry import | $\sim$50-200ms | $\sim$500-2000ms | $\sim$1000-4000ms |
+| \textbf{Total (estimated)} | \textbf{$\sim$70-260ms} | \textbf{$\sim$700-2600ms} | \textbf{$\sim$1400-5200ms} |
 
 ---
 

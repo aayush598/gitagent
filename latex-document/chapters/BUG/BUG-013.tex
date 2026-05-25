@@ -27,7 +27,7 @@ summarizeHistory()
 
 If the agent's internal message processing during the }query()\texttt{ call generates enough messages to exceed the 10-message threshold, }summarizeHistory()\texttt{ calls itself recursively. There is no recursion guard, circuit breaker, or reentrancy check. This can lead to:
 
-1. \textbf{Stack overflow}: With default Node.js call stack limits (\textasciitilde{}10,000), deep recursion from rapid summarization could exhaust the stack
+1. \textbf{Stack overflow}: With default Node.js call stack limits ($\sim$10,000), deep recursion from rapid summarization could exhaust the stack
 2. \textbf{Infinite loop}: If summarization produces more than 10 messages and the summarization of those also produces >10 messages, the recursion never terminates
 3. \textbf{Token waste}: Even if the recursion is shallow, every summarization call spends tokens unnecessarily
 

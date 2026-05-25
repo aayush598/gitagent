@@ -14,7 +14,7 @@
 \end{tabular}
 
 \subsection*{Executive Summary}
-The \texttt{read}, \texttt{write}, and \texttt{edit} tools each contained a duplicate \texttt{resolvePath()} function that resolved user-provided paths by supporting absolute paths (\texttt{/} prefix), home directory expansion (\texttt{\textasciitilde}), and relative paths resolved against the working directory---but none of them validated that the resolved path stays within the agent's working directory. An attacker who can influence the LLM's tool arguments (via prompt injection) can direct the agent to read or write arbitrary files on the system: \texttt{/etc/passwd}, \texttt{\textasciitilde{}/.ssh/id\_rsa}, \texttt{/etc/shadow}, and any other file the agent process has permission to access.
+The \texttt{read}, \texttt{write}, and \texttt{edit} tools each contained a duplicate \texttt{resolvePath()} function that resolved user-provided paths by supporting absolute paths (\texttt{/} prefix), home directory expansion (\texttt{\textasciitilde}), and relative paths resolved against the working directory---but none of them validated that the resolved path stays within the agent's working directory. An attacker who can influence the LLM's tool arguments (via prompt injection) can direct the agent to read or write arbitrary files on the system: \texttt{/etc/passwd}, \texttt{$\sim$/.ssh/id\_rsa}, \texttt{/etc/shadow}, and any other file the agent process has permission to access.
 
 The fix consolidates path resolution into a single \texttt{resolveSafePath()} function in \srcfile{src/tools/shared.ts} that performs an allowlist-based validation: it resolves the path relative to the working directory and then verifies the resolved path is within the allowed base directory using a relative-path comparison. Both absolute paths and \texttt{../} traversal sequences that escape the workspace are rejected.
 
@@ -78,7 +78,7 @@ export const readSchema = Type.Object({
 \end{itemize}
 
 \subsection*{Verification}
-A comprehensive test suite validates all path traversal scenarios: absolute paths (\texttt{/etc/passwd}) are rejected, home directory expansion (\texttt{\textasciitilde{}/.ssh/id\_rsa}) is rejected, \texttt{../} traversal sequences (\texttt{../../../etc/passwd}) are rejected, deeply nested traversal (\texttt{subdir/../../other}) is rejected, while valid relative paths (\texttt{file.txt}, \texttt{subdir/file.txt}) and deeply nested valid paths (\texttt{a/b/c/d/file.txt}) are correctly resolved within the workspace.
+A comprehensive test suite validates all path traversal scenarios: absolute paths (\texttt{/etc/passwd}) are rejected, home directory expansion (\texttt{$\sim$/.ssh/id\_rsa}) is rejected, \texttt{../} traversal sequences (\texttt{../../../etc/passwd}) are rejected, deeply nested traversal (\texttt{subdir/../../other}) is rejected, while valid relative paths (\texttt{file.txt}, \texttt{subdir/file.txt}) and deeply nested valid paths (\texttt{a/b/c/d/file.txt}) are correctly resolved within the workspace.
 
 \subsection*{Test File}
 \srcfile{src/__tests__/path-traversal.test.ts}

@@ -37,7 +37,7 @@ The \texttt{yaml.load()} function from \texttt{js-yaml} by default supports Java
   }
 \end{lstlisting}
 
-When \texttt{yaml.load()} processes these tags, it evaluates the JavaScript code in the \texttt{!!js/function} tag using the \texttt{Function()} constructor. Plugin manifests are loaded from three locations: the agent's local \texttt{plugins/} directory, the global \texttt{\textasciitilde{}/.gitclaw/plugins/} directory, and the installed \texttt{.gitagent/plugins/} directory---any of which could contain a malicious \texttt{plugin.yaml}.
+When \texttt{yaml.load()} processes these tags, it evaluates the JavaScript code in the \texttt{!!js/function} tag using the \texttt{Function()} constructor. Plugin manifests are loaded from three locations: the agent's local \texttt{plugins/} directory, the global \texttt{$\sim$/.gitclaw/plugins/} directory, and the installed \texttt{.gitagent/plugins/} directory---any of which could contain a malicious \texttt{plugin.yaml}.
 
 \subsection*{Fix Implementation}
 The fix adds pre-validation before YAML parsing. A set of dangerous YAML tag patterns is defined:

@@ -14,7 +14,7 @@
 \end{tabular}
 
 \subsection*{Executive Summary}
-The \texttt{write} tool (\srcfile{src/tools/write.ts}) writes content to user-specified file paths without verifying whether the path resolves to a symlink. An attacker who can control the file path argument---either directly via loaded agent prompts or indirectly via prompt injection---can instruct the agent to write to a symlink that points to an arbitrary location on the filesystem. The attack works by first creating a symlink in the agent's writable directory that points to a sensitive target (e.g., \texttt{\textasciitilde{}/.ssh/authorized\_keys}), then asking the agent to write to that symlink path. The \texttt{writeFile} call follows the symlink and writes the attacker's content to the target.
+The \texttt{write} tool (\srcfile{src/tools/write.ts}) writes content to user-specified file paths without verifying whether the path resolves to a symlink. An attacker who can control the file path argument---either directly via loaded agent prompts or indirectly via prompt injection---can instruct the agent to write to a symlink that points to an arbitrary location on the filesystem. The attack works by first creating a symlink in the agent's writable directory that points to a sensitive target (e.g., \texttt{$\sim$/.ssh/authorized\_keys}), then asking the agent to write to that symlink path. The \texttt{writeFile} call follows the symlink and writes the attacker's content to the target.
 
 The vulnerability is amplified by the fact that the CLI tool can create symlinks (\texttt{ln -s}), and the \texttt{write} tool creates parent directories automatically. The fix adds a symlink detection check (\texttt{assertNotSymlink()}) before both write and edit operations.
 
@@ -33,7 +33,7 @@ await writeFile(absolutePath, content, "utf-8");
 
 \texttt{writeFile()} in Node.js follows symlinks by default. If \texttt{absolutePath} is a symlink, the write targets the symlink's destination. There is no check before \texttt{mkdir} (directory creation follows symlinks in the path), before \texttt{writeFile} (no \texttt{lstat} call to check for symlinks), or after the write (no verification the written file is where expected). The same pattern exists in \texttt{edit.ts}.
 
-The attack chain is straightforward: (1) the attacker creates a symlink via the CLI tool (\texttt{ln -sf \textasciitilde{}/.ssh/authorized\_keys workspace/key}), (2) the agent writes attacker-controlled content to the symlink path via the write tool, and (3) \texttt{writeFile} follows the symlink and writes to the target.
+The attack chain is straightforward: (1) the attacker creates a symlink via the CLI tool (\texttt{ln -sf $\sim$/.ssh/authorized\_keys workspace/key}), (2) the agent writes attacker-controlled content to the symlink path via the write tool, and (3) \texttt{writeFile} follows the symlink and writes to the target.
 
 \subsection*{Fix Implementation}
 The fix adds an \texttt{assertNotSymlink()} function to \srcfile{src/tools/shared.ts}:

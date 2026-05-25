@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.5.25)  25 MAY 2026 22:49
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.5.25)  25 MAY 2026 22:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -412,32 +412,73 @@ Package: enumitem 2025/02/06 v3.11 Customized lists
 \enit@count@id=\count325
 \enitdp@description=\count326
 )
-Package hyperref Info: Option `colorlinks' set `true' on input line 27.
+(/usr/share/texmf-dist/tex/latex/psnfss/mathptmx.sty
+Package: mathptmx 2020/03/25 PSNFSS-v9.3 Times w/ Math, improved (SPQR, WaS) 
+LaTeX Font Info:    Redeclaring symbol font `operators' on input line 28.
+LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
+(Font)                  OT1/cmr/m/n --> OT1/ztmcm/m/n on input line 28.
+LaTeX Font Info:    Overwriting symbol font `operators' in version `bold'
+(Font)                  OT1/cmr/bx/n --> OT1/ztmcm/m/n on input line 28.
+LaTeX Font Info:    Redeclaring symbol font `letters' on input line 29.
+LaTeX Font Info:    Overwriting symbol font `letters' in version `normal'
+(Font)                  OML/cmm/m/it --> OML/ztmcm/m/it on input line 29.
+LaTeX Font Info:    Overwriting symbol font `letters' in version `bold'
+(Font)                  OML/cmm/b/it --> OML/ztmcm/m/it on input line 29.
+LaTeX Font Info:    Redeclaring symbol font `symbols' on input line 30.
+LaTeX Font Info:    Overwriting symbol font `symbols' in version `normal'
+(Font)                  OMS/cmsy/m/n --> OMS/ztmcm/m/n on input line 30.
+LaTeX Font Info:    Overwriting symbol font `symbols' in version `bold'
+(Font)                  OMS/cmsy/b/n --> OMS/ztmcm/m/n on input line 30.
+LaTeX Font Info:    Redeclaring symbol font `largesymbols' on input line 31.
+LaTeX Font Info:    Overwriting symbol font `largesymbols' in version `normal'
+(Font)                  OMX/cmex/m/n --> OMX/ztmcm/m/n on input line 31.
+LaTeX Font Info:    Overwriting symbol font `largesymbols' in version `bold'
+(Font)                  OMX/cmex/m/n --> OMX/ztmcm/m/n on input line 31.
+\symbold=\mathgroup4
+\symitalic=\mathgroup5
+LaTeX Font Info:    Redeclaring math alphabet \mathbf on input line 34.
+LaTeX Font Info:    Overwriting math alphabet `\mathbf' in version `normal'
+(Font)                  OT1/cmr/bx/n --> OT1/ptm/bx/n on input line 34.
+LaTeX Font Info:    Overwriting math alphabet `\mathbf' in version `bold'
+(Font)                  OT1/cmr/bx/n --> OT1/ptm/bx/n on input line 34.
+LaTeX Font Info:    Redeclaring math alphabet \mathit on input line 35.
+LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `normal'
+(Font)                  OT1/cmr/m/it --> OT1/ptm/m/it on input line 35.
+LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `bold'
+(Font)                  OT1/cmr/bx/it --> OT1/ptm/m/it on input line 35.
+LaTeX Info: Redefining \hbar on input line 50.
+)
+Package hyperref Info: Option `colorlinks' set `true' on input line 28.
+LaTeX Font Info:    Trying to load font information for T1+ptm on input line 99
+.
 
+(/usr/share/texmf-dist/tex/latex/psnfss/t1ptm.fd
+File: t1ptm.fd 2001/06/04 font definitions for T1/ptm.
+)
 (/usr/share/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count327
 ) (./main.aux)
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 98.
-LaTeX Font Info:    ... okay on input line 98.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 98.
-LaTeX Font Info:    ... okay on input line 98.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 98.
-LaTeX Font Info:    ... okay on input line 98.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 98.
-LaTeX Font Info:    ... okay on input line 98.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 98.
-LaTeX Font Info:    ... okay on input line 98.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 98.
-LaTeX Font Info:    ... okay on input line 98.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 98.
-LaTeX Font Info:    ... okay on input line 98.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 98.
-LaTeX Font Info:    ... okay on input line 98.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 98.
-LaTeX Font Info:    ... okay on input line 98.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 99.
+LaTeX Font Info:    ... okay on input line 99.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 99.
+LaTeX Font Info:    ... okay on input line 99.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 99.
+LaTeX Font Info:    ... okay on input line 99.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 99.
+LaTeX Font Info:    ... okay on input line 99.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 99.
+LaTeX Font Info:    ... okay on input line 99.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 99.
+LaTeX Font Info:    ... okay on input line 99.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 99.
+LaTeX Font Info:    ... okay on input line 99.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 99.
+LaTeX Font Info:    ... okay on input line 99.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 99.
+LaTeX Font Info:    ... okay on input line 99.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -473,7 +514,7 @@ LaTeX Font Info:    ... okay on input line 98.
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-Package hyperref Info: Link coloring ON on input line 98.
+Package hyperref Info: Link coloring ON on input line 99.
 (./main.out) (./main.out)
 \@outlinefile=\write3
 \openout3 = `main.out'.
@@ -504,17 +545,47 @@ e
 ))
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: End \AtBeginDocument code.
+\big@size=\dimen197
  [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf-dist/fonts
-/enc/dvips/cm-super/cm-super-t1.enc}] (./main.toc
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <12> on input line 1.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 1.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 1.
- [2]
+/enc/dvips/base/8r.enc}] (./main.toc
+LaTeX Font Info:    Trying to load font information for OT1+ztmcm on input line
+ 1.
+ (/usr/share/texmf-dist/tex/latex/psnfss/ot1ztmcm.fd
+File: ot1ztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OT1/ztmcm.
+)
+LaTeX Font Info:    Trying to load font information for OML+ztmcm on input line
+ 1.
+
+(/usr/share/texmf-dist/tex/latex/psnfss/omlztmcm.fd
+File: omlztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OML/ztmcm.
+)
+LaTeX Font Info:    Trying to load font information for OMS+ztmcm on input line
+ 1.
+
+(/usr/share/texmf-dist/tex/latex/psnfss/omsztmcm.fd
+File: omsztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMS/ztmcm.
+)
+LaTeX Font Info:    Trying to load font information for OMX+ztmcm on input line
+ 1.
+
+(/usr/share/texmf-dist/tex/latex/psnfss/omxztmcm.fd
+File: omxztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMX/ztmcm.
+)
+LaTeX Font Info:    Trying to load font information for OT1+ptm on input line 1
+.
+
+(/usr/share/texmf-dist/tex/latex/psnfss/ot1ptm.fd
+File: ot1ptm.fd 2001/06/04 font definitions for OT1/ptm.
+)
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <12> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1.
+ [2{/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -526,7 +597,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 ! Misplaced alignment tab character &.
 <argument> ...clinkstart {\numberline {6}Network &
                                                    Connectivity Fixes}\Hy@to...
-l.88 ...work & Connectivity Fixes}{361}{chapter.6}
+l.88 ...work & Connectivity Fixes}{359}{chapter.6}
                                                   %
 I can't figure out why you would want to use a tab mark
 here. If you just want an ampersand, the remedy is
@@ -547,10 +618,21 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[4] (./chapters/introduction.tex [5
+[4] (./chapters/introduction.tex
+LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 1
+5.
 
-{/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]) (./chapters
-/SEC/chapter.tex
+(/usr/share/texmf-dist/tex/latex/psnfss/ts1ptm.fd
+File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
+)
+Overfull \hbox (4.932pt too wide) in paragraph at lines 25--26
+\T1/ptm/m/n/12 pli-ca-tions us-ing LLM APIs, built FastAPI back-end ser-vices, 
+im-ple-mented CI/CD pipelines
+ []
+
+[5
+
+]) (./chapters/SEC/chapter.tex
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -568,13 +650,6 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 
 [7]
 Chapter 1.
-
-Overfull \hbox (10.94089pt too wide) in paragraph at lines 15--16
-[][][]\T1/cmr/m/n/12 SEC-010[][]: \T1/cmtt/m/n/12 fix/SEC-010-rate-limiting-too
-l-execution \T1/cmr/m/n/12 | [][][\T1/cmr/bx/n/12 View Diff on GitHub\T1/cmr/m/
-n/12 ][][] 
- []
-
 (./chapters/SEC/SEC-001.tex
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <17.28> not available
 (Font)              Font shape `T1/cmtt/m/n' tried instead on input line 1.
@@ -592,6 +667,12 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
 [9]
+Overfull \hbox (22.8857pt too wide) in paragraph at lines 39--40
+\T1/ptm/m/n/12 able from the par-ent, in-clud-ing \T1/cmtt/m/n/12 OPENAI_API_KE
+Y\T1/ptm/m/n/12 , \T1/cmtt/m/n/12 ANTHROPIC_API_KEY\T1/ptm/m/n/12 , and \T1/cmt
+t/m/n/12 GITHUB_TOKEN\T1/ptm/m/n/12 . 
+ []
+
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -600,11 +681,27 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
 [10]
-Overfull \hbox (28.60753pt too wide) in paragraph at lines 106--107
-[][][]\T1/cmtt/m/n/12 src/tools/cli.ts[][] \T1/cmr/m/n/12 --- Re-placed \T1/cmt
-t/m/n/12 spawn("sh", ["-c", command]) \T1/cmr/m/n/12 with \T1/cmtt/m/n/12 spawn
+Overfull \hbox (23.8567pt too wide) in paragraph at lines 106--107
+[][][]\T1/cmtt/m/n/12 src/tools/cli.ts[][] \T1/ptm/m/n/12 --- Re-placed \T1/cmt
+t/m/n/12 spawn("sh", ["-c", command]) \T1/ptm/m/n/12 with \T1/cmtt/m/n/12 spawn
 (args[0],
  []
+
+
+Overfull \hbox (5.02252pt too wide) in paragraph at lines 111--112
+\T1/ptm/m/n/12 that con-firm each pay-load is re-jected while sim-ple com-mands
+ like \T1/cmtt/m/n/12 echo hello \T1/ptm/m/n/12 and \T1/cmtt/m/n/12 git status
+ []
+
+
+Overfull \hbox (1.10101pt too wide) in paragraph at lines 111--112
+\T1/ptm/m/n/12 con-tinue to work. Run-time as-ser-tions val-i-date that en-vi-r
+on-ment vari-ables like \T1/cmtt/m/n/12 OPENAI_API_KEY
+ []
+
+
+Underfull \vbox (badness 2521) has occurred while \output is active []
+
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -614,19 +711,9 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
 [11]) (./chapters/SEC/SEC-002.tex
-Overfull \hbox (11.5887pt too wide) in paragraph at lines 1--1
-|[]\T1/cmr/bx/n/17.28 SEC-002: API Key Ex-po-sure in Mem-ory (Git-Backed
+Overfull \hbox (3.5382pt too wide) in paragraph at lines 1--1
+|[]\T1/ptm/b/n/17.28 SEC-002: API Key Ex-po-sure in Mem-ory (Git-Backed Per-
  []
-
-
-Overfull \hbox (3.70386pt too wide) in paragraph at lines 17--18
-\T1/cmr/m/n/12 stor-ing con-ver-sa-tion his-tory and op-er-a-tional state in a 
-git-backed file (\T1/cmtt/m/n/12 memory/MEMORY.md\T1/cmr/m/n/12 ).
- []
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -644,6 +731,11 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
 [13]
+Overfull \hbox (26.7519pt too wide) in paragraph at lines 77--78
+[]\T1/ptm/m/n/12 Second, both the archive path and the main save path are gated
+ by this scan-ner. In \T1/cmtt/m/n/12 archiveOverflow\T1/ptm/m/n/12 ,
+ []
+
 ! Missing $ inserted.
 <inserted text> 
                 $
@@ -705,6 +797,7 @@ With luck, this will get me unwedged. But if you
 really didn't forget anything, try typing `2' now; then
 my insertion and my current dilemma will both disappear.
 
+)
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -712,11 +805,17 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[14]) (./chapters/SEC/SEC-003.tex
-Overfull \hbox (15.8482pt too wide) in paragraph at lines 17--18
-\T1/cmr/m/n/12 key, to-ken, and se-cret the agent uses: \T1/cmtt/m/n/12 OPENAI_
-API_KEY\T1/cmr/m/n/12 , \T1/cmtt/m/n/12 ANTHROPIC_API_KEY\T1/cmr/m/n/12 , \T1/c
-mtt/m/n/12 GITHUB_TOKEN\T1/cmr/m/n/12 ,
+[14] (./chapters/SEC/SEC-003.tex
+Overfull \hbox (43.37022pt too wide) in paragraph at lines 1--1
+|[]\T1/ptm/b/n/17.28 SEC-003: API Key Leak-age via \T1/cmtt/m/n/17.28 .env \T1/
+ptm/b/n/17.28 Load-ing into \T1/cmtt/m/n/17.28 process.env| 
+ []
+
+
+Overfull \hbox (56.13113pt too wide) in paragraph at lines 22--23
+\T1/ptm/m/n/12 The en-vi-ron-ment for-ward-ing pat-tern ex-ists in three crit-i
+-cal lo-ca-tions. In the CLI tool ([][]\T1/cmtt/m/n/12 src/tools/cli.ts[][]\T1/
+ptm/m/n/12 ): 
  []
 
 
@@ -727,17 +826,17 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
 [15]
-Overfull \hbox (52.90297pt too wide) in paragraph at lines 79--80
-[]\T1/cmr/m/n/12 This pat-tern is ap-plied iden-ti-cally to [][]\T1/cmtt/m/n/12
- src/hooks.ts[][]\T1/cmr/m/n/12 , [][]\T1/cmtt/m/n/12 src/tool-loader.ts[][]\T1
-/cmr/m/n/12 , and [][]\T1/cmtt/m/n/12 src/tools/cli.ts[][]\T1/cmr/m/n/12 .
+Overfull \hbox (69.33928pt too wide) in paragraph at lines 52--53
+\T1/cmtt/m/n/12 $VAR_NAME \T1/ptm/m/n/12 syn-tax, the child pro-cess can read t
+hem via \T1/cmtt/m/n/12 process.env \T1/ptm/m/n/12 in Node.js, and \T1/cmtt/m/n
+/12 /proc/<pid>/environ
  []
 
 
-Overfull \hbox (6.55319pt too wide) in paragraph at lines 83--84
-[][][]\T1/cmtt/m/n/12 src/hooks.ts[][] \T1/cmr/m/n/12 --- Re-placed \T1/cmtt/m/
-n/12 env: { ...process.env } \T1/cmr/m/n/12 with a con-structed \T1/cmtt/m/n/12
- safeEnv
+Overfull \hbox (36.13864pt too wide) in paragraph at lines 79--80
+[]\T1/ptm/m/n/12 This pat-tern is ap-plied iden-ti-cally to [][]\T1/cmtt/m/n/12
+ src/hooks.ts[][]\T1/ptm/m/n/12 , [][]\T1/cmtt/m/n/12 src/tool-loader.ts[][]\T1
+/ptm/m/n/12 , and [][]\T1/cmtt/m/n/12 src/tools/cli.ts[][]\T1/ptm/m/n/12 .
  []
 
 
@@ -810,10 +909,20 @@ really didn't forget anything, try typing `2' now; then
 my insertion and my current dilemma will both disappear.
 
 ) (./chapters/SEC/SEC-004.tex
-Overfull \hbox (126.85048pt too wide) in paragraph at lines 17--18
-\T1/cmr/m/n/12 Per-sonal Ac-cess To-ken (PAT) di-rectly into the git re-mote UR
-L us-ing the \T1/cmtt/m/n/12 https://<token>@github.com/org/repo
+Overfull \hbox (88.24pt too wide) in paragraph at lines 17--18
+\T1/ptm/m/n/12 sonal Ac-cess To-ken (PAT) di-rectly into the git re-mote URL us
+-ing the \T1/cmtt/m/n/12 https://<token>@github.com/org/repo
  []
+
+
+Overfull \hbox (5.70796pt too wide) in paragraph at lines 17--18
+\T1/cmtt/m/n/12 git push \T1/ptm/m/n/12 op-er-a-tions through-out the ses-sion.
+ While the to-ken was cleaned up in the \T1/cmtt/m/n/12 finalize()
+ []
+
+
+Underfull \vbox (badness 1527) has occurred while \output is active []
+
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -823,19 +932,6 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
 [17]
-Overfull \hbox (18.93304pt too wide) in paragraph at lines 45--46
-\T1/cmr/m/n/12 stores au-then-ti-ca-tion ma-te-rial in a sep-a-rate file with r
-e-stricted per-mis-sions. The \T1/cmtt/m/n/12 authedUrl()
- []
-
-
-Package fancyhdr Warning: \headheight is too small (12.0pt): 
-(fancyhdr)                Make it at least 14.49998pt, for example:
-(fancyhdr)                \setlength{\headheight}{14.49998pt}.
-(fancyhdr)                You might also make \topmargin smaller:
-(fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
-
-[18]
 ! Extra }, or forgotten $.
 <recently read> \egroup 
                         
@@ -856,11 +952,11 @@ I've inserted a begin-math/end-math symbol since I think
 you left one out. Proceed, with fingers crossed.
 
 
-Overfull \hbox (203.00122pt too wide) in paragraph at lines 66--67
-\T1/cmtt/m/n/12 dir) \T1/cmr/m/n/12 in-stead of \T1/cmtt/m/n/12 git(`checkout $
-[]\OT1/cmr/m/n/12 `\OML/cmm/m/it/12 ; dir\OT1/cmr/m/n/12 )\OML/cmm/m/it/12 :Apr
-ocessexitcleanuphandlerisregisteredtoremovethecredentialfileevenoncrash \OT1/cm
-r/m/n/12 :$ 
+Overfull \hbox (140.52261pt too wide) in paragraph at lines 66--67
+\T1/ptm/m/n/12 in-stead of \T1/cmtt/m/n/12 git(`checkout $[]\OT1/ztmcm/m/n/12 `
+\OML/ztmcm/m/it/12 ; dir\OT1/ztmcm/m/n/12 )\OML/ztmcm/m/it/12 :Aprocessexitclea
+nuphandlerisregisteredtoremovethecredentialfileevenoncrash \OT1/ztmcm/m/n/12 :$
+ 
  []
 
 ! Argument of \lstenv@testopt@ has an extra }.
@@ -897,6 +993,14 @@ you forgot something else, as in `\hbox{$x}'. In such cases
 the way to recover is to insert both the forgotten and the
 deleted material, e.g., by typing `I$}'.
 
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 14.49998pt, for example:
+(fancyhdr)                \setlength{\headheight}{14.49998pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
+
+[18]
 
 ! Package Listings Error: Extra \endlstlisting.
 
@@ -1031,6 +1135,10 @@ Overfull \hbox (126.64645pt too wide) in paragraph at lines 5--15
  []
 
 
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
 (fancyhdr)                \setlength{\headheight}{14.49998pt}.
@@ -1074,9 +1182,9 @@ bitrary files
  []
 
 
-Overfull \hbox (10.04404pt too wide) in paragraph at lines 17--18
-\T1/cmtt/m/n/12 on the system: /etc/passwd, ~/.ssh/id_rsa, /etc/shadow, and any
- other file
+Overfull \hbox (13.19441pt too wide) in paragraph at lines 17--18
+\T1/cmtt/m/n/12 on the system: /etc/passwd, $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n
+/12 /.ssh/id_rsa, /etc/shadow, and any other file
  []
 
 
@@ -1275,9 +1383,9 @@ os: absolute
  []
 
 
-Overfull \hbox (3.87054pt too wide) in paragraph at lines 81--82
-\T1/cmtt/m/n/12 paths (/etc/passwd) are rejected, home directory expansion (~/.
-ssh/id_rsa)
+Overfull \hbox (7.02092pt too wide) in paragraph at lines 81--82
+\T1/cmtt/m/n/12 paths (/etc/passwd) are rejected, home directory expansion ($\O
+MS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 /.ssh/id_rsa)
  []
 
 
@@ -1419,15 +1527,15 @@ Overfull \hbox (10.04404pt too wide) in paragraph at lines 17--18
  []
 
 
-Overfull \hbox (34.738pt too wide) in paragraph at lines 17--18
-\T1/cmtt/m/n/12 sensitive target (e.g., ~/.ssh/authorized_keys), then asking th
-e agent to write
+Overfull \hbox (0.84743pt too wide) in paragraph at lines 17--18
+\T1/cmtt/m/n/12 sensitive target (e.g., $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 
+/.ssh/authorized_keys), then asking the agent to
  []
 
 
-Overfull \hbox (16.21753pt too wide) in paragraph at lines 17--18
-\T1/cmtt/m/n/12 to that symlink path. The writeFile call follows the symlink an
-d writes the
+Overfull \hbox (28.56451pt too wide) in paragraph at lines 17--18
+\T1/cmtt/m/n/12 write to that symlink path. The writeFile call follows the syml
+ink and writes
  []
 
 
@@ -1486,15 +1594,15 @@ Overfull \hbox (16.21753pt too wide) in paragraph at lines 36--37
  []
 
 
-Overfull \hbox (40.9115pt too wide) in paragraph at lines 36--37
-\T1/cmtt/m/n/12 the CLI tool (ln -sf ~/.ssh/authorized_keys workspace/key), (2)
- the agent writes
+Overfull \hbox (0.84743pt too wide) in paragraph at lines 36--37
+\T1/cmtt/m/n/12 the CLI tool (ln -sf $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 /.s
+sh/authorized_keys workspace/key), (2) the agent
  []
 
 
-Overfull \hbox (10.04404pt too wide) in paragraph at lines 36--37
-\T1/cmtt/m/n/12 attacker-controlled content to the symlink path via the write t
-ool, and (3)
+Overfull \hbox (3.87054pt too wide) in paragraph at lines 36--37
+\T1/cmtt/m/n/12 writes attacker-controlled content to the symlink path via the 
+write tool,
  []
 
 
@@ -1619,7 +1727,7 @@ Overfull \hbox (40.21756pt too wide) in paragraph at lines 5--15
  []
 
 
-Underfull \vbox (badness 4981) has occurred while \output is active []
+Underfull \vbox (badness 4872) has occurred while \output is active []
 
 
 
@@ -1955,7 +2063,7 @@ Overfull \hbox (18.5412pt too wide) in paragraph at lines 1--1
  []
 
 
-Underfull \vbox (badness 3861) has occurred while \output is active []
+Underfull \vbox (badness 3623) has occurred while \output is active []
 
 
 
@@ -2355,7 +2463,7 @@ really didn't forget anything, try typing `2' now; then
 my insertion and my current dilemma will both disappear.
 
 
-Overfull \hbox (18.80048pt too wide) in paragraph at lines 103--104
+Overfull \hbox (5.84334pt too wide) in paragraph at lines 103--104
 [][][]\T1/cmtt/m/n/12 src/$[]$[][] --- New comprehensive test suite for the rat
 e limiter. 
  []
@@ -2866,7 +2974,7 @@ ns (chmod 600)
  []
 
 
-Underfull \vbox (badness 2790) has occurred while \output is active []
+Underfull \vbox (badness 2653) has occurred while \output is active []
 
 
 
@@ -3104,9 +3212,9 @@ ry, the global
  []
 
 
-Overfull \hbox (53.25848pt too wide) in paragraph at lines 40--41
-\T1/cmtt/m/n/12 ~/.gitclaw/plugins/ directory, and the installed .gitagent/plug
-ins/ directory---any
+Overfull \hbox (56.40886pt too wide) in paragraph at lines 40--41
+\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 /.gitclaw/plugins/ directory, and the ins
+talled .gitagent/plugins/ directory---any
  []
 
 
@@ -3208,7 +3316,7 @@ really didn't forget anything, try typing `2' now; then
 my insertion and my current dilemma will both disappear.
 
 
-Overfull \hbox (34.25273pt too wide) in paragraph at lines 87--88
+Overfull \hbox (18.2481pt too wide) in paragraph at lines 87--88
 [][][]\T1/cmtt/m/n/12 src/$[]$[][] --- New comprehensive test suite for deseria
 lization
  []
@@ -3544,9 +3652,9 @@ really didn't forget anything, try typing `2' now; then
 my insertion and my current dilemma will both disappear.
 
 
-Overfull \hbox (5.6558pt too wide) in paragraph at lines 118--119
+Overfull \hbox (71.51398pt too wide) in paragraph at lines 118--119
 [][][]\T1/cmtt/m/n/12 src/$[]$[][] --- New comprehensive test suite for git his
-tory
+tory protections. 
  []
 
 
@@ -3878,7 +3986,7 @@ really didn't forget anything, try typing `2' now; then
 my insertion and my current dilemma will both disappear.
 
 
-Overfull \hbox (52.46118pt too wide) in paragraph at lines 136--137
+Overfull \hbox (35.65527pt too wide) in paragraph at lines 136--137
 [][][]\T1/cmtt/m/n/12 src/$[]$[][] --- New comprehensive test suite for integri
 ty checking. 
  []
@@ -12090,7 +12198,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[84]
+[84{/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 145--149
 []\T1/cmtt/m/n/12 What this fixes: 1. Atomic write via temp file + rename preve
 nts partial
@@ -16434,9 +16542,9 @@ Overfull \hbox (16.21753pt too wide) in paragraph at lines 28--34
  []
 
 
-Overfull \hbox (10.04404pt too wide) in paragraph at lines 34--34
-[]\T1/cmtt/m/n/12 1. Stack overflow: With default Node.js call stack limits (~1
-0,000), deep
+Overfull \hbox (13.19441pt too wide) in paragraph at lines 34--34
+[]\T1/cmtt/m/n/12 1. Stack overflow: With default Node.js call stack limits ($\
+OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 10,000), deep
  []
 
 
@@ -16483,9 +16591,9 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
 [135]
-Overfull \hbox (10.04404pt too wide) in paragraph at lines 34--34
-[]\T1/cmtt/m/n/12 1. Stack overflow: With default Node.js call stack limits (~1
-0,000), deep
+Overfull \hbox (13.19441pt too wide) in paragraph at lines 34--34
+[]\T1/cmtt/m/n/12 1. Stack overflow: With default Node.js call stack limits ($\
+OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 10,000), deep
  []
 
 
@@ -28552,10 +28660,10 @@ ed content.
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
-(fancyhdr)                Make it at least 27.11469pt, for example:
-(fancyhdr)                \setlength{\headheight}{27.11469pt}.
+(fancyhdr)                Make it at least 26.98592pt, for example:
+(fancyhdr)                \setlength{\headheight}{26.98592pt}.
 (fancyhdr)                You might also make \topmargin smaller:
-(fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
+(fancyhdr)                \addtolength{\topmargin}{-14.98592pt}.
 
 [175]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 19--20
@@ -29038,10 +29146,10 @@ Alternatively, save the file in UTF-8 using your editor or another tool
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
-(fancyhdr)                Make it at least 27.11469pt, for example:
-(fancyhdr)                \setlength{\headheight}{27.11469pt}.
+(fancyhdr)                Make it at least 26.98592pt, for example:
+(fancyhdr)                \setlength{\headheight}{26.98592pt}.
 (fancyhdr)                You might also make \topmargin smaller:
-(fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
+(fancyhdr)                \addtolength{\topmargin}{-14.98592pt}.
 
 [177]
 
@@ -29234,10 +29342,10 @@ Alternatively, save the file in UTF-8 using your editor or another tool
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
-(fancyhdr)                Make it at least 27.11469pt, for example:
-(fancyhdr)                \setlength{\headheight}{27.11469pt}.
+(fancyhdr)                Make it at least 26.98592pt, for example:
+(fancyhdr)                \setlength{\headheight}{26.98592pt}.
 (fancyhdr)                You might also make \topmargin smaller:
-(fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
+(fancyhdr)                \addtolength{\topmargin}{-14.98592pt}.
 
 [179]
 
@@ -29319,10 +29427,10 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
-(fancyhdr)                Make it at least 27.11469pt, for example:
-(fancyhdr)                \setlength{\headheight}{27.11469pt}.
+(fancyhdr)                Make it at least 26.98592pt, for example:
+(fancyhdr)                \setlength{\headheight}{26.98592pt}.
 (fancyhdr)                You might also make \topmargin smaller:
-(fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
+(fancyhdr)                \addtolength{\topmargin}{-14.98592pt}.
 
 [181]
 Underfull \vbox (badness 10000) has occurred while \output is active []
@@ -29341,10 +29449,10 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
-(fancyhdr)                Make it at least 27.11469pt, for example:
-(fancyhdr)                \setlength{\headheight}{27.11469pt}.
+(fancyhdr)                Make it at least 26.98592pt, for example:
+(fancyhdr)                \setlength{\headheight}{26.98592pt}.
 (fancyhdr)                You might also make \topmargin smaller:
-(fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
+(fancyhdr)                \addtolength{\topmargin}{-14.98592pt}.
 
 [183]
 Overfull \hbox (53.25848pt too wide) in paragraph at lines 15--16
@@ -30350,9 +30458,9 @@ the same agent
  []
 
 
-Overfull \hbox (3.87054pt too wide) in paragraph at lines 15--16
-\T1/cmtt/m/n/12 directory ^^V or share the same global plugin cache at ~/.gitcl
-aw/plugins/ ^^V
+Overfull \hbox (7.02092pt too wide) in paragraph at lines 15--16
+\T1/cmtt/m/n/12 directory ^^V or share the same global plugin cache at $\OMS/zt
+mcm/m/n/12 ^^X$\T1/cmtt/m/n/12 /.gitclaw/plugins/ ^^V
  []
 
 
@@ -33947,9 +34055,10 @@ Overfull \hbox (47.08499pt too wide) in paragraph at lines 92--101
  []
 
 
-Overfull \hbox (10.04404pt too wide) in paragraph at lines 92--101
-\T1/cmtt/m/n/12 (1/tool) | ~300 bytes | 30 KB | 300 KB | | logToolResult (1/too
-l) | ~1.2 KB
+Overfull \hbox (16.34479pt too wide) in paragraph at lines 92--101
+\T1/cmtt/m/n/12 (1/tool) | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 300 bytes | 3
+0 KB | 300 KB | | logToolResult (1/tool) | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/
+12 1.2 KB
  []
 
 
@@ -33959,15 +34068,16 @@ nse (1/turn)
  []
 
 
-Overfull \hbox (16.21753pt too wide) in paragraph at lines 92--101
-\T1/cmtt/m/n/12 | ~200 bytes | 20 KB | 200 KB | | Total per turn | ~1.7 KB | 17
-0 KB | 1.7 MB
+Overfull \hbox (3.9978pt too wide) in paragraph at lines 92--101
+\T1/cmtt/m/n/12 | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 200 bytes | 20 KB | 20
+0 KB | | Total per turn | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 1.7 KB | 170 K
+B | 1.7
  []
 
 
-Overfull \hbox (10.04404pt too wide) in paragraph at lines 92--101
-\T1/cmtt/m/n/12 | | Total for 10k turns | 17 MB | ^^V | ^^V | | Total for 100k 
-turns | 170 MB |
+Overfull \hbox (16.21753pt too wide) in paragraph at lines 92--101
+\T1/cmtt/m/n/12 MB | | Total for 10k turns | 17 MB | ^^V | ^^V | | Total for 10
+0k turns | 170 MB
  []
 
 
@@ -33977,9 +34087,9 @@ or a 24-hour deployment)
  []
 
 
-Overfull \hbox (16.21753pt too wide) in paragraph at lines 102--103
-\T1/cmtt/m/n/12 generates ~170 MB of audit data. In a container with a 1 GB eph
-emeral disk,
+Overfull \hbox (19.3679pt too wide) in paragraph at lines 102--103
+\T1/cmtt/m/n/12 generates $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 170 MB of audi
+t data. In a container with a 1 GB ephemeral disk,
  []
 
 
@@ -34120,9 +34230,9 @@ mit (default
  []
 
 
-Overfull \hbox (28.56451pt too wide) in paragraph at lines 247--252
-\T1/cmtt/m/n/12 5 compressed files = ~50 MB max total) 4. Non-fatal error handl
-ing that still
+Overfull \hbox (31.71489pt too wide) in paragraph at lines 247--252
+\T1/cmtt/m/n/12 5 compressed files = $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 50 
+MB max total) 4. Non-fatal error handling that still
  []
 
 
@@ -36792,9 +36902,9 @@ nt-dir>/plugins/),
  []
 
 
-Overfull \hbox (16.21753pt too wide) in paragraph at lines 15--16
-\T1/cmtt/m/n/12 global (~/.gitclaw/plugins/), and installed (<agent-dir>/.gitag
-ent/plugins/)
+Overfull \hbox (19.3679pt too wide) in paragraph at lines 15--16
+\T1/cmtt/m/n/12 global ($\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 /.gitclaw/plugin
+s/), and installed (<agent-dir>/.gitagent/plugins/)
  []
 
 
@@ -37145,33 +37255,42 @@ Overfull \hbox (59.43198pt too wide) in paragraph at lines 173--183
  []
 
 
-Overfull \hbox (28.56451pt too wide) in paragraph at lines 173--183
-\T1/cmtt/m/n/12 (stat) \TS1/cmtt/m/n/12 Ö \T1/cmtt/m/n/12 3 | ~3ms | ~30ms | ~6
-0ms | | fileExists (stat) | ~1ms | ~10ms | ~20ms
+Overfull \hbox (7.27544pt too wide) in paragraph at lines 173--183
+\T1/cmtt/m/n/12 (stat) \TS1/cmtt/m/n/12 Ö \T1/cmtt/m/n/12 3 | $\OMS/ztmcm/m/n/1
+2 ^^X$\T1/cmtt/m/n/12 3ms | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 30ms | $\OMS
+/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 60ms | | fileExists (stat) | $\OMS/ztmcm/m/n/
+12 ^^X$\T1/cmtt/m/n/12 1ms | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 10ms |
  []
 
 
-Overfull \hbox (28.56451pt too wide) in paragraph at lines 173--183
-\T1/cmtt/m/n/12 | | readFile (plugin.yaml) | ~2ms | ~20ms | ~40ms | | yaml.load
- | ~5ms | ~50ms
+Overfull \hbox (31.9694pt too wide) in paragraph at lines 173--183
+\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 20ms | | readFile (plugin.yaml) | $\OMS/z
+tmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 2ms | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 20
+ms | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 40ms | | yaml.load | $\OMS/ztmcm/m/
+n/12 ^^X$\T1/cmtt/m/n/12 5ms
  []
 
 
-Overfull \hbox (16.21753pt too wide) in paragraph at lines 173--183
-\T1/cmtt/m/n/12 | ~100ms | | Validation + config | ~2ms | ~20ms | ~40ms | | Dec
-larative tool
+Overfull \hbox (50.48988pt too wide) in paragraph at lines 173--183
+\T1/cmtt/m/n/12 | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 50ms | $\OMS/ztmcm/m/n
+/12 ^^X$\T1/cmtt/m/n/12 100ms | | Validation + config | $\OMS/ztmcm/m/n/12 ^^X$
+\T1/cmtt/m/n/12 2ms | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 20ms | $\OMS/ztmcm
+/m/n/12 ^^X$\T1/cmtt/m/n/12 40ms | | Declarative
  []
 
 
-Overfull \hbox (10.04404pt too wide) in paragraph at lines 173--183
-\T1/cmtt/m/n/12 loading | ~10-50ms | ~100-500ms | ~200-1000ms | | Programmatic 
-entry import
+Overfull \hbox (7.14818pt too wide) in paragraph at lines 173--183
+\T1/cmtt/m/n/12 tool loading | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 10-50ms |
+ $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 100-500ms | $\OMS/ztmcm/m/n/12 ^^X$\T1/
+cmtt/m/n/12 200-1000ms | | Programmatic entry
  []
 
 
-Overfull \hbox (3.87054pt too wide) in paragraph at lines 173--183
-\T1/cmtt/m/n/12 | ~50-200ms | ~500-2000ms | ~1000-4000ms | | Total (estimated) 
-| ~70-260ms
+Overfull \hbox (59.6865pt too wide) in paragraph at lines 173--183
+\T1/cmtt/m/n/12 import | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 50-200ms | $\OM
+S/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 500-2000ms | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt
+/m/n/12 1000-4000ms | | Total (estimated) | $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n
+/12 70-260ms
  []
 
 
@@ -37859,10 +37978,10 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
-(fancyhdr)                Make it at least 27.11469pt, for example:
-(fancyhdr)                \setlength{\headheight}{27.11469pt}.
+(fancyhdr)                Make it at least 26.98592pt, for example:
+(fancyhdr)                \setlength{\headheight}{26.98592pt}.
 (fancyhdr)                You might also make \topmargin smaller:
-(fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
+(fancyhdr)                \addtolength{\topmargin}{-14.98592pt}.
 
 [265]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 17--21
@@ -38042,10 +38161,10 @@ Alternatively, save the file in UTF-8 using your editor or another tool
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
-(fancyhdr)                Make it at least 27.11469pt, for example:
-(fancyhdr)                \setlength{\headheight}{27.11469pt}.
+(fancyhdr)                Make it at least 26.98592pt, for example:
+(fancyhdr)                \setlength{\headheight}{26.98592pt}.
 (fancyhdr)                You might also make \topmargin smaller:
-(fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
+(fancyhdr)                \addtolength{\topmargin}{-14.98592pt}.
 
 [267]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 121--122
@@ -38395,10 +38514,10 @@ Alternatively, save the file in UTF-8 using your editor or another tool
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
-(fancyhdr)                Make it at least 27.11469pt, for example:
-(fancyhdr)                \setlength{\headheight}{27.11469pt}.
+(fancyhdr)                Make it at least 26.98592pt, for example:
+(fancyhdr)                \setlength{\headheight}{26.98592pt}.
 (fancyhdr)                You might also make \topmargin smaller:
-(fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
+(fancyhdr)                \addtolength{\topmargin}{-14.98592pt}.
 
 [269]
 
@@ -38513,10 +38632,10 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
-(fancyhdr)                Make it at least 27.11469pt, for example:
-(fancyhdr)                \setlength{\headheight}{27.11469pt}.
+(fancyhdr)                Make it at least 26.98592pt, for example:
+(fancyhdr)                \setlength{\headheight}{26.98592pt}.
 (fancyhdr)                You might also make \topmargin smaller:
-(fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
+(fancyhdr)                \addtolength{\topmargin}{-14.98592pt}.
 
 [271]) (./chapters/BUG/BUG-033.tex
 Overfull \hbox (1.20123pt too wide) in paragraph at lines 1--1
@@ -39057,9 +39176,9 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
 [279]
-Overfull \hbox (16.21753pt too wide) in paragraph at lines 129--130
-[]\T1/cmtt/m/n/12 At roughly 80 characters per line + overhead, 150 tasks = ~12
-,000 characters
+Overfull \hbox (19.3679pt too wide) in paragraph at lines 129--130
+[]\T1/cmtt/m/n/12 At roughly 80 characters per line + overhead, 150 tasks = $\O
+MS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 12,000 characters
  []
 
 
@@ -39069,9 +39188,9 @@ Overfull \hbox (34.738pt too wide) in paragraph at lines 129--130
  []
 
 
-Overfull \hbox (34.738pt too wide) in paragraph at lines 129--130
+Overfull \hbox (37.88838pt too wide) in paragraph at lines 129--130
 \T1/cmtt/m/n/12 ^^V just for the task list. If the context window is 128K token
-s, this is ~2.3%.
+s, this is $\OMS/ztmcm/m/n/12 ^^X$\T1/cmtt/m/n/12 2.3%.
  []
 
 
@@ -48104,10 +48223,10 @@ I've inserted a begin-math/end-math symbol since I think
 you left one out. Proceed, with fingers crossed.
 
 
-Overfull \hbox (50.55817pt too wide) in paragraph at lines 32--33
-[]\T1/cmtt/m/n/12 All dependencies use $[]\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 car
-et\OT1/cmr/m/n/12 )\OML/cmm/m/it/12 ranges; meaningnpminstallsanycompatiblemino
-r=patchversion \OT1/cmr/m/n/12 :$ 
+Overfull \hbox (24.44818pt too wide) in paragraph at lines 32--33
+[]\T1/cmtt/m/n/12 All dependencies use $[]\OT1/ztmcm/m/n/12 (\OML/ztmcm/m/it/12
+ caret\OT1/ztmcm/m/n/12 )\OML/ztmcm/m/it/12 ranges; meaningnpminstallsanycompat
+ibleminor=patchversion \OT1/ztmcm/m/n/12 :$ 
  []
 
 (/usr/share/texmf-dist/tex/latex/listings/lstlang1.sty
@@ -49324,7 +49443,7 @@ See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.150 \end{document}
+l.149 \end{document}
                     
 Your command was ignored.
 Type  I <command> <return>  to replace it with another command,
@@ -49342,6 +49461,10 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 905D10A20C45E9181B2B472F64AB4E56;33774.
  )
@@ -49352,35 +49475,27 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 ### simple group (level 1) entered at line 66 ({)
 ### bottom level 
 Here is how much of TeX's memory you used:
- 28903 strings out of 469515
- 459870 string characters out of 5470807
- 1273840 words of memory out of 5000000
- 45482 multiletter control sequences out of 15000+600000
- 641454 words of font info for 68 fonts, out of 8000000 for 9000
+ 29125 strings out of 469515
+ 463212 string characters out of 5470807
+ 1275202 words of memory out of 5000000
+ 45660 multiletter control sequences out of 15000+600000
+ 676290 words of font info for 106 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  75i,12n,79p,973b,3511s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pf
-b></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/t
-exmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texmf-dist/fonts
-/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texmf-dist/fonts/type1/public/a
-msfonts/cm/cmr6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6
-.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/shar
-e/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb></usr/share/texmf-dist/fo
-nts/type1/public/cm-super/sfbx1728.pfb></usr/share/texmf-dist/fonts/type1/publi
-c/cm-super/sfbx2488.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfit
-1095.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfrm0600.pfb></usr/
-share/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></usr/share/texmf-dis
-t/fonts/type1/public/cm-super/sfrm1440.pfb></usr/share/texmf-dist/fonts/type1/p
-ublic/cm-super/sfrm1728.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/
-sfrm2074.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb></
-usr/share/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb></usr/share/texmf
--dist/fonts/type1/public/cm-super/sftt1440.pfb></usr/share/texmf-dist/fonts/typ
-e1/public/cm-super/sftt1728.pfb></usr/share/texmf-dist/fonts/type1/public/cm-su
-per/sftt2488.pfb>
-Output written on main.pdf (417 pages, 2360161 bytes).
+</usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pf
+b></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/t
+exmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-dist/font
+s/type1/public/cm-super/sfit1095.pfb></usr/share/texmf-dist/fonts/type1/public/
+cm-super/sftt1095.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sftt12
+00.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sftt1440.pfb></usr/sh
+are/texmf-dist/fonts/type1/public/cm-super/sftt1728.pfb></usr/share/texmf-dist/
+fonts/type1/public/cm-super/sftt2488.pfb></usr/share/texmf-dist/fonts/type1/urw
+/times/utmb8a.pfb></usr/share/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr
+/share/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on main.pdf (417 pages, 2206766 bytes).
 PDF statistics:
- 16638 PDF objects out of 18468 (max. 8388607)
- 16014 compressed objects within 161 object streams
+ 16589 PDF objects out of 18468 (max. 8388607)
+ 15985 compressed objects within 160 object streams
  11511 named destinations out of 12825 (max. 500000)
  921 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -91,15 +91,15 @@ Each audit entry is approximately 200-500 bytes. For an active session:
 
 | Metric | Per Turn | Per 100 Turns | Per 1000 Turns |
 |---|---|---|---|
-| \texttt{logToolUse} (1/tool) | \textasciitilde{}300 bytes | 30 KB | 300 KB |
-| \texttt{logToolResult} (1/tool) | \textasciitilde{}1.2 KB (result truncated to 1000 chars) | 120 KB | 1.2 MB |
-| \texttt{logResponse} (1/turn) | \textasciitilde{}200 bytes | 20 KB | 200 KB |
-| \textbf{Total per turn} | \textasciitilde{}1.7 KB | 170 KB | 1.7 MB |
+| \texttt{logToolUse} (1/tool) | $\sim$300 bytes | 30 KB | 300 KB |
+| \texttt{logToolResult} (1/tool) | $\sim$1.2 KB (result truncated to 1000 chars) | 120 KB | 1.2 MB |
+| \texttt{logResponse} (1/turn) | $\sim$200 bytes | 20 KB | 200 KB |
+| \textbf{Total per turn} | $\sim$1.7 KB | 170 KB | 1.7 MB |
 | \textbf{Total for 10k turns} | 17 MB | — | — |
 | \textbf{Total for 100k turns} | 170 MB | — | — |
 | \textbf{Total for 1M turns} | 1.7 GB | — | — |
 
-A voice server session handling 100k turns (not unrealistic for a 24-hour deployment) generates \textasciitilde{}170 MB of audit data. In a container with a 1 GB ephemeral disk, this can fill the disk in \textasciitilde{}6 hours.
+A voice server session handling 100k turns (not unrealistic for a 24-hour deployment) generates $\sim$170 MB of audit data. In a container with a 1 GB ephemeral disk, this can fill the disk in $\sim$6 hours.
 
 \#\#\# The \texttt{catch} Block Swallows Disk-Full Errors
 
@@ -247,7 +247,7 @@ export class AuditLogger {
 \textbf{What this fixes:}
 1. Automatic rotation at configurable size (default 10 MB)
 2. Background gzip compression of rotated files
-3. Retention limit (default 5 compressed files = \textasciitilde{}50 MB max total)
+3. Retention limit (default 5 compressed files = $\sim$50 MB max total)
 4. Non-fatal error handling that still logs the failure
 
 \#\#\# Option B: Simple Truncation (Ring Buffer)
