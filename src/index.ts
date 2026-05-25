@@ -21,6 +21,7 @@ import { execSync } from "child_process";
 import { initLocalSession } from "./session.js";
 import type { LocalSession } from "./session.js";
 import { startVoiceServer } from "./voice/server.js";
+import { configureHttpClient } from "./http-client.js";
 import { handlePluginCommand } from "./plugin-cli.js";
 import { context as otelContext } from "@opentelemetry/api";
 import {
@@ -301,6 +302,8 @@ async function ensureRepo(dir: string, model?: string): Promise<string> {
 }
 
 async function main(): Promise<void> {
+	configureHttpClient();
+
 	// Handle plugin subcommand: gitclaw plugin <install|list|remove|...>
 	if (process.argv[2] === "plugin") {
 		const allArgs = process.argv.slice(3);
