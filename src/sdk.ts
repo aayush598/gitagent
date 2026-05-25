@@ -83,6 +83,17 @@ function extractContent(msg: AssistantMessage): { text: string; thinking: string
 	return { text, thinking };
 }
 
+// ── System prompt integrity ────────────────────────────────────────────
+
+function verifySystemPromptIntegrity(systemPrompt: string): void {
+	const required = ["IMMUTABLE SAFETY RULES", "Never execute destructive commands", "Never send data to external servers"];
+	for (const phrase of required) {
+		if (!systemPrompt.includes(phrase)) {
+			throw new Error(`Safety rule removed from system prompt: "${phrase}"`);
+		}
+	}
+}
+
 // ── query() ────────────────────────────────────────────────────────────
 
 export function query(options: QueryOptions): Query {
@@ -296,6 +307,8 @@ export function query(options: QueryOptions): Query {
 		}
 
 		// 8. Create Agent
+		verifySystemPromptIntegrity(systemPrompt);
+
 		const agent = new Agent({
 			initialState: {
 				systemPrompt,
