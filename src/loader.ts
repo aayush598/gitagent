@@ -408,9 +408,24 @@ Do NOT track trivial single-command tasks (e.g. "what time is it"). But DO check
 	// For unknown providers using openai-completions API, set provider to "openai" so
 	// pi-ai finds OPENAI_API_KEY. The actual auth happens via custom headers on the model.
 	const knownProviders = new Set(["openai", "anthropic", "google", "google-vertex", "groq", "cerebras", "xai", "openrouter", "mistral", "amazon-bedrock", "azure-openai-responses", "huggingface", "opencode", "kimi-coding", "github-copilot"]);
+
+	function normalizeEnvName(name: string): string {
+		return name.replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").toUpperCase();
+	}
+
 	if (model.baseUrl && !knownProviders.has(provider)) {
-		// Use provider-specific key if available, otherwise use LYZR key or dummy
-		const providerKey = process.env[`${provider.toUpperCase()}_API_KEY`] || process.env.LYZR_API_KEY;
+		const normalized = normalizeEnvName(provider);
+		const hyphenated = provider.toUpperCase();
+		const providerKey = (
+			process.env[`${normalized}_API_KEY`]
+			|| process.env[`${hyphenated}_API_KEY`]
+			|| process.env.LYZR_API_KEY
+		);
+		if (!process.env[`${normalized}_API_KEY`] && !process.env[`${hyphenated}_API_KEY`]) {
+			console.warn(
+				`[loader] No API key for "${provider}". Tried ${normalized}_API_KEY and ${hyphenated}_API_KEY. Falling back to LYZR_API_KEY.`,
+			);
+		}
 		if (providerKey && !process.env.OPENAI_API_KEY) {
 			process.env.OPENAI_API_KEY = providerKey;
 		}
