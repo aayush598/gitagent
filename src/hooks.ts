@@ -79,6 +79,15 @@ async function executeHook(
 
 		let stdout = "";
 		let stderr = "";
+		let settled = false;
+
+		function settle(resolveVal: HookResult | null, rejectErr: Error | null) {
+			if (settled) return;
+			settled = true;
+			clearTimeout(timeout);
+			if (rejectErr) reject(rejectErr);
+			else if (resolveVal) promiseResolve(resolveVal);
+		}
 
 		child.stdout.on("data", (data: Buffer) => {
 			stdout += data.toString("utf-8");
@@ -92,26 +101,23 @@ async function executeHook(
 
 		const timeout = setTimeout(() => {
 			child.kill("SIGTERM");
-			reject(new Error(`Hook "${hook.script}" timed out after 10s`));
+			settle(null, new Error(`Hook "${hook.script}" timed out after 10s`));
 		}, 10_000);
 
 		child.on("error", (err) => {
-			clearTimeout(timeout);
-			reject(new Error(`Hook "${hook.script}" failed to start: ${err.message}`));
+			settle(null, new Error(`Hook "${hook.script}" failed to start: ${err.message}`));
 		});
 
 		child.on("close", (code) => {
-			clearTimeout(timeout);
 			if (code !== 0) {
-				reject(new Error(`Hook "${hook.script}" exited with code ${code}: ${stderr.trim()}`));
+				settle(null, new Error(`Hook "${hook.script}" exited with code ${code}: ${stderr.trim()}`));
 				return;
 			}
 			try {
 				const result = JSON.parse(stdout.trim()) as HookResult;
-				promiseResolve(result);
+				settle(result, null);
 			} catch {
-				// If hook doesn't return JSON, treat as allow
-				promiseResolve({ action: "allow" });
+				settle({ action: "allow" }, null);
 			}
 		});
 	});
