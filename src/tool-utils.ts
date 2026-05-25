@@ -4,7 +4,7 @@ import { buildTypeboxSchema } from "./tool-loader.js";
 
 // ── Convert GCToolDefinition → AgentTool ───────────────────────────────
 
-export function toAgentTool(def: GCToolDefinition): AgentTool<any> {
+export function toAgentTool(def: GCToolDefinition): AgentTool<ReturnType<typeof buildTypeboxSchema>> {
 	const schema = buildTypeboxSchema(def.inputSchema);
 
 	return {
@@ -14,7 +14,7 @@ export function toAgentTool(def: GCToolDefinition): AgentTool<any> {
 		parameters: schema,
 		execute: async (
 			_toolCallId: string,
-			params: any,
+			params: Record<string, unknown>,
 			signal?: AbortSignal,
 		) => {
 			const result = await def.handler(params, signal);
