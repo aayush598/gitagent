@@ -441,7 +441,7 @@ async function main(): Promise<void> {
 	try {
 		loaded = await loadAgent(dir, model, env);
 	} catch (err: any) {
-		console.error(red(`Error: ${err.message}`));
+		console.error(red(`Error: ${err.stack || err.message}`));
 		process.exit(1);
 	}
 
@@ -479,7 +479,7 @@ async function main(): Promise<void> {
 				process.exit(1);
 			}
 		} catch (err: any) {
-			console.error(red(`Hook error: ${err.message}`));
+			console.error(red(`Hook error: ${err.stack || err.message}`));
 		}
 	}
 
@@ -774,58 +774,7 @@ async function main(): Promise<void> {
 			try {
 				await otelContext.with(_session.ctx, () => agent.prompt(promptText));
 			} catch (err: any) {
-				console.error(red(`Error: ${err.message}`));
-				auditLogger?.logError(err.message).catch(() => {});
-				// Fire on_error hooks
-				if (hooksConfig?.hooks.on_error) {
-					runHooks(hooksConfig.hooks.on_error, agentDir, {
-						event: "on_error",
-						session_id: sessionId,
-						error: err.message,
-					}).catch(() => {});
-				}
-			}
-
-			ask();
-		});
-	};
-
-	// Sandbox cleanup helper
-	const stopSandbox = async () => {
-		if (sandboxCtx) {
-			console.log(dim("Stopping sandbox..."));
-			await sandboxCtx.gitMachine.stop();
-		}
-	};
-
-	// Handle Ctrl+C during streaming
-	rl.on("SIGINT", () => {
-		if (agent.state.isStreaming) {
-			agent.abort();
-		} else {
-			console.log("\nBye!");
-			rl.close();
-			if (localSession) {
-				try { localSession.finalize(); } catch { /* best-effort */ }
-			}
-			try {
-				_session.end({ "gitclaw.cost_usd": _totalCostUsd });
-			} catch { /* ignore */ }
-			stopSandbox().finally(() => process.exit(0));
-		}
-	});
-
-	ask();
-}
-
-// Flush OpenTelemetry exporters on SIGTERM. No-op when telemetry is disabled.
-process.on("SIGTERM", () => {
-	shutdownTelemetry().catch(() => {}).finally(() => process.exit(0));
-});
-
-main()
-  .finally(() => shutdownTelemetry().catch(() => {}))
-  .catch((err) => {
-    console.error(red(`Fatal: ${err.message}`));
-    process.exit(1);
+		console.error(red(`Error: ${err.stack || err.message}`));
+		await shutdownTelemetry().catch(() => {});
+		process.exit(1);
   });
