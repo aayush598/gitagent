@@ -44,13 +44,19 @@ export interface TelemetryOptions {
 	 * Test escape hatch — register the given TracerProvider directly and
 	 * skip all dynamic SDK imports. Used by unit tests.
 	 */
-	_testProvider?: unknown;
+	_testProvider?: { register?(): void };
 }
 
 // ── Module state ───────────────────────────────────────────────────────
 
 let _initialized = false;
-let _sdk: any = null;
+
+interface SdkHandle {
+	start(): void;
+	shutdown(): Promise<void>;
+}
+
+let _sdk: SdkHandle | null = null;
 
 const TRACER_NAME = "gitclaw";
 const METER_NAME = "gitclaw";
@@ -74,14 +80,9 @@ export async function initTelemetry(opts: TelemetryOptions): Promise<void> {
 	try {
 		// Test path — register a caller-supplied TracerProvider directly.
 		if (opts._testProvider) {
-			const provider = opts._testProvider as {
-				register?: () => void;
-			};
+			const provider = opts._testProvider;
 			if (typeof provider.register === "function") {
 				provider.register();
-			} else {
-				// Fall back to setGlobalTracerProvider for providers without register()
-				trace.setGlobalTracerProvider(opts._testProvider as any);
 			}
 			_initialized = true;
 			return;
