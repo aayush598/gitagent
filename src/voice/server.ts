@@ -31,19 +31,52 @@ interface LogEntry {
 	message: string;
 }
 
+const MAX_LOG_MESSAGE_LENGTH = 2000;
+
 class LogRingBuffer {
-	private buf: LogEntry[] = [];
+	private buf: (LogEntry | null)[];
 	private nextId = 1;
-	private cap: number;
-	constructor(capacity = 2000) { this.cap = capacity; }
+	private writeIdx = 0;
+	private count = 0;
+
+	constructor(capacity = 2000) {
+		this.buf = new Array(capacity).fill(null);
+	}
+
 	push(source: string, level: "info" | "warn" | "error", message: string): LogEntry {
-		const entry: LogEntry = { id: this.nextId++, ts: new Date().toISOString(), source, level, message };
-		this.buf.push(entry);
-		if (this.buf.length > this.cap) this.buf.shift();
+		// Truncate long messages to prevent unbounded memory growth
+		const truncated = message.length > MAX_LOG_MESSAGE_LENGTH
+			? message.slice(0, MAX_LOG_MESSAGE_LENGTH) + "... [truncated]"
+			: message;
+			
+		const entry: LogEntry = { 
+			id: this.nextId++, 
+			ts: new Date().toISOString(), 
+			source, 
+			level, 
+			message: truncated 
+		};
+		
+		this.buf[this.writeIdx] = entry;
+		this.writeIdx = (this.writeIdx + 1) % this.buf.length;
+		if (this.count < this.buf.length) this.count++;
+		
 		return entry;
 	}
-	all(): LogEntry[] { return this.buf.slice(); }
-	since(id: number): LogEntry[] { return this.buf.filter(e => e.id > id); }
+
+	all(): LogEntry[] {
+		const result: LogEntry[] = [];
+		for (let i = 0; i < this.count; i++) {
+			const idx = (this.writeIdx - this.count + i + this.buf.length) % this.buf.length;
+			const entry = this.buf[idx];
+			if (entry) result.push(entry);
+		}
+		return result;
+	}
+
+	since(id: number): LogEntry[] {
+		return this.all().filter(e => e.id > id);
+	}
 }
 
 const logBuffer = new LogRingBuffer(2000);
