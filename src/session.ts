@@ -1,6 +1,6 @@
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
-import { resolve } from "path";
+import { resolve, join } from "path";
 import { randomBytes } from "crypto";
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -23,28 +23,27 @@ export interface LocalSession {
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-function authedUrl(url: string, token: string): string {
-	// https://github.com/org/repo → https://<token>@github.com/org/repo
-	return url.replace(/^https:\/\//, `https://${token}@`);
+function setupCredentialHelper(dir: string, url: string, token: string): void {
+	const host = new URL(url).host;
+	const credentialsPath = join(dir, ".git", ".git-credentials");
+	writeFileSync(credentialsPath, `https://oauth2:${token}@${host}\n`, "utf-8");
+	execFileSync("chmod", ["600", credentialsPath], { stdio: "pipe" });
+	execFileSync("git", ["config", "--local", "credential.helper", `store --file ${credentialsPath}`], { cwd: dir, stdio: "pipe" });
 }
 
-function cleanUrl(url: string): string {
-	return url.replace(/^https:\/\/[^@]+@/, "https://");
-}
-
-function git(args: string, cwd: string): string {
-	return execSync(`git ${args}`, { cwd, stdio: "pipe", encoding: "utf-8" }).trim();
+function git(args: string[], cwd: string): string {
+	return execFileSync("git", args, { cwd, stdio: "pipe", encoding: "utf-8" }).trim();
 }
 
 function getDefaultBranch(cwd: string): string {
 	try {
 		// e.g. "origin/main" → "main"
-		const ref = git("symbolic-ref refs/remotes/origin/HEAD", cwd);
+		const ref = git(["symbolic-ref", "refs/remotes/origin/HEAD"], cwd);
 		return ref.replace("refs/remotes/origin/", "");
 	} catch {
 		// Fallback: try main, then master
 		try {
-			git("rev-parse --verify origin/main", cwd);
+			git(["rev-parse", "--verify", "origin/main"], cwd);
 			return "main";
 		} catch {
 			return "master";
@@ -52,25 +51,49 @@ function getDefaultBranch(cwd: string): string {
 	}
 }
 
+function cleanupOnExit(dir: string, url: string, credentialsPath: string): void {
+	process.on("exit", () => {
+		try {
+			execFileSync("git", ["remote", "set-url", "origin", url], { cwd: dir, stdio: "pipe", encoding: "utf-8" });
+		} catch { /* best effort */ }
+		try {
+			execFileSync("rm", ["-f", credentialsPath], { stdio: "pipe" });
+		} catch { /* best effort */ }
+	});
+}
+
 // ── initLocalSession ──────────────────────────────────────────────────
 
 export function initLocalSession(opts: LocalRepoOptions): LocalSession {
 	const { url, token, session } = opts;
 	const dir = resolve(opts.dir);
-	const aUrl = authedUrl(url, token);
 
-	// Clone or update
+	// Clone or init repository without embedding token in the URL
 	if (!existsSync(dir)) {
-		execSync(`git clone --depth 1 --no-single-branch ${aUrl} ${dir}`, { stdio: "pipe" });
+		mkdirSync(dir, { recursive: true });
+		git(["init"], dir);
+		git(["remote", "add", "origin", url], dir);
 	} else {
-		git(`remote set-url origin ${aUrl}`, dir);
-		git("fetch origin", dir);
-
-		// Reset local default branch to latest remote
-		const defaultBranch = getDefaultBranch(dir);
-		git(`checkout ${defaultBranch}`, dir);
-		git(`reset --hard origin/${defaultBranch}`, dir);
+		git(["remote", "set-url", "origin", url], dir);
 	}
+
+	// Set up credential helper before any authenticated operation
+	setupCredentialHelper(dir, url, token);
+
+	if (!existsSync(join(dir, ".git", "HEAD")) || existsSync(join(dir, ".git", "shallow"))) {
+		// Fresh clone: fetch all branches shallowly
+		git(["fetch", "--depth", "1", "--no-single-branch", "origin"], dir);
+	} else {
+		git(["fetch", "origin"], dir);
+	}
+
+	// Ensure remote URL is clean — no token embedded
+	git(["remote", "set-url", "origin", url], dir);
+
+	// Reset local default branch to latest remote
+	const defaultBranch = getDefaultBranch(dir);
+	git(["checkout", "-B", defaultBranch, `origin/${defaultBranch}`], dir);
+	git(["reset", "--hard", `origin/${defaultBranch}`], dir);
 
 	// Determine branch
 	let branch: string;
@@ -83,20 +106,20 @@ export function initLocalSession(opts: LocalRepoOptions): LocalSession {
 
 		// Try local checkout first, fall back to remote tracking
 		try {
-			git(`checkout ${branch}`, dir);
+			git(["checkout", branch], dir);
 		} catch {
-			git(`checkout -b ${branch} origin/${branch}`, dir);
+			git(["checkout", "-b", branch, `origin/${branch}`], dir);
 		}
 		// Pull latest for existing session branch
-		try { git(`pull origin ${branch}`, dir); } catch { /* branch may not exist on remote yet */ }
+		try { git(["pull", "origin", branch], dir); } catch { /* branch may not exist on remote yet */ }
 	} else {
 		// New session — branch off latest default branch
 		sessionId = randomBytes(4).toString("hex"); // 8-char hex
 		branch = `gitclaw/session-${sessionId}`;
-		git(`checkout -b ${branch}`, dir);
+		git(["checkout", "-b", branch], dir);
 	}
 
-	// Scaffold agent.yaml + memory if missing (on session branch only)
+	// Scaffold agent.yaml + memory (on session branch only)
 	const agentYamlPath = `${dir}/agent.yaml`;
 	if (!existsSync(agentYamlPath)) {
 		const name = url.split("/").pop()?.replace(/\.git$/, "") || "agent";
@@ -121,6 +144,10 @@ export function initLocalSession(opts: LocalRepoOptions): LocalSession {
 		writeFileSync(memoryFile, "# Memory\n", "utf-8");
 	}
 
+	// Register process exit cleanup to remove credential file and strip URL
+	const credentialsPath = join(dir, ".git", ".git-credentials");
+	cleanupOnExit(dir, url, credentialsPath);
+
 	// Build session object
 	const localSession: LocalSession = {
 		dir,
@@ -128,26 +155,29 @@ export function initLocalSession(opts: LocalRepoOptions): LocalSession {
 		sessionId,
 
 		commitChanges(msg?: string) {
-			git("add -A", dir);
+			git(["add", "-A"], dir);
 			try {
-				git("diff --cached --quiet", dir);
+				git(["diff", "--cached", "--quiet"], dir);
 				// Nothing staged — skip
 			} catch {
 				// There are staged changes
 				const commitMsg = msg || `gitclaw: auto-commit (${branch})`;
-				git(`commit -m "${commitMsg}"`, dir);
+				git(["commit", "-m", commitMsg], dir);
 			}
 		},
 
 		push() {
-			git(`push origin ${branch}`, dir);
+			git(["push", "origin", branch], dir);
 		},
 
 		finalize() {
 			localSession.commitChanges();
 			localSession.push();
-			// Strip PAT from remote URL
-			git(`remote set-url origin ${cleanUrl(url)}`, dir);
+			// Remove credential file and keep plain URL
+			try { execFileSync("rm", ["-f", credentialsPath], { stdio: "pipe" }); } catch { /* best effort */ }
+			git(["remote", "set-url", "origin", url], dir);
+			// Remove cleanup handler since we've already cleaned up
+			process.removeAllListeners("exit");
 		},
 	};
 
