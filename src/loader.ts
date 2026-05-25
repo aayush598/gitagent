@@ -415,7 +415,7 @@ Do NOT track trivial single-command tasks (e.g. "what time is it"). But DO check
 			process.env.OPENAI_API_KEY = providerKey;
 		}
 		// Override provider to "openai" so pi-ai resolves the API key correctly
-		(model as any).provider = "openai";
+		model.provider = "openai";
 	}
 
 	return {
