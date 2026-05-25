@@ -239,22 +239,40 @@ export async function loadAgent(
 	envFlag?: string,
 ): Promise<LoadedAgent> {
 	// Parse agent.yaml
-	const manifestRaw = await readFile(join(agentDir, "agent.yaml"), "utf-8");
-	let manifest = yaml.load(manifestRaw) as AgentManifest;
+	const manifestPath = join(agentDir, "agent.yaml");
+	let manifestRaw: string;
+	try {
+		manifestRaw = await readFile(manifestPath, "utf-8");
+	} catch (err: any) {
+		throw new Error(
+			`Could not read agent.yaml at ${manifestPath}.\n` +
+			`Error: ${err.message}\n` +
+			"Run 'gitclaw --dir <dir>' to scaffold a new config.",
+		);
+	}
 
-	// Load environment config
-	const envConfig = await loadEnvConfig(agentDir, envFlag);
-
-	// Ensure .gitagent/ directory and write session state
-	const gitagentDir = await ensureGitagentDir(agentDir);
-	const sessionId = await writeSessionState(gitagentDir);
-
-	// Resolve inheritance (Phase 2.4)
-	let parentRules = "";
-	if (manifest.extends) {
-		const resolved = await resolveInheritance(manifest, agentDir, gitagentDir);
-		manifest = resolved.manifest;
-		parentRules = resolved.parentRules;
+	if (!manifestRaw.trim()) {
+		throw new Error(
+			`agent.yaml at ${manifestPath} is empty.\n` +
+			"Delete the file and run gitclaw again to scaffold a new one.",
+		);
+	}
+	let manifest: AgentManifest;
+	try {
+		const parsed = yaml.load(manifestRaw);
+		if (!parsed || typeof parsed !== "object") {
+			throw new Error(
+				`agent.yaml does not contain a valid configuration object.\n` +
+				"Ensure the file starts with a top-level mapping (e.g., 'name: my-agent').",
+			);
+		}
+		manifest = parsed as AgentManifest;
+	} catch (err: any) {
+		if (err.message && (err.message.includes("agent.yaml") || err.message.includes("empty") || err.message.includes("Could not read"))) throw err;
+		throw new Error(
+			`agent.yaml has a YAML syntax error at ${manifestPath}:\n  ${err.message}\n` +
+			"Fix the syntax error or delete the file and run gitclaw again.",
+		);
 	}
 
 	// Resolve dependencies (Phase 2.5)
