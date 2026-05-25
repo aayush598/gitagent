@@ -240,7 +240,39 @@ export async function loadAgent(
 ): Promise<LoadedAgent> {
 	// Parse agent.yaml
 	const manifestRaw = await readFile(join(agentDir, "agent.yaml"), "utf-8");
-	let manifest = yaml.load(manifestRaw) as AgentManifest;
+	if (!manifestRaw.trim()) {
+		throw new Error(
+			`agent.yaml at ${join(agentDir, "agent.yaml")} is empty.\n` +
+			"Delete the file and run gitclaw again to scaffold a new one.",
+		);
+	}
+	let manifest: AgentManifest;
+	try {
+		const parsed = yaml.load(manifestRaw);
+		if (!parsed || typeof parsed !== "object") {
+			throw new Error(
+				`agent.yaml does not contain a valid configuration object.\n` +
+				"Ensure the file starts with a top-level mapping (e.g., 'name: my-agent').",
+			);
+		}
+		manifest = parsed as AgentManifest;
+	} catch (err: any) {
+		if (err.message && (err.message.includes("agent.yaml") || err.message.includes("empty"))) throw err;
+		throw new Error(
+			`agent.yaml has a YAML syntax error:\n  ${err.message}\n` +
+			"Fix the syntax error or delete the file and run gitclaw again.",
+		);
+	}
+
+	// Validate model.preferred is not empty
+	if (!manifest.model?.preferred || manifest.model.preferred.trim() === "") {
+		throw new Error(
+			"model.preferred is empty or not set.\n" +
+			"Set it in agent.yaml:\n" +
+			'  model:\n    preferred: "provider:model-id"\n' +
+			'Or pass --model provider:model on the command line.',
+		);
+	}
 
 	// Load environment config
 	const envConfig = await loadEnvConfig(agentDir, envFlag);

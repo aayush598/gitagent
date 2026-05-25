@@ -3,7 +3,7 @@ name: gitclaw
 version: 0.1.0
 description: A universal git-native agent powered by pi-agent-core
 model:
-  preferred: ""
+  preferred: "openai:gpt-4o-mini"
   fallback: []
 tools:
   - cli
