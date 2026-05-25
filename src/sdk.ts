@@ -35,12 +35,12 @@ import {
 interface Channel<T> {
 	push(v: T): void;
 	finish(): void;
-	pull(): Promise<IteratorResult<T>>;
+	pull(): Promise<IteratorResult<T, undefined>>;
 }
 
 function createChannel<T>(): Channel<T> {
 	const buffer: T[] = [];
-	let resolve: ((v: IteratorResult<T>) => void) | null = null;
+	let resolve: ((v: IteratorResult<T, undefined>) => void) | null = null;
 	let done = false;
 
 	return {
@@ -55,16 +55,16 @@ function createChannel<T>(): Channel<T> {
 		finish() {
 			done = true;
 			if (resolve) {
-				resolve({ value: undefined as any, done: true });
+				resolve({ value: undefined, done: true });
 				resolve = null;
 			}
 		},
-		pull(): Promise<IteratorResult<T>> {
+		pull(): Promise<IteratorResult<T, undefined>> {
 			if (buffer.length) {
 				return Promise.resolve({ value: buffer.shift()!, done: false });
 			}
 			if (done) {
-				return Promise.resolve({ value: undefined as any, done: true });
+				return Promise.resolve({ value: undefined, done: true });
 			}
 			return new Promise((r) => { resolve = r; });
 		},
