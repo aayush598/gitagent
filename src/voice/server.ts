@@ -49,7 +49,9 @@ class LogRingBuffer {
 const logBuffer = new LogRingBuffer(2000);
 let logBroadcast: ((entry: LogEntry) => void) | null = null;
 
-function stripAnsi(s: string): string { return s.replace(/\x1b\[\d*m/g, ""); }
+function stripAnsi(s: string): string {
+	return s.replace(/[\x1b\x9b][[\]()#;?]*(?:\d{1,4}(?:;\d{0,4})*)?[\dA-PRZcf-nq-uy=><~]/g, "");
+}
 function extractSource(msg: string): { source: string; cleaned: string } {
 	const m = msg.match(/^\[(\w+(?:\/\w+)?)\]\s*/);
 	if (m) return { source: m[1].split("/")[0].toLowerCase(), cleaned: msg.slice(m[0].length) };
