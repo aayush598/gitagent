@@ -84,7 +84,9 @@ function installConsoleIntercept() {
 			const { source, cleaned } = extractSource(clean);
 			const entry = logBuffer.push(source, level, cleaned);
 			if (logBroadcast) logBroadcast(entry);
-		} catch { /* non-fatal */ }
+		} catch (interceptErr) {
+			origFn(`[console-intercept] Failed: ${interceptErr instanceof Error ? interceptErr.message : String(interceptErr)}`);
+		}
 	}
 
 	console.log = (...args: any[]) => intercept("info", origLog, ...args);
