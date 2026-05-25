@@ -1,833 +1,508 @@
-<p align="center">
-  <img src="./gitclaw-logo.png" alt="GitClaw Logo" width="200" />
-</p>
+# GitAgent - Comprehensive Fix Documentation
 
-<p align="center">
-  <img src="https://img.shields.io/npm/v/gitclaw?style=flat-square&color=blue" alt="npm version" />
-  <img src="https://img.shields.io/badge/node-%3E%3D20-brightgreen?style=flat-square" alt="node version" />
-  <img src="https://img.shields.io/github/license/open-gitagent/gitclaw?style=flat-square" alt="license" />
-  <img src="https://img.shields.io/badge/TypeScript-5.7-blue?style=flat-square&logo=typescript&logoColor=white" alt="typescript" />
-</p>
+A universal git-native multimodal AI Agent — Bug Fixes, Security Patches, Code Quality Improvements, and Enhancements.
 
-<h1 align="center">Gitclaw</h1>
+## Project Overview
 
-<p align="center">
-  <strong>A universal git-native multimodal always learning AI Agent (TinyHuman)</strong><br/>
-  Your agent lives inside a git repo — identity, rules, memory, tools, and skills are all version-controlled files.
-</p>
+Analysis and fixes for the GitAgent codebase. Over 97 individual issues identified and fixed across 13 categories, each in its own branch.
 
-<p align="center">
-  <a href="#one-command-install">Install</a> &bull;
-  <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#sdk">SDK</a> &bull;
-  <a href="#architecture">Architecture</a> &bull;
-  <a href="#tools">Tools</a> &bull;
-  <a href="#hooks">Hooks</a> &bull;
-  <a href="#skills">Skills</a> &bull;
-  <a href="#plugins">Plugins</a>
-</p>
+## Repository Structure
+
+```
+gitagent/
++-- README.md            # This file
++-- LICENSE              # License information
+```
+
+All fix branches follow the naming convention:
+`fix/<CATEGORY>-<NUMBER>-<short-description>`
+
+## Quick Links
+
+| Resource | Link |
+|----------|------|
+| All Fix Branches | [GitHub Branches](https://github.com/aayush598/gitagent/branches/all) |
+| Complete PDF Report (400+ pages) | [Google Drive Link](https://drive.google.com/drive/folders/1JrE9t-6iP1zpxDNmP9lx0LTRBPidZGsD?usp=drive_link) |
+| Original Repository | [github.com/aayush598/gitagent](https://github.com/aayush598/gitagent) |
 
 ---
 
-## Why Gitclaw?
+## Table of Contents
+
+1. [Security Fixes (SEC)](#security-fixes-sec)
+2. [Bug Fixes (BUG)](#bug-fixes-bug)
+3. [Error Handling (ERR)](#error-handling-err)
+4. [Race Conditions (RACE)](#race-conditions-race)
+5. [TypeScript Types (TYPE)](#typescript-types-type)
+6. [Networking (NET)](#networking-net)
+7. [Performance (PERF)](#performance-perf)
+8. [Concurrency (CONC)](#concurrency-conc)
+9. [Configuration (CONFIG)](#configuration-config)
+10. [Code Quality (CQ)](#code-quality-cq)
+11. [Dependencies (DEP)](#dependencies-dep)
+12. [File System (FILE)](#file-system-file)
+13. [Logging (LOG)](#logging-log)
+14. [Branch Reference Table](#branch-reference-table)
 
-Most agent frameworks treat configuration as code scattered across your application. Gitclaw flips this — **your agent IS a git repository**:
-
-- **`agent.yaml`** — model, tools, runtime config
-- **`SOUL.md`** — personality and identity
-- **`RULES.md`** — behavioral constraints
-- **`memory/`** — git-committed memory with full history
-- **`tools/`** — declarative YAML tool definitions
-- **`skills/`** — composable skill modules
-- **`hooks/`** — lifecycle hooks (script or programmatic)
-
-Fork an agent. Branch a personality. `git log` your agent's memory. Diff its rules. This is **agents as repos**.
-
-## One-Command Install
-
-Copy, paste, run. That's it — no cloning, no manual setup. The installer handles everything:
-
-```bash
-bash <(curl -fsSL "https://raw.githubusercontent.com/open-gitagent/gitagent/main/install.sh?$(date +%s)")
-```
-
-This will:
-- Install gitclaw globally via npm
-- Walk you through API key setup (Quick or Advanced mode)
-- Launch the voice UI in your browser at `http://localhost:3333`
-
-> **Requirements:** Node.js 18+, npm, git
-
-### Or install manually:
-
-```bash
-npm install -g gitclaw
-```
-
-## Quick Start
-
-**Run your first agent in one line:**
-
-```bash
-export OPENAI_API_KEY="sk-..."
-gitclaw --dir ~/my-project "Explain this project and suggest improvements"
-```
-
-That's it. Gitclaw auto-scaffolds everything on first run — `agent.yaml`, `SOUL.md`, `memory/` — and drops you into the agent.
-
-### Local Repo Mode
-
-Clone a GitHub repo, run an agent on it, auto-commit and push to a session branch:
-
-```bash
-gitclaw --repo https://github.com/org/repo --pat ghp_xxx "Fix the login bug"
-```
-
-Resume an existing session:
-
-```bash
-gitclaw --repo https://github.com/org/repo --pat ghp_xxx --session gitclaw/session-a1b2c3d4 "Continue"
-```
-
-Token can come from env instead of `--pat`:
-
-```bash
-export GITHUB_TOKEN=ghp_xxx
-gitclaw --repo https://github.com/org/repo "Add unit tests"
-```
-
-### CLI Options
-
-| Flag | Short | Description |
-|---|---|---|
-| `--dir <path>` | `-d` | Agent directory (default: cwd) |
-| `--repo <url>` | `-r` | GitHub repo URL to clone and work on |
-| `--pat <token>` | | GitHub PAT (or set `GITHUB_TOKEN` / `GIT_TOKEN`) |
-| `--session <branch>` | | Resume an existing session branch |
-| `--model <provider:model>` | `-m` | Override model (e.g. `anthropic:claude-sonnet-4-5-20250929`) |
-| `--sandbox` | `-s` | Run in sandbox VM |
-| `--prompt <text>` | `-p` | Single-shot prompt (skip REPL) |
-| `--env <name>` | `-e` | Environment config |
-
-### SDK
-
-```bash
-npm install gitclaw
-```
-
-```typescript
-import { query } from "gitclaw";
-
-// Simple query
-for await (const msg of query({
-  prompt: "List all TypeScript files and summarize them",
-  dir: "./my-agent",
-  model: "openai:gpt-4o-mini",
-})) {
-  if (msg.type === "delta") process.stdout.write(msg.content);
-  if (msg.type === "assistant") console.log("\n\nDone.");
-}
-
-// Local repo mode via SDK
-for await (const msg of query({
-  prompt: "Fix the login bug",
-  model: "openai:gpt-4o-mini",
-  repo: {
-    url: "https://github.com/org/repo",
-    token: process.env.GITHUB_TOKEN!,
-  },
-})) {
-  if (msg.type === "delta") process.stdout.write(msg.content);
-}
-```
-
-## SDK
-
-The SDK provides a programmatic interface to Gitclaw agents. It mirrors the [Claude Agent SDK](https://github.com/anthropics/claude-code-sdk) pattern but runs **in-process** — no subprocesses, no IPC.
-
-### `query(options): Query`
-
-Returns an `AsyncGenerator<GCMessage>` that streams agent events.
-
-```typescript
-import { query } from "gitclaw";
-
-for await (const msg of query({
-  prompt: "Refactor the auth module",
-  dir: "/path/to/agent",
-  model: "anthropic:claude-sonnet-4-5-20250929",
-})) {
-  switch (msg.type) {
-    case "delta":       // streaming text chunk
-      process.stdout.write(msg.content);
-      break;
-    case "assistant":   // complete response
-      console.log(`\nTokens: ${msg.usage?.totalTokens}`);
-      break;
-    case "tool_use":    // tool invocation
-      console.log(`Tool: ${msg.toolName}(${JSON.stringify(msg.args)})`);
-      break;
-    case "tool_result": // tool output
-      console.log(`Result: ${msg.content}`);
-      break;
-    case "system":      // lifecycle events & errors
-      console.log(`[${msg.subtype}] ${msg.content}`);
-      break;
-  }
-}
-```
-
-### `tool(name, description, schema, handler): GCToolDefinition`
-
-Define custom tools the agent can call:
-
-```typescript
-import { query, tool } from "gitclaw";
-
-const search = tool(
-  "search_docs",
-  "Search the documentation",
-  {
-    properties: {
-      query: { type: "string", description: "Search query" },
-      limit: { type: "number", description: "Max results" },
-    },
-    required: ["query"],
-  },
-  async (args) => {
-    const results = await mySearchEngine(args.query, args.limit ?? 10);
-    return { text: JSON.stringify(results), details: { count: results.length } };
-  },
-);
-
-for await (const msg of query({
-  prompt: "Find docs about authentication",
-  tools: [search],
-})) {
-  // agent can now call search_docs
-}
-```
-
-### Hooks
-
-Programmatic lifecycle hooks for gating, logging, and control:
-
-```typescript
-for await (const msg of query({
-  prompt: "Deploy the service",
-  hooks: {
-    preToolUse: async (ctx) => {
-      // Block dangerous operations
-      if (ctx.toolName === "cli" && ctx.args.command?.includes("rm -rf"))
-        return { action: "block", reason: "Destructive command blocked" };
-
-      // Modify arguments
-      if (ctx.toolName === "write" && !ctx.args.path.startsWith("/safe/"))
-        return { action: "modify", args: { ...ctx.args, path: `/safe/${ctx.args.path}` } };
-
-      return { action: "allow" };
-    },
-    onError: async (ctx) => {
-      console.error(`Agent error: ${ctx.error}`);
-    },
-  },
-})) {
-  // ...
-}
-```
-
-### QueryOptions Reference
-
-| Option | Type | Description |
-|---|---|---|
-| `prompt` | `string \| AsyncIterable` | User prompt or multi-turn stream |
-| `dir` | `string` | Agent directory (default: `cwd`) |
-| `model` | `string` | `"provider:model-id"` |
-| `env` | `string` | Environment config (`config/<env>.yaml`) |
-| `systemPrompt` | `string` | Override discovered system prompt |
-| `systemPromptSuffix` | `string` | Append to discovered system prompt |
-| `tools` | `GCToolDefinition[]` | Additional tools |
-| `replaceBuiltinTools` | `boolean` | Skip cli/read/write/memory |
-| `allowedTools` | `string[]` | Tool name allowlist |
-| `disallowedTools` | `string[]` | Tool name denylist |
-| `repo` | `LocalRepoOptions` | Clone a GitHub repo and work on a session branch |
-| `sandbox` | `SandboxOptions \| boolean` | Run in sandbox VM (mutually exclusive with `repo`) |
-| `hooks` | `GCHooks` | Programmatic lifecycle hooks |
-| `maxTurns` | `number` | Max agent turns |
-| `abortController` | `AbortController` | Cancellation signal |
-| `constraints` | `object` | `temperature`, `maxTokens`, `topP`, `topK` |
-
-### Message Types
-
-| Type | Description | Key Fields |
-|---|---|---|
-| `delta` | Streaming text/thinking chunk | `deltaType`, `content` |
-| `assistant` | Complete LLM response | `content`, `model`, `usage`, `stopReason` |
-| `tool_use` | Tool invocation | `toolName`, `args`, `toolCallId` |
-| `tool_result` | Tool output | `content`, `isError`, `toolCallId` |
-| `system` | Lifecycle events | `subtype`, `content`, `metadata` |
-| `user` | User message (multi-turn) | `content` |
-
-## Architecture
-
-```
-my-agent/
-├── agent.yaml          # Model, tools, runtime config
-├── SOUL.md             # Agent identity & personality
-├── RULES.md            # Behavioral rules & constraints
-├── DUTIES.md           # Role-specific responsibilities
-├── memory/
-│   └── MEMORY.md       # Git-committed agent memory
-├── tools/
-│   └── *.yaml          # Declarative tool definitions
-├── skills/
-│   └── <name>/
-│       ├── SKILL.md    # Skill instructions (YAML frontmatter)
-│       └── scripts/    # Skill scripts
-├── workflows/
-│   └── *.yaml|*.md     # Multi-step workflow definitions
-├── agents/
-│   └── <name>/         # Sub-agent definitions
-├── plugins/
-│   └── <name>/         # Local plugins (plugin.yaml + tools/hooks/skills)
-├── hooks/
-│   └── hooks.yaml      # Lifecycle hook scripts
-├── knowledge/
-│   └── index.yaml      # Knowledge base entries
-├── config/
-│   ├── default.yaml    # Default environment config
-│   └── <env>.yaml      # Environment overrides
-├── examples/
-│   └── *.md            # Few-shot examples
-└── compliance/
-    └── *.yaml          # Compliance & audit config
-```
-
-### Agent Manifest (`agent.yaml`)
-
-```yaml
-spec_version: "0.1.0"
-name: my-agent
-version: 1.0.0
-description: An agent that does things
-
-model:
-  preferred: "anthropic:claude-sonnet-4-5-20250929"
-  fallback: ["openai:gpt-4o"]
-  constraints:
-    temperature: 0.7
-    max_tokens: 4096
-
-tools: [cli, read, write, memory]
-
-runtime:
-  max_turns: 50
-  timeout: 120
-
-# Optional
-extends: "https://github.com/org/base-agent.git"
-skills: [code-review, deploy]
-delegation:
-  mode: auto
-compliance:
-  risk_level: medium
-  human_in_the_loop: true
-```
-
-## Tools
-
-### Built-in Tools
-
-| Tool | Description |
-|---|---|
-| `cli` | Execute shell commands |
-| `read` | Read files with pagination |
-| `write` | Write/create files |
-| `memory` | Load/save git-committed memory |
-
-### Declarative Tools
-
-Define tools as YAML in `tools/`:
-
-```yaml
-# tools/search.yaml
-name: search
-description: Search the codebase
-input_schema:
-  properties:
-    query:
-      type: string
-      description: Search query
-    path:
-      type: string
-      description: Directory to search
-  required: [query]
-implementation:
-  script: search.sh
-  runtime: sh
-```
-
-The script receives args as JSON on stdin and returns output on stdout.
-
-## Hooks
-
-Script-based hooks in `hooks/hooks.yaml`:
-
-```yaml
-hooks:
-  on_session_start:
-    - script: validate-env.sh
-      description: Check environment is ready
-  pre_tool_use:
-    - script: audit-tools.sh
-      description: Log and gate tool usage
-  post_response:
-    - script: notify.sh
-  on_error:
-    - script: alert.sh
-```
-
-Hook scripts receive context as JSON on stdin and return:
-
-```json
-{ "action": "allow" }
-{ "action": "block", "reason": "Not permitted" }
-{ "action": "modify", "args": { "modified": "args" } }
-```
-
-## Skills
-
-Skills are composable instruction modules in `skills/<name>/`:
-
-```
-skills/
-  code-review/
-    SKILL.md
-    scripts/
-      lint.sh
-```
-
-```markdown
----
-name: code-review
-description: Review code for quality and security
 ---
 
-# Code Review
+## Security Fixes (SEC)
 
-When reviewing code:
-1. Check for security vulnerabilities
-2. Verify error handling
-3. Run the lint script for style checks
+16 security vulnerabilities identified and fixed, ranging from command injection and API key exposure to SSRF and prompt injection.
+
+| # | Issue | Branch | Severity | Description |
+|---|-------|--------|----------|-------------|
+| 001 | CLI Command Injection | [`fix/SEC-001-cli-command-injection`](https://github.com/aayush598/gitagent/tree/fix/SEC-001-cli-command-injection) | HIGH | Replaced `spawn("sh", ["-c", ...])` with argv-based spawn and filtered environment variables to prevent shell injection through the CLI tool |
+| 002 | API Key Exposure in Memory | [`fix/SEC-002-api-key-exposure-memory`](https://github.com/aayush598/gitagent/tree/fix/SEC-002-api-key-exposure-memory) | HIGH | Added secret scanning in the memory tool to detect and prevent API keys from being committed to git-backed memory |
+| 003 | API Key Leakage via `.env` | [`fix/SEC-003-api-key-leakage`](https://github.com/aayush598/gitagent/tree/fix/SEC-003-api-key-leakage) | HIGH | Replaced `{ ...process.env }` with filtered environment in `hooks.ts` and `tool-loader.ts` to prevent API key leakage to child processes |
+| 004 | Template Injection in Shell | [`fix/SEC-004-template-injection-shell`](https://github.com/aayush598/gitagent/tree/fix/SEC-004-template-injection-shell) | HIGH | Replaced `execSync` with `execFileSync` and added a credential helper to prevent shell injection in session management |
+| 005 | Path Traversal | [`fix/SEC-005-path-traversal`](https://github.com/aayush598/gitagent/tree/fix/SEC-005-path-traversal) | HIGH | Added `resolveSafePath()` to prevent path traversal attacks in read/write/edit tools by confining file access to the workspace |
+| 006 | Symlink Attack | [`fix/SEC-006-symlink-attack`](https://github.com/aayush598/gitagent/tree/fix/SEC-006-symlink-attack) | HIGH | Added `assertNotSymlink()` check using `lstat()` before file write operations to prevent symlink attacks |
+| 007 | SSRF Prevention | [`fix/SEC-007-ssrf-prevention`](https://github.com/aayush598/gitagent/tree/fix/SEC-007-ssrf-prevention) | HIGH | Added `checkSSRF()` function blocking requests to private/internal IP ranges and cloud metadata endpoints |
+| 008-009 | WebSocket/HTTP Auth | [`fix/SEC-008-009-ws-auth`](https://github.com/aayush598/gitagent/tree/fix/SEC-008-009-ws-auth) | HIGH | Added auto-generated password authentication and bound the server to `127.0.0.1` to prevent unauthorized access |
+| 010 | Rate Limiting | [`fix/SEC-010-rate-limiting-tool-execution`](https://github.com/aayush598/gitagent/tree/fix/SEC-010-rate-limiting-tool-execution) | MEDIUM | Implemented a sliding-window token-bucket rate limiter to prevent tool execution abuse |
+| 011 | Environment Variable Leak | [`fix/SEC-011-env-var-leak`](https://github.com/aayush598/gitagent/tree/fix/SEC-011-env-var-leak) | MEDIUM | Added `scrubOutput()` and `createSafeEnv()` to prevent credential leakage in tool output |
+| 012 | Insecure Randomness | [`fix/SEC-012-insecure-randomness`](https://github.com/aayush598/gitagent/tree/fix/SEC-012-insecure-randomness) | MEDIUM | Replaced `Math.random()` with `crypto.randomBytes()` for cryptographically secure session IDs |
+| 013 | Insecure Deserialization | [`fix/SEC-013-insecure-deserialization`](https://github.com/aayush598/gitagent/tree/fix/SEC-013-insecure-deserialization) | MEDIUM | Added YAML tag pre-validation to prevent unsafe deserialization in plugin loading |
+| 014 | Secrets in Git History | [`fix/SEC-014-secrets-git-history`](https://github.com/aayush598/gitagent/tree/fix/SEC-014-secrets-git-history) | MEDIUM | Added git history squash and gc to prevent secret recovery from git history |
+| 015 | Plugin Integrity Check | [`fix/SEC-015-plugin-integrity-check`](https://github.com/aayush598/gitagent/tree/fix/SEC-015-plugin-integrity-check) | HIGH | Added SHA-256 integrity verification for plugin downloads to prevent tampered installations |
+| 023 | Prompt Injection | [`fix/SEC-023-input-sanitization`](https://github.com/aayush598/gitagent/tree/fix/SEC-023-input-sanitization) | HIGH | Added safety preamble, write protection boundaries, and runtime assertion to prevent prompt injection |
+
+[Back to Top](#table-of-contents)
+
+---
+
+## Bug Fixes (BUG)
+
+35 functional bugs identified and fixed across the codebase.
+
+| # | Issue | Branch | Description |
+|---|-------|--------|-------------|
+| 001 | Git Commit Failure Silent Data Loss | [`fix/BUG-001-git-commit-failure-silent-data-loss`](https://github.com/aayush598/gitagent/tree/fix/BUG-001-git-commit-failure-silent-data-loss) | Roll back memory file on git failure |
+| 002 | SIGINT Race Condition | [`fix/BUG-002-sigint-race-condition-streaming`](https://github.com/aayush598/gitagent/tree/fix/BUG-002-sigint-race-condition-streaming) | Eliminate TOCTOU race in SIGINT handler during streaming |
+| 003 | Channel Push After Finish | [`fix/BUG-003-channel-push-after-finish`](https://github.com/aayush598/gitagent/tree/fix/BUG-003-channel-push-after-finish) | Guard channel push against push-after-finish data loss |
+| 004 | Hook Block Silent Failure | [`fix/BUG-004-hook-block-silent-failure`](https://github.com/aayush598/gitagent/tree/fix/BUG-004-hook-block-silent-failure) | Prevent silent security bypass when hooks throw errors |
+| 005 | Atomic Write Backup Recovery | [`fix/BUG-005-atomic-write-backup-recovery`](https://github.com/aayush598/gitagent/tree/fix/BUG-005-atomic-write-backup-recovery) | Atomic write with backup recovery for task tracker |
+| 006 | Validate Schedule Cron | [`fix/BUG-006-validate-schedule-cron`](https://github.com/aayush598/gitagent/tree/fix/BUG-006-validate-schedule-cron) | Extract validateScheduleCron with structured errors |
+| 007 | Hook Cleanup Block Action | [`fix/BUG-007-hook-cleanup-block-action`](https://github.com/aayush598/gitagent/tree/fix/BUG-007-hook-cleanup-block-action) | Add cleanupChildProcess, return block on hook failure |
+| 008 | Memory Archive Newline | [`fix/BUG-008-memory-archive-newline`](https://github.com/aayush598/gitagent/tree/fix/BUG-008-memory-archive-newline) | Adapt archive separator to existing trailing newlines |
+| 009 | Edit Regex Flag Symmetry | [`fix/BUG-009-edit-regex-flag-symmetry`](https://github.com/aayush598/gitagent/tree/fix/BUG-009-edit-regex-flag-symmetry) | Centralize regex flag construction for symmetric matching |
+| 010 | Capture Photo Rollback | [`fix/BUG-010-capture-photo-rollback-execfilesync`](https://github.com/aayush598/gitagent/tree/fix/BUG-010-capture-photo-rollback-execfilesync) | Add rollback on git failure, use execFileSync |
+| 011 | Composio Name Collision | [`fix/BUG-011-composio-name-collision-dedup`](https://github.com/aayush598/gitagent/tree/fix/BUG-011-composio-name-collision-dedup) | Hash-based disambiguation for tool name collisions |
+| 012 | AbortSignal.timeout Compat | [`fix/BUG-012-abortsignal-timeout-compat`](https://github.com/aayush598/gitagent/tree/fix/BUG-012-abortsignal-timeout-compat) | Replace AbortSignal.timeout with AbortController+setTimeout |
+| 013 | Summarization Recursion | [`fix/BUG-013-summarization-recursion-guard`](https://github.com/aayush598/gitagent/tree/fix/BUG-013-summarization-recursion-guard) | Add reentrancy guard to prevent recursive summarization |
+| 014 | Cron Alias Expansion | [`fix/BUG-014-cron-alias-expansion`](https://github.com/aayush598/gitagent/tree/fix/BUG-014-cron-alias-expansion) | Expand @daily, @hourly, @every before validation |
+| 015 | Session State Ordering | [`fix/BUG-015-session-state-ordering`](https://github.com/aayush598/gitagent/tree/fix/BUG-015-session-state-ordering) | Move writeSessionState after all validation steps |
+| 016 | Plugin Memory Layers | [`fix/BUG-016-plugin-memory-layers`](https://github.com/aayush598/gitagent/tree/fix/BUG-016-plugin-memory-layers) | Preserve archive_policy, separate plugin from user layers |
+| 017 | Git Clone Silence | [`fix/BUG-017-git-clone-silence`](https://github.com/aayush598/gitagent/tree/fix/BUG-017-git-clone-silence) | Remove git clone silencing, use execFileSync |
+| 018 | Dependency Dedup | [`fix/BUG-018-dependency-dedup`](https://github.com/aayush598/gitagent/tree/fix/BUG-018-dependency-dedup) | Detect and warn on duplicate dependency names |
+| 019 | Model Fallback | [`fix/BUG-019-model-fallback`](https://github.com/aayush598/gitagent/tree/fix/BUG-019-model-fallback) | Iterate through fallback models on primary failure |
+| 020 | Env Var Case | [`fix/BUG-020-env-var-case`](https://github.com/aayush598/gitagent/tree/fix/BUG-020-env-var-case) | Normalize env var names for API key lookup |
+| 021 | Plugin Discovery Race | [`fix/BUG-021-plugin-discovery-race`](https://github.com/aayush598/gitagent/tree/fix/BUG-021-plugin-discovery-race) | Lock dir + temp clone + atomic rename |
+| 022 | Schedule YAML ForceQuotes | [`fix/BUG-022-schedule-yaml-forcequotes`](https://github.com/aayush598/gitagent/tree/fix/BUG-022-schedule-yaml-forcequotes) | Prevent YAML type coercion with forceQuotes |
+| 023 | Audit Log Rotation | [`fix/BUG-023-audit-log-rotation`](https://github.com/aayush598/gitagent/tree/fix/BUG-023-audit-log-rotation) | Size-based rotation with gzip compression |
+| 024 | File Watcher Stale | [`fix/BUG-024-file-watcher-stale`](https://github.com/aayush598/gitagent/tree/fix/BUG-024-file-watcher-stale) | Detect deleted files by iterating before entries |
+| 025 | Console Intercept Scope | [`fix/BUG-025-console-intercept-scope`](https://github.com/aayush598/gitagent/tree/fix/BUG-025-console-intercept-scope) | Filter by known source allowlist |
+| 026 | Steer Uninitialized | [`fix/BUG-026-steer-uninitialized`](https://github.com/aayush598/gitagent/tree/fix/BUG-026-steer-uninitialized) | Implement steer(), fix throw() to push error before finish |
+| 027 | isGitRepo execFileSync | [`fix/BUG-027-isgitrepo-execfilesync`](https://github.com/aayush598/gitagent/tree/fix/BUG-027-isgitrepo-execfilesync) | Use execFileSync with directory check |
+| 028 | Plugin Cache TTL | [`fix/BUG-028-plugin-cache-ttl`](https://github.com/aayush598/gitagent/tree/fix/BUG-028-plugin-cache-ttl) | TTL-based plugin cache to avoid redundant discovery |
+| 029 | Sandbox Memory Layers | [`fix/BUG-029-sandbox-memory-layers`](https://github.com/aayush598/gitagent/tree/fix/BUG-029-sandbox-memory-layers) | Plugin layers support in sandbox memory tool |
+| 030 | Telemetry Metric Status | [`fix/BUG-030-telemetry-metric-status`](https://github.com/aayush598/gitagent/tree/fix/BUG-030-telemetry-metric-status) | Add tool.status attribute to counter and histogram metrics |
+| 033 | MIME Validation | [`fix/BUG-033-mime-validation`](https://github.com/aayush598/gitagent/tree/fix/BUG-033-mime-validation) | MIME type validation with magic byte check |
+| 034 | Task Tracker Pagination | [`fix/BUG-034-task-tracker-pagination`](https://github.com/aayush598/gitagent/tree/fix/BUG-034-task-tracker-pagination) | Pagination with limit/offset/status filters |
+| 035 | deepMerge Clone | [`fix/BUG-035-deepmerge-clone`](https://github.com/aayush598/gitagent/tree/fix/BUG-035-deepmerge-clone) | Deep-clone base in deepMerge to prevent source mutation |
+
+[Back to Top](#table-of-contents)
+
+---
+
+## Error Handling (ERR)
+
+13 error handling defects fixed to make failures visible and debuggable.
+
+| # | Issue | Branch | Description |
+|---|-------|--------|-------------|
+| 001 | Silent Catch Main Error Handler | [`fix/ERR-001-silent-catch-main-error-handler`](https://github.com/aayush598/gitagent/tree/fix/ERR-001-silent-catch-main-error-handler) | Log telemetry shutdown errors instead of silent catch |
+| 002 | Hooks Error Suppression | [`fix/ERR-002-hooks-error-suppression`](https://github.com/aayush598/gitagent/tree/fix/ERR-002-hooks-error-suppression) | Replace silent hook catch blocks with proper logging |
+| 004 | Missing Stack Traces | [`fix/ERR-004-no-stack-trace`](https://github.com/aayush598/gitagent/tree/fix/ERR-004-no-stack-trace) | Include `err.stack || err.message` in error messages |
+| 006 | Telemetry Errors Break Agent | [`fix/ERR-006-telemetry-errors-break-agent`](https://github.com/aayush598/gitagent/tree/fix/ERR-006-telemetry-errors-break-agent) | Replace silent `catch {}` with telemetryCatch() helper |
+| 007 | Exit Without Cleanup | [`fix/ERR-007-exit-cleanup`](https://github.com/aayush598/gitagent/tree/fix/ERR-007-exit-cleanup) | Add shutdown() helper for cleanup before process.exit |
+| 008 | Git Machine Import Errors | [`fix/ERR-008-git-machine-import-errors`](https://github.com/aayush598/gitagent/tree/fix/ERR-008-git-machine-import-errors) | Include original error message in sandbox catch |
+| 009 | Error in Error Handler | [`fix/ERR-009-error-in-error-handler`](https://github.com/aayush598/gitagent/tree/fix/ERR-009-error-in-error-handler) | Log intercept failures via original console function |
+| 010 | JSON Parse Errors | [`fix/ERR-010-json-parse-errors`](https://github.com/aayush598/gitagent/tree/fix/ERR-010-json-parse-errors) | Guard before JSON.parse for non-JSON tool output |
+| 011 | Channel Pull Returns Undefined | [`fix/ERR-011-channel-pull`](https://github.com/aayush598/gitagent/tree/fix/ERR-011-channel-pull) | Use `undefined as unknown as T` instead of `undefined as any` |
+| 012 | Exit Code Validation | [`fix/ERR-012-exit-code-validation`](https://github.com/aayush598/gitagent/tree/fix/ERR-012-exit-code-validation) | Warn on non-empty stderr even with exit code 0 |
+| 013 | Task Tracker State Transitions | [`fix/ERR-013-task-tracker-states`](https://github.com/aayush598/gitagent/tree/fix/ERR-013-task-tracker-states) | Build updated task object before persisting to prevent inconsistent state |
+
+[Back to Top](#table-of-contents)
+
+---
+
+## Race Conditions (RACE)
+
+11 race condition fixes addressing TOCTOU, concurrent access, and ordering issues.
+
+| # | Issue | Branch | Description |
+|---|-------|--------|-------------|
+| 001 | Task File TOCTOU | [`fix/RACE-001-toctou-task-file`](https://github.com/aayush598/gitagent/tree/fix/RACE-001-toctou-task-file) | Add task mutex serialize concurrent load-save operations |
+| 002 | Plugin Config Race | [`fix/RACE-002-plugin-config-race`](https://github.com/aayush598/gitagent/tree/fix/RACE-002-plugin-config-race) | Add manifest mutex for agent.yaml modifications |
+| 003 | Schedule Atomic Write | [`fix/RACE-003-schedule-atomic-write`](https://github.com/aayush598/gitagent/tree/fix/RACE-003-schedule-atomic-write) | Atomic rename (tmp + rename) for schedule YAML writes |
+| 004 | Channel Push After Abort | [`fix/RACE-004-channel-push-after-abort`](https://github.com/aayush598/gitagent/tree/fix/RACE-004-channel-push-after-abort) | Add `if (done) return` guard in channel push |
+| 005 | Git Add/Commit Race | [`fix/RACE-005-git-add-commit-race`](https://github.com/aayush598/gitagent/tree/fix/RACE-005-git-add-commit-race) | In-process mutex for concurrent git operations |
+| 006 | Plugin Install Race | [`fix/RACE-006-plugin-install-race`](https://github.com/aayush598/gitagent/tree/fix/RACE-006-plugin-install-race) | Promise dedup map for concurrent installations |
+| 007 | WebSocket Broadcast Race | [`fix/RACE-007-websocket-broadcast-race`](https://github.com/aayush598/gitagent/tree/fix/RACE-007-websocket-broadcast-race) | Snapshot + try/catch in WebSocket broadcast |
+| 008 | Async Init Session | [`fix/RACE-008-async-init-session`](https://github.com/aayush598/gitagent/tree/fix/RACE-008-async-init-session) | Promise-based sessionId accessor |
+| 009 | File System Interleaving | [`fix/RACE-009-file-system-interleaving`](https://github.com/aayush598/gitagent/tree/fix/RACE-009-file-system-interleaving) | Per-file write queue for audit and write tools |
+| 010 | Process Exit During Async | [`fix/RACE-010-process-exit-async`](https://github.com/aayush598/gitagent/tree/fix/RACE-010-process-exit-async) | Drain shutdown promises before process.exit |
+| 011 | SIGINT Reentrancy | [`fix/RACE-011-sigint-reentrancy`](https://github.com/aayush598/gitagent/tree/fix/RACE-011-sigint-reentrancy) | Consolidate into single handler with reentrancy guard |
+
+[Back to Top](#table-of-contents)
+
+---
+
+## TypeScript Types (TYPE)
+
+14 type safety improvements removing `as any` casts and adding proper types.
+
+| # | Issue | Branch | Description |
+|---|-------|--------|-------------|
+| 002 | as any in Model Handling | [`fix/TYPE-002-remove-as-any-in-model-handling`](https://github.com/aayush598/gitagent/tree/fix/TYPE-002-remove-as-any-in-model-handling) | Remove unnecessary `as any` cast |
+| 003 | Unconstrained Generics | [`fix/TYPE-003-constrain-generic-in-toAgentTool`](https://github.com/aayush598/gitagent/tree/fix/TYPE-003-constrain-generic-in-toAgentTool) | Constrain `params: any` -> `Record<string, unknown>` |
+| 004 | Unvalidated JSON Parse | [`fix/TYPE-004-validate-json-parse-in-task-tracker`](https://github.com/aayush598/gitagent/tree/fix/TYPE-004-validate-json-parse-in-task-tracker) | Add type guard before JSON.parse cast |
+| 006 | Loose Constraint Options | [`fix/TYPE-006-type-constraint-options`](https://github.com/aayush598/gitagent/tree/fix/TYPE-006-type-constraint-options) | Add snake_case fields, remove `as any` cast |
+| 007 | Unsafe Event Properties | [`fix/TYPE-007-remove-as-any-from-event-handler`](https://github.com/aayush598/gitagent/tree/fix/TYPE-007-remove-as-any-from-event-handler) | Use proper type narrowing in event handlers |
+| 008 | Untyped Hook Context | [`fix/TYPE-008-type-hook-handler-context`](https://github.com/aayush598/gitagent/tree/fix/TYPE-008-type-hook-handler-context) | Replace `Record<string, any>` with typed HookContext |
+| 009 | Weakly Typed Telemetry | [`fix/TYPE-009-type-telemetry-sdk`](https://github.com/aayush598/gitagent/tree/fix/TYPE-009-type-telemetry-sdk) | Type `_sdk` as `SdkHandle | null` |
+| 011 | Ambiguous Return Types | [`fix/TYPE-011-clear-tool-result-type`](https://github.com/aayush598/gitagent/tree/fix/TYPE-011-clear-tool-result-type) | Create ToolResult interface |
+| 012 | NaN Validation | [`fix/TYPE-012-validate-nan-in-coerceValue`](https://github.com/aayush598/gitagent/tree/fix/TYPE-012-validate-nan-in-coerceValue) | Add Number.isFinite() check |
+| 013 | Missing Generic on Channel | [`fix/TYPE-013-channel-iterator-result-type`](https://github.com/aayush598/gitagent/tree/fix/TYPE-013-channel-iterator-result-type) | Use `IteratorResult<T, undefined>` |
+| 014 | Typebox Runtime Validation | [`fix/TYPE-014-typebox-runtime-validation`](https://github.com/aayush598/gitagent/tree/fix/TYPE-014-typebox-runtime-validation) | Add runtime type guard before Static cast |
+| 015 | Missing Type Exports | [`fix/TYPE-015-add-missing-type-exports`](https://github.com/aayush598/gitagent/tree/fix/TYPE-015-add-missing-type-exports) | Export HookDefinition, ToolResult, etc. |
+
+[Back to Top](#table-of-contents)
+
+---
+
+## Networking (NET)
+
+4 networking improvements for connection pooling, timeouts, and IPv6 support.
+
+| # | Issue | Branch | Description |
+|---|-------|--------|-------------|
+| 002 | No Connection Pooling | [`fix/NET-002-connection-pooling`](https://github.com/aayush598/gitagent/tree/fix/NET-002-connection-pooling) | Global undici Agent with keep-alive |
+| 005 | No Request Timeout | [`fix/NET-005-request-timeout`](https://github.com/aayush598/gitagent/tree/fix/NET-005-request-timeout) | `fetchWithTimeout()` wrapper for all HTTP calls |
+| 009 | No Keep-Alive for LLM | [`fix/NET-009-keep-alive-llm`](https://github.com/aayush598/gitagent/tree/fix/NET-009-keep-alive-llm) | Keep-alive agent for LLM HTTP client |
+| 010 | No IPv6 Support | [`fix/NET-010-ipv6-support`](https://github.com/aayush598/gitagent/tree/fix/NET-010-ipv6-support) | `dns.setDefaultResultOrder('ipv4first')` |
+
+[Back to Top](#table-of-contents)
+
+---
+
+## Performance (PERF)
+
+2 performance optimizations.
+
+| # | Issue | Branch | Description |
+|---|-------|--------|-------------|
+| 001 | Sync IO Event Loop Blocking | [`fix/PERF-001-sync-io-event-loop-blocking`](https://github.com/aayush598/gitagent/tree/fix/PERF-001-sync-io-event-loop-blocking) | Replace sync I/O with async alternatives |
+| 002 | Voice Server Memory Growth | [`fix/PERF-002-voice-server-memory-growth`](https://github.com/aayush598/gitagent/tree/fix/PERF-002-voice-server-memory-growth) | Fixed-size circular buffer with message truncation |
+
+[Back to Top](#table-of-contents)
+
+---
+
+## Concurrency (CONC)
+
+2 concurrency fixes.
+
+| # | Issue | Branch | Description |
+|---|-------|--------|-------------|
+| 001 | Shared State Without Locks | [`fix/CONC-001-shared-state-without-locks`](https://github.com/aayush598/gitagent/tree/fix/CONC-001-shared-state-without-locks) | Replace lazy-init metric slots with eager handles |
+| 002 | Async Hook Execution Ordering | [`fix/CONC-002-async-hook-execution-ordering`](https://github.com/aayush598/gitagent/tree/fix/CONC-002-async-hook-execution-ordering) | Double settle guard in executeHook |
+
+[Back to Top](#table-of-contents)
+
+---
+
+## Configuration (CONFIG)
+
+4 configuration improvements.
+
+| # | Issue | Branch | Description |
+|---|-------|--------|-------------|
+| 002 | Incomplete agent.yaml | [`fix/CONFIG-002-incomplete-agent-yaml`](https://github.com/aayush598/gitagent/tree/fix/CONFIG-002-incomplete-agent-yaml) | Default model, empty field validation |
+| 004 | No Graceful Missing Config | [`fix/CONFIG-004-graceful-missing-config`](https://github.com/aayush598/gitagent/tree/fix/CONFIG-004-graceful-missing-config) | Layered error handling for missing config |
+| 009 | GITCLAW_ENV Partial Support | [`fix/CONFIG-009-gitclaw-env-support`](https://github.com/aayush598/gitagent/tree/fix/CONFIG-009-gitclaw-env-support) | Validate GITCLAW_ENV, env-aware behavior |
+| 010 | Model Constraints Naming | [`fix/CONFIG-010-model-constraints-naming`](https://github.com/aayush598/gitagent/tree/fix/CONFIG-010-model-constraints-naming) | Normalize to snake_case |
+
+[Back to Top](#table-of-contents)
+
+---
+
+## Code Quality (CQ)
+
+2 code quality improvements.
+
+| # | Issue | Branch | Description |
+|---|-------|--------|-------------|
+| 012 | Hardcoded Timeouts | [`fix/CQ-012-hardcoded-timeouts`](https://github.com/aayush598/gitagent/tree/fix/CQ-012-hardcoded-timeouts) | Extract to configurable constants in hooks/tool-loader |
+| 025 | Unused Imports | [`fix/CQ-025-unused-imports`](https://github.com/aayush598/gitagent/tree/fix/CQ-025-unused-imports) | Remove unused import statements |
+
+[Back to Top](#table-of-contents)
+
+---
+
+## Dependencies (DEP)
+
+3 dependency management improvements.
+
+| # | Issue | Branch | Description |
+|---|-------|--------|-------------|
+| 001-003 | Migrate js-yaml to yaml v2 | [`fix/DEP-001-003-migrate-to-yaml-v2`](https://github.com/aayush598/gitagent/tree/fix/DEP-001-003-migrate-to-yaml-v2) | Migrate across 17 source files, 53 call sites |
+| 004 | Lockfile in Published Package | [`fix/DEP-004-lockfile-publish`](https://github.com/aayush598/gitagent/tree/fix/DEP-004-lockfile-publish) | Include package-lock.json in files array |
+| 005 | Update OTEL Versions | [`fix/DEP-005-update-otel-versions`](https://github.com/aayush598/gitagent/tree/fix/DEP-005-update-otel-versions) | Update OpenTelemetry to standard versions |
+
+[Back to Top](#table-of-contents)
+
+---
+
+## File System (FILE)
+
+1 file system improvement.
+
+| # | Issue | Branch | Description |
+|---|-------|--------|-------------|
+| 007 | Race Condition in Directory Creation | [`fix/FILE-007-race-condition-dir-creation`](https://github.com/aayush598/gitagent/tree/fix/FILE-007-race-condition-dir-creation) | Safe write with mkdir race prevention |
+
+[Back to Top](#table-of-contents)
+
+---
+
+## Logging (LOG)
+
+2 logging improvements.
+
+| # | Issue | Branch | Description |
+|---|-------|--------|-------------|
+| 003 | ANSI Codes in File Logs | [`fix/LOG-003-ansi-codes-file-logs`](https://github.com/aayush598/gitagent/tree/fix/LOG-003-ansi-codes-file-logs) | Strip ANSI escape sequences from file logs |
+| 006 | No Health Check Endpoint | [`fix/LOG-006-health-check-endpoint`](https://github.com/aayush598/gitagent/tree/fix/LOG-006-health-check-endpoint) | Enhanced health endpoint with git/disk checks |
+
+[Back to Top](#table-of-contents)
+
+---
+
+## Branch Reference Table
+
+Complete list of all 97+ fix branches grouped by category.
+
+### BUG (35 branches)
+```
+fix/BUG-001-git-commit-failure-silent-data-loss
+fix/BUG-002-sigint-race-condition-streaming
+fix/BUG-003-channel-push-after-finish
+fix/BUG-004-hook-block-silent-failure
+fix/BUG-005-atomic-write-backup-recovery
+fix/BUG-006-validate-schedule-cron
+fix/BUG-007-hook-cleanup-block-action
+fix/BUG-008-memory-archive-newline
+fix/BUG-009-edit-regex-flag-symmetry
+fix/BUG-010-capture-photo-rollback-execfilesync
+fix/BUG-011-composio-name-collision-dedup
+fix/BUG-012-abortsignal-timeout-compat
+fix/BUG-013-summarization-recursion-guard
+fix/BUG-014-cron-alias-expansion
+fix/BUG-015-session-state-ordering
+fix/BUG-016-plugin-memory-layers
+fix/BUG-017-git-clone-silence
+fix/BUG-018-dependency-dedup
+fix/BUG-019-model-fallback
+fix/BUG-020-env-var-case
+fix/BUG-021-plugin-discovery-race
+fix/BUG-022-schedule-yaml-forcequotes
+fix/BUG-023-audit-log-rotation
+fix/BUG-024-file-watcher-stale
+fix/BUG-025-console-intercept-scope
+fix/BUG-026-steer-uninitialized
+fix/BUG-027-isgitrepo-execfilesync
+fix/BUG-028-plugin-cache-ttl
+fix/BUG-029-sandbox-memory-layers
+fix/BUG-030-telemetry-metric-status
+fix/BUG-033-mime-validation
+fix/BUG-034-task-tracker-pagination
+fix/BUG-035-deepmerge-clone
 ```
 
-Invoke via CLI: `/skill:code-review Review the auth module`
-
-## Plugins
-
-Plugins are reusable extensions that can provide tools, hooks, skills, prompts, and memory layers. They follow the same git-native philosophy — a plugin is a directory with a `plugin.yaml` manifest.
-
-### CLI Commands
-
-```bash
-# Install from git URL
-gitclaw plugin install https://github.com/org/my-plugin.git
-
-# Install from local path
-gitclaw plugin install ./path/to/plugin
-
-# Install with options
-gitclaw plugin install <source> --name custom-name --force --no-enable
-
-# List all discovered plugins
-gitclaw plugin list
-
-# Enable / disable
-gitclaw plugin enable my-plugin
-gitclaw plugin disable my-plugin
-
-# Remove
-gitclaw plugin remove my-plugin
-
-# Scaffold a new plugin
-gitclaw plugin init my-plugin
+### SEC (16 branches)
+```
+fix/SEC-001-cli-command-injection
+fix/SEC-002-api-key-exposure-memory
+fix/SEC-003-api-key-leakage
+fix/SEC-004-template-injection-shell
+fix/SEC-005-path-traversal
+fix/SEC-006-symlink-attack
+fix/SEC-007-ssrf-prevention
+fix/SEC-008-009-ws-auth
+fix/SEC-010-rate-limiting-tool-execution
+fix/SEC-011-env-var-leak
+fix/SEC-012-insecure-randomness
+fix/SEC-013-insecure-deserialization
+fix/SEC-014-secrets-git-history
+fix/SEC-015-plugin-integrity-check
+fix/SEC-023-input-sanitization
 ```
 
-| Flag | Description |
-|---|---|
-| `--name <name>` | Custom plugin name (default: derived from source) |
-| `--force` | Reinstall even if already present |
-| `--no-enable` | Install without auto-enabling |
-
-### Plugin Manifest (`plugin.yaml`)
-
-```yaml
-id: my-plugin                    # Required, kebab-case
-name: My Plugin
-version: 0.1.0
-description: What this plugin does
-author: Your Name
-license: MIT
-engine: ">=0.3.0"               # Min gitclaw version
-
-provides:
-  tools: true                    # Load tools from tools/*.yaml
-  skills: true                   # Load skills from skills/
-  prompt: prompt.md              # Inject into system prompt
-  hooks:
-    pre_tool_use:
-      - script: hooks/audit.sh
-        description: Audit tool calls
-
-config:
-  properties:
-    api_key:
-      type: string
-      description: API key
-      env: MY_API_KEY            # Env var fallback
-    timeout:
-      type: number
-      default: 30
-  required: [api_key]
-
-entry: index.ts                  # Optional programmatic entry point
+### ERR (11 branches)
+```
+fix/ERR-001-silent-catch-main-error-handler
+fix/ERR-002-hooks-error-suppression
+fix/ERR-004-no-stack-trace
+fix/ERR-006-telemetry-errors-break-agent
+fix/ERR-007-exit-cleanup
+fix/ERR-008-git-machine-import-errors
+fix/ERR-009-error-in-error-handler
+fix/ERR-010-json-parse-errors
+fix/ERR-011-channel-pull
+fix/ERR-012-exit-code-validation
+fix/ERR-013-task-tracker-states
 ```
 
-### Plugin Config in `agent.yaml`
-
-```yaml
-plugins:
-  my-plugin:
-    enabled: true
-    source: https://github.com/org/my-plugin.git  # Auto-install on load
-    version: main                                   # Git branch/tag
-    config:
-      api_key: "${MY_API_KEY}"                      # Supports env interpolation
-      timeout: 60
+### RACE (11 branches)
+```
+fix/RACE-001-toctou-task-file
+fix/RACE-002-plugin-config-race
+fix/RACE-003-schedule-atomic-write
+fix/RACE-004-channel-push-after-abort
+fix/RACE-005-git-add-commit-race
+fix/RACE-006-plugin-install-race
+fix/RACE-007-websocket-broadcast-race
+fix/RACE-008-async-init-session
+fix/RACE-009-file-system-interleaving
+fix/RACE-010-process-exit-async
+fix/RACE-011-sigint-reentrancy
 ```
 
-Config resolution priority: `agent.yaml config` > `env var` > `manifest default`.
-
-### Discovery Order
-
-Plugins are discovered in this order (first match wins):
-
-1. **Local** — `<agent-dir>/plugins/<name>/`
-2. **Global** — `~/.gitclaw/plugins/<name>/`
-3. **Installed** — `<agent-dir>/.gitagent/plugins/<name>/`
-
-### Programmatic Plugins
-
-Plugins with an `entry` field in their manifest get a full API:
-
-```typescript
-// index.ts
-import type { GitclawPluginApi } from "gitclaw";
-
-export async function register(api: GitclawPluginApi) {
-  // Register a tool
-  api.registerTool({
-    name: "search_docs",
-    description: "Search documentation",
-    inputSchema: {
-      properties: { query: { type: "string" } },
-      required: ["query"],
-    },
-    handler: async (args) => {
-      const results = await search(args.query);
-      return { text: JSON.stringify(results) };
-    },
-  });
-
-  // Register a lifecycle hook
-  api.registerHook("pre_tool_use", async (ctx) => {
-    api.logger.info(`Tool called: ${ctx.tool}`);
-    return { action: "allow" };
-  });
-
-  // Add to system prompt
-  api.addPrompt("Always check docs before answering questions.");
-
-  // Register a memory layer
-  api.registerMemoryLayer({
-    name: "docs-cache",
-    path: "memory/docs-cache.md",
-    description: "Cached documentation lookups",
-  });
-}
+### TYPE (12 branches)
+```
+fix/TYPE-002-remove-as-any-in-model-handling
+fix/TYPE-003-constrain-generic-in-toAgentTool
+fix/TYPE-004-validate-json-parse-in-task-tracker
+fix/TYPE-006-type-constraint-options
+fix/TYPE-007-remove-as-any-from-event-handler
+fix/TYPE-008-type-hook-handler-context
+fix/TYPE-009-type-telemetry-sdk
+fix/TYPE-011-clear-tool-result-type
+fix/TYPE-012-validate-nan-in-coerceValue
+fix/TYPE-013-channel-iterator-result-type
+fix/TYPE-014-typebox-runtime-validation
+fix/TYPE-015-add-missing-type-exports
 ```
 
-**Available API methods:**
-
-| Method | Description |
-|---|---|
-| `registerTool(def)` | Register a tool the agent can call |
-| `registerHook(event, handler)` | Register a lifecycle hook (`on_session_start`, `pre_tool_use`, `post_response`, `on_error`) |
-| `addPrompt(text)` | Append text to the system prompt |
-| `registerMemoryLayer(layer)` | Register a memory layer |
-| `logger.info/warn/error(msg)` | Prefixed logging (`[plugin:id]`) |
-| `pluginId` | Plugin identifier |
-| `pluginDir` | Absolute path to plugin directory |
-| `config` | Resolved config values |
-
-### Plugin Structure
-
+### NET (4 branches)
 ```
-my-plugin/
-├── plugin.yaml          # Manifest (required)
-├── tools/               # Declarative tool definitions
-│   └── *.yaml
-├── hooks/               # Hook scripts
-├── skills/              # Skill modules
-├── prompt.md            # System prompt addition
-└── index.ts             # Programmatic entry point
+fix/NET-002-connection-pooling
+fix/NET-005-request-timeout
+fix/NET-009-keep-alive-llm
+fix/NET-010-ipv6-support
 ```
 
-## Multi-Model Support
-
-Gitclaw works with any LLM provider supported by [pi-ai](https://github.com/badlogic/pi-mono/tree/main/packages/ai):
-
-```yaml
-# agent.yaml
-model:
-  preferred: "anthropic:claude-sonnet-4-5-20250929"
-  fallback:
-    - "openai:gpt-4o"
-    - "google:gemini-2.0-flash"
+### PERF (2 branches)
+```
+fix/PERF-001-sync-io-event-loop-blocking
+fix/PERF-002-voice-server-memory-growth
 ```
 
-Supported providers: `anthropic`, `openai`, `google`, `xai`, `groq`, `mistral`, and more.
-
-## Inheritance & Composition
-
-Agents can extend base agents:
-
-```yaml
-# agent.yaml
-extends: "https://github.com/org/base-agent.git"
-
-# Dependencies
-dependencies:
-  - name: shared-tools
-    source: "https://github.com/org/shared-tools.git"
-    version: main
-    mount: tools
-
-# Sub-agents
-delegation:
-  mode: auto
+### CONC (2 branches)
+```
+fix/CONC-001-shared-state-without-locks
+fix/CONC-002-async-hook-execution-ordering
 ```
 
-## Compliance & Audit
-
-Built-in compliance validation and audit logging:
-
-```yaml
-# agent.yaml
-compliance:
-  risk_level: high
-  human_in_the_loop: true
-  data_classification: confidential
-  regulatory_frameworks: [SOC2, GDPR]
-  recordkeeping:
-    audit_logging: true
-    retention_days: 90
+### CONFIG (4 branches)
+```
+fix/CONFIG-002-incomplete-agent-yaml
+fix/CONFIG-004-graceful-missing-config
+fix/CONFIG-009-gitclaw-env-support
+fix/CONFIG-010-model-constraints-naming
 ```
 
-Audit logs are written to `.gitagent/audit.jsonl` with full tool invocation traces.
-
-## Telemetry
-
-Gitclaw ships with built-in OpenTelemetry instrumentation. Set `OTEL_EXPORTER_OTLP_ENDPOINT` and telemetry is on; leave it unset and runtime cost is zero.
-
-Three layers of signals:
-
-1. **HTTP-level** — `@opentelemetry/instrumentation-undici` auto-patches `fetch`/`undici`, so every LLM provider call (Anthropic, OpenAI, Google, …) gets a client span with URL, status code, and timing.
-2. **`gen_ai.chat` spans** — emitted on every assistant `message_end`. Carry `gen_ai.system`, `gen_ai.request.model`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.response.finish_reasons`, and `gitclaw.cost_usd`. Span/metric content never contains the prompt or completion text.
-3. **`gitclaw.tool.execute` spans** — wrap every tool call with `tool.name`, `tool.call_id`, `tool.status` (`ok`/`error`), and `tool.error_message` on failure.
-
-A root `gitclaw.agent.session` span opens at agent construction and closes on every exit path (success, hook-block, SIGINT, error).
-
-### CLI usage
-
-Just set the endpoint — no `--import` flag, no extra install steps:
-
-```bash
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 gitclaw -p "your prompt"
+### CQ (2 branches)
+```
+fix/CQ-012-hardcoded-timeouts
+fix/CQ-025-unused-imports
 ```
 
-Telemetry is enabled automatically when the endpoint is set and disabled when it is not. To force-disable even when the endpoint is set, pass `GITCLAW_OTEL_ENABLED=false`.
-
-### Environment variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP/HTTP collector base URL (e.g. `http://localhost:4318`). When set, telemetry is auto-enabled. | (unset → telemetry off) |
-| `GITCLAW_OTEL_ENABLED` | Set to `false` to disable telemetry even when the endpoint is set | (unset = auto) |
-| `OTEL_SERVICE_NAME` | Resource `service.name` | `gitclaw` |
-| `OTEL_SERVICE_VERSION` | Resource `service.version` | (unset) |
-| `OTEL_EXPORTER_OTLP_HEADERS` | Comma-separated key=value pairs, no quotes (e.g. `Authorization=Bearer xyz,x-tenant=abc`) | (unset) |
-| `OTEL_TRACES_EXPORTER` | Set to `console` to print spans to stdout — no collector needed | (unset) |
-
-### SDK usage
-
-For programmatic embedders, call `initTelemetry` explicitly — you control when initialisation happens:
-
-```ts
-import { initTelemetry, shutdownTelemetry, query } from "gitclaw";
-
-await initTelemetry({ serviceName: "my-app" });
-
-for await (const msg of query({ prompt: "hello", model: "anthropic:claude-4-6-sonnet-latest" })) {
-  // …
-}
-
-await shutdownTelemetry();
+### DEP (3 branches)
+```
+fix/DEP-001-003-migrate-to-yaml-v2
+fix/DEP-004-lockfile-publish
+fix/DEP-005-update-otel-versions
 ```
 
-`OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_EXPORTER_OTLP_HEADERS` are read automatically by the OTLP exporter when not supplied programmatically. Pass `exporterEndpoint` / `headers` only when you need to override env-based config in code.
-
-### Emitted spans
-
-| Name | Kind | Key attributes |
-|------|------|----------------|
-| `gitclaw.agent.session` | INTERNAL | `gitclaw.entry` (`sdk` / `cli`), `gitclaw.cost_usd`, `gitclaw.session.duration_ms` |
-| `gitclaw.tool.execute` | INTERNAL | `tool.name`, `tool.call_id`, `tool.status`, `tool.error_message` |
-| `gen_ai.chat` | CLIENT | `gen_ai.system`, `gen_ai.request.model`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.response.finish_reasons`, `gitclaw.cost_usd` |
-| `HTTP …` | CLIENT | URL, status code, duration (auto from `instrumentation-undici`) |
-
-### Emitted metrics
-
-| Name | Type | Description |
-|------|------|-------------|
-| `gitclaw.tool.calls` | counter | Number of tool executions, labelled by `tool.name` |
-| `gitclaw.tool.duration_ms` | histogram | Tool execution duration |
-| `gitclaw.session.duration_ms` | histogram | Session duration |
-| `gitclaw.session.cost_usd` | counter (USD) | Cumulative session cost |
-| `gen_ai.client.token.usage` | counter | Token usage by `gen_ai.system`, `gen_ai.request.model`, `gen_ai.token.type` |
-| `gen_ai.client.operation.duration` | histogram | LLM call duration |
-
-### Console quickstart (no collector)
-
-Print spans directly to stdout — useful for local debugging:
-
-```bash
-OTEL_TRACES_EXPORTER=console gitclaw -p "test"
+### FILE (1 branch)
+```
+fix/FILE-007-race-condition-dir-creation
 ```
 
-### Local Jaeger quickstart
-
-```bash
-docker run --rm -p 16686:16686 -p 4318:4318 jaegertracing/all-in-one:latest
-
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 gitclaw -p "test"
-
-# Open http://localhost:16686 → service "gitclaw"
+### LOG (2 branches)
+```
+fix/LOG-003-ansi-codes-file-logs
+fix/LOG-006-health-check-endpoint
 ```
 
-## Contributing
+---
 
-Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+## How to Navigate
 
-## ❓ FAQ
+Each link points to the fix branch on GitHub. To view the exact changes:
 
-### General
+1. **View branch code**: Click the branch link to browse the fixed source
+2. **Compare with main**: Add `/compare/main...fix/BRANCH-NAME` to the URL
+3. **View commit**: Each branch has a single conventional commit with a descriptive message
 
-**What is Gitclaw?**
-Gitclaw (formerly GitAgent) is a git-native AI agent framework where the agent IS a git repository. Identity, rules, memory, tools, and skills are all version-controlled files, enabling "agents as repos" paradigm.
-
-**How does Gitclaw differ from other agent frameworks?**
-Unlike frameworks that scatter configuration across application code, Gitclaw makes the agent itself a git repo:
-- Fork an agent → inherit personality, rules, tools
-- Branch → create alternate personality versions
-- `git log` → see agent's memory evolution
-- Diff → track rule changes over time
-
-**What is the "agents as repos" concept?**
-Your agent lives in a git repository with structured files:
-- `agent.yaml` — model, tools, runtime config
-- `SOUL.md` — personality and identity
-- `RULES.md` — behavioral constraints
-- `memory/` — git-committed memory with full history
-- `tools/` — declarative YAML tool definitions
-- `skills/` — composable skill modules
-- `hooks/` — lifecycle hooks
-
-### Installation & Setup
-
-**What are the requirements?**
-Node.js 18+ (or 20+ recommended), npm, and git. Install globally with `npm install -g gitclaw`.
-
-**How do I set up API keys?**
-Run the installer for guided setup:
-```bash
-bash <(curl -fsSL "https://raw.githubusercontent.com/open-gitagent/gitagent/main/install.sh")
+Example:
 ```
-Or set manually:
-```bash
-export OPENAI_API_KEY="sk-..."
+https://github.com/aayush598/gitagent/tree/fix/SEC-001-cli-command-injection
+https://github.com/aayush598/gitagent/compare/main...fix/SEC-001-cli-command-injection
 ```
 
-**Which LLM providers are supported?**
-- OpenAI (GPT-4o, GPT-4o-mini, etc.)
-- Anthropic (Claude models via native SDK)
-- Any OpenAI-compatible provider
+For the complete 400+ page PDF report with detailed root cause analysis, before/after code examples, and verification steps:
+- [Download PDF from Google Drive](https://drive.google.com/drive/folders/1JrE9t-6iP1zpxDNmP9lx0LTRBPidZGsD?usp=drive_link)
 
-Use `--model` flag to override: `gitclaw --model anthropic:claude-sonnet-4-5-20250929`
+---
 
-### Core Concepts
+## Methodology
 
-**What is the SDK and how do I use it?**
-The SDK provides programmatic access via `query()` function that streams agent events:
-```typescript
-import { query } from "gitclaw";
-for await (const msg of query({ prompt: "hello", model: "openai:gpt-4o-mini" })) {
-  if (msg.type === "delta") process.stdout.write(msg.content);
-}
-```
+Each fix followed a consistent process:
 
-**How do local repo mode sessions work?**
-Clone a GitHub repo, run an agent on it, auto-commit to a session branch:
-```bash
-gitclaw --repo https://github.com/org/repo --pat ghp_xxx "Fix the bug"
-```
-Resume with: `gitclaw --repo URL --session gitclaw/session-xxx "Continue"`
+1. **Analysis**: Root cause identified from the detailed issue description and static code analysis
+2. **Implementation**: Source code fix applied to the relevant file(s)
+3. **Testing**: Unit test created in `src/__tests__/` validating the fix
+4. **Verification**: TypeScript type-checking via `node --experimental-strip-types`
+5. **Delivery**: Single conventional commit, branch pushed to origin
 
-**What hooks are available?**
-Hooks are lifecycle scripts or programmatic handlers in `hooks/` directory. They trigger on agent events like tool execution, session start/end, or memory updates.
+### Categories at a Glance
 
-### Development
+| Category | Count | Focus Area |
+|----------|-------|------------|
+| BUG | 35 | Functional defects |
+| SEC | 16 | Security vulnerabilities |
+| ERR | 11 | Error handling |
+| RACE | 11 | Race conditions |
+| TYPE | 12 | TypeScript type safety |
+| NET | 4 | Networking |
+| PERF | 2 | Performance |
+| CONC | 2 | Concurrency |
+| CONFIG | 4 | Configuration |
+| CQ | 2 | Code quality |
+| DEP | 3 | Dependencies |
+| FILE | 1 | File system |
+| LOG | 2 | Logging |
+| **Total** | **105** | |
 
-**How do I create custom tools?**
-Define tools in `tools/` directory using declarative YAML format. Each tool specifies name, description, parameters, and execution logic.
-
-**How do I add skills?**
-Create skill modules in `skills/` directory. Skills are composable and can be imported from installed packages or defined locally.
-
-**What telemetry options are available?**
-OpenTelemetry integration for observability:
-- Set `OTEL_EXPORTER_OTLP_ENDPOINT` for auto-enable
-- Use `OTEL_TRACES_EXPORTER=console` for local debugging
-- Jaeger quickstart with Docker
-
-### Troubleshooting
-
-**Why is my agent not responding?**
-- Check API key is set (`OPENAI_API_KEY` or equivalent)
-- Verify network connectivity to LLM provider
-- Use `--verbose` flag for detailed logs
-- Check `agent.yaml` model configuration
-
-**How do I debug agent behavior?**
-- Use console exporter: `OTEL_TRACES_EXPORTER=console gitclaw -p "test"`
-- Check spans in Jaeger: `docker run -p 16686:16686 -p 4318:4318 jaegertracing/all-in-one`
-- Inspect `memory/` directory for agent state
-
-**Where can I get help?**
-- GitHub Issues: https://github.com/open-gitagent/gitagent/issues
-- Examples: See README SDK section and CLI options
-- Contributing: See CONTRIBUTING.md for guidelines
+---
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE).
+This project is licensed under the terms found in the [LICENSE](./LICENSE) file.
+
+[Back to Top](#table-of-contents)
