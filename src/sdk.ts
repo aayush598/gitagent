@@ -345,10 +345,8 @@ export function query(options: QueryOptions): Query {
 
 				case "message_end": {
 					// Only process assistant messages — skip user/toolResult
-					const raw = event.message as any;
-					if (!raw || raw.role !== "assistant") break;
-
-					const msg = raw as AssistantMessage;
+					const msg = event.message;
+					if (!msg?.role || msg.role !== "assistant") break;
 
 					// Emit error system message if the LLM call failed
 					if (msg.stopReason === "error") {

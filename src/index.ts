@@ -139,10 +139,9 @@ function handleEvent(
 			break;
 		}
 		case "message_end": {
-			const _msgEnd = event as any;
-			if (_msgEnd.message?.role !== "user") {
-				if (_msgEnd.message?.stopReason === "error") {
-					process.stderr.write(red(`\nError: ${_msgEnd.message?.errorMessage ?? "LLM error"}\n`));
+			if (event.message?.role !== "user") {
+				if (event.message?.stopReason === "error") {
+					process.stderr.write(red(`\nError: ${event.message?.errorMessage ?? "LLM error"}\n`));
 				} else {
 					process.stdout.write("\n");
 				}
