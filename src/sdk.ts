@@ -10,6 +10,7 @@ import { loadHooksConfig, runHooks, wrapToolWithHooks } from "./hooks.js";
 import { loadDeclarativeTools } from "./tool-loader.js";
 import { toAgentTool } from "./tool-utils.js";
 import { wrapToolWithProgrammaticHooks } from "./sdk-hooks.js";
+import { wrapToolWithRateLimit } from "./tools/rate-limiter.js";
 import { mergeHooksConfigs } from "./plugins.js";
 import { initLocalSession } from "./session.js";
 import type { LocalSession } from "./session.js";
@@ -235,7 +236,11 @@ export function query(options: QueryOptions): Query {
 			);
 		}
 
-		// 5b. Wrap every tool with OpenTelemetry instrumentation. No-op if
+		// 5b. Wrap every tool with rate limiting. Applied before OpenTelemetry
+		// so the rate limit check runs first (outermost wrapper).
+		tools = tools.map(wrapToolWithRateLimit);
+
+		// 5c. Wrap every tool with OpenTelemetry instrumentation. No-op if
 		// telemetry isn't initialised — wrapToolWithOtel returns the tool
 		// unchanged in that case.
 		tools = tools.map(wrapToolWithOtel);
