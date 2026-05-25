@@ -1,6 +1,7 @@
 import { spawn } from "child_process";
 import type { AgentTool, AgentToolUpdateCallback } from "@mariozechner/pi-agent-core";
 import { cliSchema, MAX_OUTPUT, DEFAULT_TIMEOUT } from "./shared.js";
+import { createSafeEnv, scrubOutput } from "./env-redact.js";
 
 export function createCliTool(cwd: string, defaultTimeout?: number): AgentTool<typeof cliSchema> {
 	const baseTimeout = defaultTimeout ?? DEFAULT_TIMEOUT;
@@ -27,7 +28,7 @@ export function createCliTool(cwd: string, defaultTimeout?: number): AgentTool<t
 				const child = spawn("sh", ["-c", command], {
 					cwd,
 					stdio: ["ignore", "pipe", "pipe"],
-					env: { ...process.env },
+					env: createSafeEnv(),
 				});
 
 				let output = "";
@@ -43,7 +44,7 @@ export function createCliTool(cwd: string, defaultTimeout?: number): AgentTool<t
 
 					if (onUpdate && output.length <= MAX_OUTPUT) {
 						onUpdate({
-							content: [{ type: "text", text: output }],
+							content: [{ type: "text", text: scrubOutput(output) }],
 							details: undefined,
 						});
 					}
@@ -76,12 +77,12 @@ export function createCliTool(cwd: string, defaultTimeout?: number): AgentTool<t
 					}
 
 					if (timedOut) {
-						reject(new Error(`Command timed out after ${timeoutSecs} seconds\n${output}`));
+						reject(new Error(`Command timed out after ${timeoutSecs} seconds\n${scrubOutput(output)}`));
 						return;
 					}
 
 					// Truncate if needed
-					let text = output;
+					let text = scrubOutput(output);
 					if (text.length > MAX_OUTPUT) {
 						text = text.slice(-MAX_OUTPUT);
 						text = `[output truncated, showing last ~100KB]\n${text}`;

@@ -1,6 +1,7 @@
 import type { AgentTool, AgentToolUpdateCallback } from "@mariozechner/pi-agent-core";
 import type { SandboxContext } from "../sandbox.js";
 import { cliSchema, MAX_OUTPUT, DEFAULT_TIMEOUT, truncateOutput } from "./shared.js";
+import { scrubOutput } from "./env-redact.js";
 
 export function createSandboxCliTool(
 	ctx: SandboxContext,
@@ -31,7 +32,7 @@ export function createSandboxCliTool(
 					output += data;
 					if (onUpdate && output.length <= MAX_OUTPUT) {
 						onUpdate({
-							content: [{ type: "text", text: output }],
+							content: [{ type: "text", text: scrubOutput(output) }],
 							details: undefined,
 						});
 					}
@@ -40,7 +41,7 @@ export function createSandboxCliTool(
 					output += data;
 					if (onUpdate && output.length <= MAX_OUTPUT) {
 						onUpdate({
-							content: [{ type: "text", text: output }],
+							content: [{ type: "text", text: scrubOutput(output) }],
 							details: undefined,
 						});
 					}
@@ -48,7 +49,7 @@ export function createSandboxCliTool(
 			});
 
 			const exitCode = result?.exitCode ?? 0;
-			let text = truncateOutput(output) || "(no output)";
+			let text = truncateOutput(scrubOutput(output)) || "(no output)";
 
 			if (exitCode !== 0) {
 				text += `\n\nExit code: ${exitCode}`;
