@@ -77,7 +77,7 @@ function resolvePluginConfig(
 			}
 			resolved[key] = value;
 		} else if (prop.env && process.env[prop.env]) {
-			resolved[key] = coerceValue(process.env[prop.env]!, prop.type);
+			resolved[key] = coerceValue(process.env[prop.env], prop.type);
 		} else if (prop.default !== undefined) {
 			resolved[key] = prop.default;
 		}
@@ -95,9 +95,17 @@ function resolvePluginConfig(
 	return resolved;
 }
 
-function coerceValue(value: string, type: string): any {
+function coerceValue(value: string | undefined, type: string): unknown {
+	if (value === undefined || value === "") return undefined;
 	switch (type) {
-		case "number": return Number(value);
+		case "number": {
+			const n = Number(value);
+			if (!Number.isFinite(n)) {
+				console.warn(`Plugin config: invalid number value "${value}", defaulting to undefined`);
+				return undefined;
+			}
+			return n;
+		}
 		case "boolean": return value === "true" || value === "1";
 		default: return value;
 	}
