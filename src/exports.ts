@@ -60,6 +60,21 @@ export { estimateTokens, estimateMessageTokens, needsCompaction, truncateToolRes
 // Loader (escape hatch)
 export { loadAgent } from "./loader.js";
 
+// Hooks
+export type { HookDefinition, HooksConfig, HookResult } from "./hooks.js";
+
+// Workflows
+export type { SkillFlowDefinition, SkillFlowStep } from "./workflows.js";
+
+// Schedules
+export type { ScheduleDefinition } from "./schedules.js";
+
+// Plugin internals
+export type { MemoryLayerDef } from "./plugin-types.js";
+
+// Tool result
+export type { ToolResult } from "./sdk-types.js";
+
 // Telemetry (OpenTelemetry instrumentation)
 export {
 	initTelemetry,
