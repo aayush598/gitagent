@@ -106,6 +106,9 @@ async function executeHook(
 				reject(new Error(`Hook "${hook.script}" exited with code ${code}: ${stderr.trim()}`));
 				return;
 			}
+			if (stderr.trim()) {
+				console.warn(`[hooks] Hook "${hook.script}" exited with code 0 but produced stderr output: ${stderr.trim()}`);
+			}
 			try {
 				const result = JSON.parse(stdout.trim()) as HookResult;
 				promiseResolve(result);

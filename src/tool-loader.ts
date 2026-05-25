@@ -116,6 +116,10 @@ function createDeclarativeTool(
 						return;
 					}
 
+					if (stderr.trim()) {
+						console.warn(`[tool-loader] Tool "${def.name}" exited with code 0 but produced stderr output: ${stderr.trim()}`);
+					}
+
 					// Try parsing JSON output
 					let text = stdout.trim();
 					try {
