@@ -379,28 +379,42 @@ Do NOT track trivial single-command tasks (e.g. "what time is it"). But DO check
 
 	const systemPrompt = parts.join("\n\n");
 
-	// Resolve model — env config model_override > CLI flag > manifest preferred
-	const modelStr = envConfig.model_override || modelFlag || manifest.model.preferred;
-	if (!modelStr) {
+	// Resolve model — env config model_override > CLI flag > manifest preferred + fallbacks
+	const preferred = envConfig.model_override || modelFlag || manifest.model.preferred;
+	if (!preferred) {
 		throw new Error(
 			'No model configured. Either:\n  - Set model.preferred in agent.yaml (e.g., "anthropic:claude-sonnet-4-5-20250929")\n  - Pass --model provider:model on the command line',
 		);
 	}
 
-	const { provider, modelId } = parseModelString(modelStr);
+	const modelCandidates = [preferred, ...(manifest.model.fallback || [])];
 	const envBaseUrl = process.env.GITCLAW_MODEL_BASE_URL;
 
-	let model: Model<any>;
-	if (modelId.includes("@")) {
-		// Custom endpoint: provider:model-id@base-url
-		const atIndex = modelId.indexOf("@");
-		model = createCustomModel(provider, modelId.slice(0, atIndex), modelId.slice(atIndex + 1));
-	} else if (envBaseUrl) {
-		// Environment-specified base URL overrides all providers
-		model = createCustomModel(provider, modelId, envBaseUrl);
-	} else {
-		// Standard registered model
-		model = getModel(provider as any, modelId as any);
+	let model: Model<any> | null = null;
+	const errors: string[] = [];
+
+	for (const candidate of modelCandidates) {
+		const { provider, modelId } = parseModelString(candidate);
+		try {
+			if (modelId.includes("@")) {
+				const atIndex = modelId.indexOf("@");
+				model = createCustomModel(provider, modelId.slice(0, atIndex), modelId.slice(atIndex + 1));
+			} else if (envBaseUrl) {
+				model = createCustomModel(provider, modelId, envBaseUrl);
+			} else {
+				model = getModel(provider as any, modelId as any);
+			}
+			break;
+		} catch (err: any) {
+			errors.push(`${candidate}: ${err.message}`);
+			console.warn(`[loader] Model "${candidate}" failed: ${err.message}`);
+		}
+	}
+
+	if (!model) {
+		throw new Error(
+			`All model candidates failed:\n` + errors.map((e) => `  - ${e}`).join("\n"),
+		);
 	}
 
 	// For custom providers not in pi-ai's env key map, ensure an API key is available.
