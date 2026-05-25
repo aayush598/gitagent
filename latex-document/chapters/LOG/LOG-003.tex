@@ -1,0 +1,110 @@
+\section{LOG-003: ANSI Escape Codes in File Logs}
+\label{sec:log-003}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & LOG-003 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Logging \\
+\textbf{Branch} & \branchref{fix/LOG-003-ansi-codes-file-logs} \\
+\textbf{Changes} & \branchdiff{fix/LOG-003-ansi-codes-file-logs} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+When log output is redirected to a file, ANSI escape codes embedded in log messages corrupt the file. The codebase uses ANSI helpers (\texttt{dim()}, \texttt{bold()}, \texttt{red()}, \texttt{green()}) extensively in \texttt{src/index.ts} and \texttt{src/voice/server.ts}. The \texttt{stripAnsi()} function in \texttt{src/voice/server.ts:52} uses a simplistic regex that only matches single-parameter codes like \texttt{\textbackslash{}x1b[2m}, missing multi-parameter codes like \texttt{\textbackslash{}x1b[38;5;196m} (256-color) and combined codes like \texttt{\textbackslash{}x1b[1;31m} (bold + red).
+
+The fix replaces the simplistic regex with a comprehensive ANSI escape sequence pattern that matches all standard ANSI variants and ensures all messages entering the \texttt{LogRingBuffer} are properly sanitized.
+
+\subsection*{Root Cause Analysis}
+
+The original regex was too simplistic:
+
+\begin{lstlisting}[language=TypeScript]
+// src/voice/server.ts:52 — Before fix
+function stripAnsi(s: string): string {
+    return s.replace(/\x1b\[\d*m/g, "");
+}
+\end{lstlisting}
+
+This regex only matches patterns like \texttt{\textbackslash{}x1b[2m} (single digit) or \texttt{\textbackslash{}x1b[31m} (two digits). It misses:
+\begin{itemize}
+    \item Multi-parameter codes: \texttt{\textbackslash{}x1b[38;5;196m} (256-color foreground)
+    \item Combined codes: \texttt{\textbackslash{}x1b[1;31m} (bold + red)
+    \item OSC sequences: \texttt{\textbackslash{}x1b]0;title\textbackslash{}x07}
+\end{itemize}
+
+When stdout is piped to a file, the raw file contains unreadable escape sequences:
+
+\begin{lstlisting}[language=text]
+←[1mMyAgent v0.1.0←[0m
+←[2mModel: openai:gpt-4o←[0m
+←[31mError: API key not set←[0m
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+
+The fix replaces the simplistic regex with a comprehensive pattern that handles all ANSI escape sequence variants:
+
+\begin{lstlisting}[language=TypeScript]
+// src/voice/server.ts — After fix
+function stripAnsi(s: string): string {
+    return s.replace(
+        /[\x1b\x9b][[\]()#;?]*(?:\d{1,4}(?:;\d{0,4})*)?
+         [\dA-PRZcf-nq-uy=><~]/g,
+        "",
+    );
+}
+\end{lstlisting}
+
+This comprehensive regex handles:
+\begin{itemize}
+    \item Simple codes: \texttt{\textbackslash{}x1b[1m}, \texttt{\textbackslash{}x1b[0m}, \texttt{\textbackslash{}x1b[31m}
+    \item Combined codes: \texttt{\textbackslash{}x1b[1;31m} (bold red)
+    \item 256-color codes: \texttt{\textbackslash{}x1b[38;5;196m}
+    \item True color codes: \texttt{\textbackslash{}x1b[38;2;255;0;0m}
+    \item CSI sequences with multiple parameters
+\end{itemize}
+
+The function is called on all messages entering the \texttt{LogRingBuffer} and a detection mechanism suppresses ANSI codes globally when stdout is detected as a file or pipe.
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/voice/server.ts} --- replaced \texttt{stripAnsi} regex with comprehensive pattern
+    \item \srcfile{src/\_\_tests\_\_/log-003.test.ts} --- new ANSI stripping tests
+\end{itemize}
+
+\subsection*{Verification}
+\begin{lstlisting}[language=TypeScript]
+// log-003.test.ts
+const stripAnsi = (s: string): string => {
+    return s.replace(
+        /[\x1b\x9b][[\]()#;?]*(?:\d{1,4}(?:;\d{0,4})*)?
+         [\dA-PRZcf-nq-uy=><~]/g,
+        "",
+    );
+};
+
+test("stripAnsi handles simple bold code", () => {
+    strictEqual(stripAnsi("\x1b[1mBold\x1b[0m"), "Bold");
+});
+
+test("stripAnsi handles 256-color codes", () => {
+    strictEqual(stripAnsi("\x1b[38;5;196mRed\x1b[0m"), "Red");
+});
+
+test("stripAnsi handles combined bold+red", () => {
+    strictEqual(stripAnsi("\x1b[1;31mBoldRed\x1b[0m"), "BoldRed");
+});
+
+test("stripAnsi handles dim code", () => {
+    strictEqual(stripAnsi("\x1b[2mdim text\x1b[0m"), "dim text");
+});
+
+test("stripAnsi leaves plain text unchanged", () => {
+    strictEqual(stripAnsi("hello world"), "hello world");
+});
+
+test("stripAnsi handles empty string", () => {
+    strictEqual(stripAnsi(""), "");
+});
+\end{lstlisting}

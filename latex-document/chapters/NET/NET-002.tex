@@ -1,0 +1,68 @@
+\section{NET-002: No Connection Pooling}
+\label{sec:net-002}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & NET-002 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Network \\
+\textbf{Branch} & \branchref{fix/NET-002-connection-pooling}
+\textbf{Changes} & \branchdiff{fix/NET-002-connection-pooling} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+Every HTTP fetch creates a new TCP connection. The \code{ComposioClient}, Telegram polling, OpenAI API calls, and all other HTTP clients do not reuse connections. This incurs TCP handshake latency (1-3 RTT) on every request and can exhaust ephemeral ports under high throughput. While Node.js 18+ \code{fetch()} uses \code{undici} under the hood, the codebase does not configure or expose connection pooling.
+
+\subsection*{Root Cause Analysis}
+Each \code{fetch()} call uses the default dispatcher without pooling:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — no connection pool configured
+const resp = await fetch(url, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+});
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+A global HTTP client configuration sets up connection pooling:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — src/http-client.ts
+import { Agent, setGlobalDispatcher } from "undici";
+
+export function configureHttpClient(): void {
+    const agent = new Agent({
+        connections: 100,
+        keepAliveTimeout: 60000,
+        keepAliveMaxTimeout: 300000,
+    });
+    setGlobalDispatcher(agent);
+}
+
+// Called at startup in src/index.ts
+async function main(): Promise<void> {
+    configureHttpClient();
+    // ...
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/http-client.ts} — New shared HTTP client configuration module
+    \item \srcfile{src/index.ts} — configureHttpClient() called at startup
+    \item \srcfile{src/\_\_tests\_\_/net-002.test.ts}
+    \item \srcfile{package.json} — undici dependency
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify the global dispatcher is replaced:
+
+\begin{lstlisting}[language=TypeScript]
+const undici = await import("undici");
+const original = undici.getGlobalDispatcher();
+const { configureHttpClient } = await import("../http-client.ts");
+configureHttpClient();
+const updated = undici.getGlobalDispatcher();
+ok(updated !== original, "global dispatcher should be replaced");
+\end{lstlisting}

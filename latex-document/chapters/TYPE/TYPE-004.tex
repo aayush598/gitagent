@@ -1,0 +1,64 @@
+\section{TYPE-004: Unvalidated JSON Parsed Results}
+\label{sec:type-004}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & TYPE-004 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Type Safety \\
+\textbf{Branch} & \branchref{fix/TYPE-004-validate-json-parse-in-task-tracker}
+\textbf{Changes} & \branchdiff{fix/TYPE-004-validate-json-parse-in-task-tracker} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The task tracker at \srcfile{src/tools/task-tracker.ts:39-40} uses \code{JSON.parse(raw) as TasksStore} to load persisted task data. The \code{as TasksStore} cast tells TypeScript to trust that the raw JSON matches the \code{TasksStore} interface, but there is no runtime validation. If the file is corrupted, contains unexpected data, or was written by a different code version, the cast hides type mismatches and causes runtime errors downstream.
+
+\subsection*{Root Cause Analysis}
+The parsed result is cast without validation:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — unchecked cast
+const raw = await readFile(tasksPath, "utf-8");
+const tasksData = JSON.parse(raw) as TasksStore;  // No validation
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+A type guard validates the parsed structure:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — runtime type guard
+function isTasksStore(data: unknown): data is TasksStore {
+    if (typeof data !== "object" || data === null) return false;
+    const d = data as Record<string, unknown>;
+    return Array.isArray(d.tasks) && d.tasks.every(
+        (t: unknown) =>
+            typeof t === "object" && t !== null &&
+            typeof (t as Record<string, unknown>).id === "string" &&
+            typeof (t as Record<string, unknown>).objective === "string" &&
+            Array.isArray((t as Record<string, unknown>).steps),
+    );
+}
+
+async function loadTasks(gitagentDir: string): Promise<TasksStore> {
+    const tasksFile = join(gitagentDir, "learning", "tasks.json");
+    try {
+        const raw = await readFile(tasksFile, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (!isTasksStore(parsed)) {
+            console.warn("Invalid tasks.json format, starting fresh");
+            return { tasks: [] };
+        }
+        return parsed;
+    } catch {
+        return { tasks: [] };
+    }
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tools/task-tracker.ts} — loadTasks() function
+    \item \srcfile{src/\_\_tests\_\_/type-004.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Invalid JSON now returns an empty store instead of silently producing incorrect types.

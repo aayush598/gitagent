@@ -1,0 +1,82 @@
+\section{RACE-011: SIGINT Handler Reentrancy}
+\label{sec:race-011}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & RACE-011 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Race Condition \\
+\textbf{Branch} & \branchref{fix/RACE-011-sigint-reentrancy}
+\textbf{Changes} & \branchdiff{fix/RACE-011-sigint-reentrancy} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The SIGINT handler in \srcfile{src/index.ts} uses a \code{stopping} boolean flag to guard against reentrancy, but the REPL mode has a separate \code{rl.on("SIGINT")} handler. Both are registered on \code{process.on("SIGINT")}, meaning both fire on a single SIGINT. The voice mode handler and REPL handler both call \code{process.exit(0)} in their \code{.finally()}, causing potential double-cleanup, race conditions during shutdown, and orphaned resources.
+
+\subsection*{Root Cause Analysis}
+Two separate SIGINT handlers with overlapping behavior:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — two handlers registered on same event
+// Voice mode handler (line 426)
+process.on("SIGINT", () => {
+    if (stopping) { process.exit(1); }
+    stopping = true;
+    cleanup().finally(() => process.exit(0));
+});
+
+// REPL handler (line 802) — also fires on same SIGINT
+rl.on("SIGINT", () => {
+    if (agent.state.isStreaming) { agent.abort(); }
+    else {
+        stopSandbox().finally(() => process.exit(0));
+    }
+});
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+A single process-level handler with reentrancy guard and consolidated cleanup:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — single process-level handler
+let replStopping = false;
+process.on("SIGINT", () => {
+    if (replStopping) {
+        process.exit(1);
+    }
+    replStopping = true;
+
+    if (agent.state.isStreaming) {
+        agent.abort();
+    } else {
+        console.log("\nBye!");
+        rl.close();
+        if (localSession) { await localSession.finalize(); }
+        try { _session.end({ "gitclaw.cost_usd": _totalCostUsd }); } catch { /* ignore */ }
+        stopSandbox().finally(() => drainShutdown().finally(() => process.exit(0)));
+    }
+});
+\end{lstlisting}
+
+Consolidating to a single handler prevents double-firing and ensures cleanup runs at most once. The \code{drainShutdown()} from RACE-010 is also integrated.
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/index.ts} — SIGINT handler consolidated
+    \item \srcfile{src/\_\_tests\_\_/sigint-reentrancy.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify the reentrancy guard works:
+
+\begin{lstlisting}[language=TypeScript]
+let stopping = false;
+function handleSIGINT() {
+    if (stopping) { calls.push("force-exit"); return; }
+    stopping = true;
+    calls.push("cleanup-start");
+}
+handleSIGINT();
+assert.equal(calls[0], "cleanup-start");
+handleSIGINT();
+assert.equal(calls[1], "force-exit");
+\end{lstlisting}

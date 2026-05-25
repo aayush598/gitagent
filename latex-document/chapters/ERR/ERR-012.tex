@@ -1,0 +1,83 @@
+\section{ERR-012: No Validation of Script Exit Codes}
+\label{sec:err-012}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & ERR-012 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Error Handling \\
+\textbf{Branch} & \branchref{fix/ERR-012-exit-code-validation}
+\textbf{Changes} & \branchdiff{fix/ERR-012-exit-code-validation} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+In \srcfile{src/tool-loader.ts}, a declarative tool script's exit code is checked only for zero vs non-zero. If the script exits with code 0 but writes error information to stderr, the error is silently discarded. Many CLI tools write warnings to stderr even on success, but some tools write errors to stderr and still exit 0 — the current code treats all such output as successful execution. The same pattern exists in \srcfile{src/hooks.ts} for hook execution.
+
+\subsection*{Root Cause Analysis}
+The original code does not check stderr when exit code is 0:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — no stderr check on successful exit
+// src/tool-loader.ts
+child.on("close", (code) => {
+    if (code !== 0 && code !== null) {
+        reject(new Error(`Tool "${def.name}" exited with code ${code}: ${stderr.trim()}`));
+        return;
+    }
+    // code === 0 — always treated as success
+});
+
+// src/hooks.ts
+child.on("close", (code) => {
+    if (code !== 0) {
+        reject(new Error(`Hook "${hook.script}" exited with code ${code}: ${stderr.trim()}`));
+        return;
+    }
+    // code === 0 — success, even if stderr has content
+});
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+Both locations now warn when stderr is non-empty on a successful exit:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — stderr is checked even on exit code 0
+// src/tool-loader.ts
+child.on("close", (code) => {
+    if (code !== 0 && code !== null) { /* reject */ return; }
+
+    if (stderr.trim()) {
+        console.warn(`[tool-loader] Tool "${def.name}" exited with code 0 but produced stderr output: ${stderr.trim()}`);
+    }
+
+    // Continue to JSON parsing
+});
+
+// src/hooks.ts
+child.on("close", (code) => {
+    if (code !== 0) { /* reject */ return; }
+
+    if (stderr.trim()) {
+        console.warn(`[hooks] Hook "${hook.script}" exited with code 0 but produced stderr output: ${stderr.trim()}`);
+    }
+
+    try { /* JSON parse */ } catch { /* fallback */ }
+});
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tool-loader.ts} — Line 114 (after exit code check)
+    \item \srcfile{src/hooks.ts} — Line 106 (after exit code check)
+    \item \srcfile{src/\_\_tests\_\_/exit-code-validation.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify the warning behavior:
+
+\begin{lstlisting}[language=TypeScript]
+const stderr = "Warning: deprecated API usage";
+const name = "test-tool";
+console.warn(`[tool-loader] Tool "${name}" exited with code 0 but produced stderr output: ${stderr}`);
+assert.ok(captured.includes("[tool-loader]"));
+assert.ok(captured.includes("deprecated API"));
+\end{lstlisting}

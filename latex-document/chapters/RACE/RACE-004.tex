@@ -1,0 +1,82 @@
+\section{RACE-004: Channel Push After Abort / Agent End Race}
+\label{sec:race-004}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & RACE-004 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Race Condition \\
+\textbf{Branch} & \branchref{fix/RACE-004-channel-push-after-abort}
+\textbf{Changes} & \branchdiff{fix/RACE-004-channel-push-after-abort} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+In \srcfile{src/sdk.ts}, the \code{query()} function creates an event channel consumed via \code{pull()}. When the agent ends or an error occurs, \code{channel.finish()} is called. However, the event subscription may continue firing events before the catch/finally block completes. If a \code{push()} occurs after \code{finish()}, the data is silently lost — the promise resolver is null and the buffer is ignored. Tool results, assistant messages, or error messages can be dropped without the consumer ever seeing them.
+
+\subsection*{Root Cause Analysis}
+The \code{push()} method does not check the \code{done} flag:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — push() accepts data after finish()
+function createChannel<T>(): Channel<T> {
+    const buffer: T[] = [];
+    let resolve: ((v: IteratorResult<T>) => void) | null = null;
+    let done = false;
+
+    return {
+        push(v: T) {
+            if (resolve) {
+                resolve({ value: v, done: false });
+                resolve = null;
+            } else {
+                buffer.push(v);  // Still pushes even if finished
+            }
+        },
+        finish() {
+            done = true;
+            if (resolve) {
+                resolve({ value: undefined as any, done: true });
+                resolve = null;
+            }
+        },
+    };
+}
+\end{lstlisting}
+
+After \code{finish()}, events like \code{message\_end} or \code{tool\_execution\_end} can still fire and push to an orphaned buffer that the consumer will never read.
+
+\subsection*{Fix Implementation}
+A guard prevents push after finish:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — push() drops data after finish()
+push(v: T) {
+    if (done) return;  // Silently drop after finish
+    if (resolve) {
+        resolve({ value: v, done: false });
+        resolve = null;
+    } else {
+        buffer.push(v);
+    }
+},
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/sdk.ts} — push() method in createChannel()
+    \item \srcfile{src/\_\_tests\_\_/channel-push-after-abort.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify pushes are dropped after finish:
+
+\begin{lstlisting}[language=TypeScript]
+const channel = {
+    push(v: string) { if (done) return; buffer.push(v); },
+    finish() { done = true; },
+};
+channel.push("a"); channel.push("b");
+assert.equal(buffer.length, 2, "Should accept before finish");
+channel.finish();
+channel.push("c");
+assert.equal(buffer.length, 2, "Should drop after finish");
+\end{lstlisting}

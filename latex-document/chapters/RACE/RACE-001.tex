@@ -1,0 +1,92 @@
+\section{RACE-001: Task File Read-Modify-Write Race (TOCTOU)}
+\label{sec:race-001}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & RACE-001 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Race Condition \\
+\textbf{Branch} & \branchref{fix/RACE-001-toctou-task-file}
+\textbf{Changes} & \branchdiff{fix/RACE-001-toctou-task-file} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \code{task\_tracker} tool in \srcfile{src/tools/task-tracker.ts} uses a naive read-modify-write pattern for persisting task records. Each invocation reads the entire \code{tasks.json} file from disk, mutates the in-memory object, and writes it back — all without holding a lock. If two concurrent tool calls reach the \code{loadTasks} / \code{saveTasks} sequence simultaneously, one will silently overwrite the other's changes, causing lost updates, duplicated tasks, or corrupted state. This is a classic TOCTOU race condition, and the window is widened by async skill search operations between load and save.
+
+\subsection*{Root Cause Analysis}
+Every action follows this vulnerable pattern:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — no lock between read and write
+const store = await loadTasks(gitagentDir);   // READ at time T1
+// ... async gap with skill searches ...
+store.tasks.push(task);                        // MODIFY
+await saveTasks(gitagentDir, store);           // WRITE at time T2 — overwrites
+\end{lstlisting}
+
+The \code{begin} action widens the race window with async operations between load and save:
+
+\begin{lstlisting}[language=TypeScript]
+const store = await loadTasks(gitagentDir);
+const [localMatches, mpMatches] = await Promise.all([
+    searchLocalSkills(agentDir, params.objective),
+    searchSkillsMP(params.objective),
+]);
+// ... build task ...
+store.tasks.push(task);
+await saveTasks(gitagentDir, store);
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+A mutex (\code{TaskMutex}) serializes all task tracker operations:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — mutex serializes concurrent operations
+class TaskMutex {
+    private queue: (() => void)[] = [];
+    private locked = false;
+
+    async acquire<T>(fn: () => Promise<T>): Promise<T> {
+        await new Promise<void>((resolve) => {
+            if (!this.locked) { this.locked = true; resolve(); }
+            else { this.queue.push(resolve); }
+        });
+        try { return await fn(); }
+        finally {
+            if (this.queue.length > 0) { const next = this.queue.shift()!; next(); }
+            else { this.locked = false; }
+        }
+    }
+}
+
+const taskMutex = new TaskMutex();
+
+// Wrapped execute method
+execute: async (_toolCallId, rawParams, signal) => {
+    return taskMutex.acquire(async () => {
+        const params = rawParams as Static<typeof taskTrackerSchema>;
+        if (signal?.aborted) throw new Error("Operation aborted");
+        const store = await loadTasks(gitagentDir);
+        // ... action logic ...
+    });
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tools/task-tracker.ts} — execute() method wrapped in mutex
+    \item \srcfile{src/\_\_tests\_\_/toctou-task-file.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify the mutex serializes concurrent operations:
+
+\begin{lstlisting}[language=TypeScript]
+const mutex = new TestMutex();
+const order: number[] = [];
+await Promise.all([
+    mutex.acquire(async () => { await new Promise((r) => setTimeout(r, 10)); order.push(1); }),
+    mutex.acquire(async () => { order.push(2); }),
+    mutex.acquire(async () => { order.push(3); }),
+]);
+assert.equal(order[0], 1, "First acquire should run first");
+\end{lstlisting}

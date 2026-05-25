@@ -1,0 +1,38 @@
+\section{TYPE-002: as any Assertions in Model Handling}
+\label{sec:type-002}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & TYPE-002 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Type Safety \\
+\textbf{Branch} & \branchref{fix/TYPE-002-remove-as-any-in-model-handling}
+\textbf{Changes} & \branchdiff{fix/TYPE-002-remove-as-any-in-model-handling} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+At \srcfile{src/loader.ts:418}, the model's \code{provider} property is forcibly set via \code{(model as any).provider = "openai"}. This bypasses the TypeScript type system and mutates the \code{Model} object in-place, violating the type contract. The \code{as any} is unnecessary — the \code{provider} field already allows \code{string} assignment. If \code{Model} is refactored to use a getter or readonly property, this silent mutation could cause bugs.
+
+\subsection*{Root Cause Analysis}
+The \code{as any} cast is used unnecessarily:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — unnecessary as any cast
+(model as any).provider = "openai";
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+The \code{as any} cast is removed:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — direct property assignment
+model.provider = "openai";
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/loader.ts} — Line 418
+    \item \srcfile{src/\_\_tests\_\_/type-002.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+TypeScript compilation passes without the \code{as any} cast.

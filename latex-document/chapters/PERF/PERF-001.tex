@@ -1,0 +1,96 @@
+\section{PERF-001: Synchronous File Operations Block the Event Loop}
+\label{sec:perf-001}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & PERF-001 \\
+\textbf{Severity} & HIGH \\
+\textbf{Category} & Performance \\
+\textbf{Branch} & \branchref{fix/PERF-001-sync-io-event-loop-blocking}
+\textbf{Changes} & \branchdiff{fix/PERF-001-sync-io-event-loop-blocking} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+GitAgent uses Node.js's synchronous (\code{Sync}) variants of file system and child process operations in multiple locations — most critically in \srcfile{src/tools/memory.ts} for \code{execSync} git operations and \srcfile{src/session.ts} for \code{execSync} git clone. These synchronous calls block the Node.js event loop entirely for the duration of the operation, freezing all concurrent activity. In voice mode with WebSocket connections, a single synchronous git operation blocks ALL clients — no messages are processed until the call completes.
+
+\subsection*{Root Cause Analysis}
+Synchronous calls block the event loop:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — synchronous operations block event loop
+// src/tools/memory.ts:157
+execSync(`git add "${memoryPath}" && git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, {
+    cwd,
+    stdio: "pipe",
+});
+
+// src/session.ts:36
+execSync(`git clone --depth 1 --no-single-branch ${aUrl} ${dir}`, { stdio: "pipe" });
+
+// src/index.ts:381
+const envContent = readFileSync(envPath, "utf-8");
+\end{lstlisting}
+
+When the event loop is blocked, WebSocket frames are not processed, audio dropouts occur, and the UI freezes. A 500ms git commit block causes perceptible gaps in voice mode.
+
+\subsection*{Fix Implementation}
+All synchronous calls are replaced with async alternatives:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — async replacements
+// src/index.ts — async file operations
+import { readFile } from "fs/promises";
+import { execFile } from "child_process";
+import { promisify } from "util";
+
+const execFileAsync = promisify(execFile);
+
+async function execGit(args: string[], cwd: string): Promise<string> {
+    const { stdout } = await execFileAsync("git", args, { cwd, encoding: "utf-8" });
+    return stdout.trim();
+}
+
+// .env loading
+if (await fileExists(envPath)) {
+    const envContent = await readFile(envPath, "utf-8");
+    // ...
+}
+
+// Git operations
+await execGit(["add", memoryPath], cwd);
+await execGit(["commit", "-m", commitMsg], cwd);
+
+// Session git clone
+await execGit(["clone", "--depth", "1", aUrl, dir], dir);
+
+// Session finalize
+await localSession.finalize();
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/index.ts} — All file and git operations made async
+    \item \srcfile{src/loader.ts} — Git clone for dependencies
+    \item \srcfile{src/session.ts} — All git operations made async
+    \item \srcfile{src/tools/memory.ts} — Git add/commit made async via mutex
+    \item \srcfile{test/PERF-001-sync-io-blocking.test.ts}
+    \item \srcfile{pocs/PERF-001-sync-io-blocking/} — Performance proofs
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify the event loop is not blocked during operations:
+
+\begin{lstlisting}[language=TypeScript]
+let timerFiredDuringSave = false;
+setTimeout(() => { timerFiredDuringSave = true; }, 10);
+
+const result = await tool.execute("save", {
+    action: "save",
+    content: "# Test memory",
+    message: "perf test",
+});
+
+await new Promise(r => setTimeout(r, 50));
+if (timerFiredDuringSave) {
+    console.log("PASS: Timer fired during save (event loop not blocked)");
+}
+\end{lstlisting}

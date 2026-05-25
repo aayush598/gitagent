@@ -1,0 +1,66 @@
+\section{TYPE-003: Unconstrained Generic Parameters in toAgentTool}
+\label{sec:type-003}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & TYPE-003 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Type Safety \\
+\textbf{Branch} & \branchref{fix/TYPE-003-constrain-generic-in-toAgentTool}
+\textbf{Changes} & \branchdiff{fix/TYPE-003-constrain-generic-in-toAgentTool} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \code{toAgentTool} function at \srcfile{src/tool-utils.ts:7} returns \code{AgentTool<any>}, discarding the TypeBox schema type. The caller loses all type information about the tool's parameters. When the tool is executed, the \code{params} argument is typed as \code{any}, allowing invalid parameters to be passed without compile-time errors.
+
+\subsection*{Root Cause Analysis}
+The function signature uses \code{any} instead of propagating the schema type:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — unconstrained generic and any params
+export function toAgentTool(def: GCToolDefinition): AgentTool<any> {
+    const schema = buildTypeboxSchema(def.inputSchema);
+    return {
+        name: def.name,
+        parameters: schema,
+        execute: async (
+            _toolCallId: string,
+            params: any,  // No type checking
+            signal?: AbortSignal,
+        ) => {
+            const result = await def.handler(params, signal);
+            // ...
+        },
+    };
+}
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+The return type is tightened and params typed as \code{Record<string, unknown>}:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — constrained return type
+export function toAgentTool(def: GCToolDefinition): AgentTool<ReturnType<typeof buildTypeboxSchema>> {
+    const schema = buildTypeboxSchema(def.inputSchema);
+    return {
+        name: def.name,
+        parameters: schema,
+        execute: async (
+            _toolCallId: string,
+            params: Record<string, unknown>,  // Now typed
+            signal?: AbortSignal,
+        ) => {
+            const result = await def.handler(params, signal);
+            // ...
+        },
+    };
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tool-utils.ts} — Lines 4, 14
+    \item \srcfile{src/\_\_tests\_\_/type-003.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+TypeScript compilation verifies the return type is now constrained.

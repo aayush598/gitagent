@@ -1,0 +1,112 @@
+\section{PERF-002: Unbounded Memory Growth in Voice Server Log Ring Buffer}
+\label{sec:perf-002}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & PERF-002 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Performance \\
+\textbf{Branch} & \branchref{fix/PERF-002-voice-server-memory-growth}
+\textbf{Changes} & \branchdiff{fix/PERF-002-voice-server-memory-growth} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The voice server's \code{LogRingBuffer} (\srcfile{src/voice/server.ts:34-47}) caps its entry count at 2000 but places no limit on the size of individual messages. Log entries can contain serialized tool results, full file reads, or long LLM responses. Over a long-running voice session, the buffer grows to consume significant heap memory. Because \code{.shift()} is used to evict old entries, the underlying array never shrinks its internal capacity, leading to a memory leak pattern. With an average log message size of 4KB, the buffer holds 8MB minimum; with large tool results of 100KB+, it can reach 200MB+.
+
+\subsection*{Root Cause Analysis}
+The original implementation has three problems:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — unbounded entry size and backing store leak
+class LogRingBuffer {
+    private buf: LogEntry[] = [];
+    private nextId = 1;
+    private cap: number;
+    constructor(capacity = 2000) { this.cap = capacity; }
+
+    push(source, level, message): LogEntry {
+        const entry = { id: this.nextId++, ts: new Date().toISOString(), source, level, message };
+        this.buf.push(entry);
+        if (this.buf.length > this.cap) this.buf.shift();  // Backing store never shrinks
+        return entry;
+    }
+
+    all(): LogEntry[] { return this.buf.slice(); }  // Duplicates all data
+    since(id: number): LogEntry[] { return this.buf.filter(e => e.id > id); }
+}
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+A fixed-size circular buffer with message truncation replaces the array-based implementation:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — fixed-size circular buffer with truncation
+const MAX_LOG_MESSAGE_LENGTH = 2000;
+
+class LogRingBuffer {
+    private buf: (LogEntry | null)[];
+    private nextId = 1;
+    private writeIdx = 0;
+    private count = 0;
+
+    constructor(capacity = 2000) {
+        this.buf = new Array(capacity).fill(null);
+    }
+
+    push(source, level, message): LogEntry {
+        const truncated = message.length > MAX_LOG_MESSAGE_LENGTH
+            ? message.slice(0, MAX_LOG_MESSAGE_LENGTH) + "... [truncated]"
+            : message;
+
+        const entry = {
+            id: this.nextId++,
+            ts: new Date().toISOString(),
+            source, level,
+            message: truncated,
+        };
+
+        this.buf[this.writeIdx] = entry;
+        this.writeIdx = (this.writeIdx + 1) % this.buf.length;
+        if (this.count < this.buf.length) this.count++;
+        return entry;
+    }
+
+    all(): LogEntry[] {
+        const result: LogEntry[] = [];
+        for (let i = 0; i < this.count; i++) {
+            const idx = (this.writeIdx - this.count + i + this.buf.length) % this.buf.length;
+            const entry = this.buf[idx];
+            if (entry) result.push(entry);
+        }
+        return result;
+    }
+
+    since(id: number): LogEntry[] {
+        return this.all().filter(e => e.id > id);
+    }
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/voice/server.ts} — LogRingBuffer class completely rewritten
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify bounded memory and truncation:
+
+\begin{lstlisting}[language=TypeScript]
+// Test truncation
+const buf = new FixedLogRingBuffer(10);
+const large = "x".repeat(5000);
+buf.push("test", "info", large);
+const entries = buf.all();
+assert(entries[0].message.length < 2100);
+assert(entries[0].message.includes("..."));
+
+// Test fixed memory
+const buf2 = new FixedLogRingBuffer(100);
+for (let i = 0; i < 10000; i++) {
+    buf2.push("test", "info", `message ${i}`);
+}
+assert(buf2.all().length === 100);
+\end{lstlisting}

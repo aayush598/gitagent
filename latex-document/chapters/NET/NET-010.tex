@@ -1,0 +1,58 @@
+\section{NET-010: No IPv6 Support}
+\label{sec:net-010}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & NET-010 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Network \\
+\textbf{Branch} & \branchref{fix/NET-010-ipv6-support}
+\textbf{Changes} & \branchdiff{fix/NET-010-ipv6-support} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The codebase does not explicitly handle IPv6 connectivity. In \srcfile{src/voice/server.ts:1942}, URL parsing creates URLs with \code{http://localhost:\$\{port\}} which resolves only to IPv4 \code{127.0.0.1}, not IPv6 \code{::1}. In IPv6-only environments (certain cloud containers, Tailscale, some Kubernetes clusters), the voice server binds to IPv6 but clients connecting via \code{localhost} will fail. Additionally, no DNS resolution preference is configured, causing dual-stack timeout issues on systems with broken IPv6 connectivity.
+
+\subsection*{Root Cause Analysis}
+Hardcoded \code{localhost} and no DNS ordering:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — http://localhost resolves only to IPv4
+const url = new URL(req.url || "/", `http://localhost:${port}`);
+
+// No DNS preference set
+// Default behavior may try IPv6 first, causing 5-10s timeout
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+DNS ordering is configured and \code{localhost} is replaced with explicit IP:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — DNS order and explicit IP
+import { setDefaultResultOrder } from "dns";
+
+// At the top of src/index.ts
+setDefaultResultOrder("ipv4first");
+
+// In src/voice/server.ts — use 127.0.0.1 explicitly
+const url = new URL(req.url || "/", `http://127.0.0.1:${port}`);
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/index.ts} — setDefaultResultOrder("ipv4first")
+    \item \srcfile{src/voice/server.ts} — URL construction with 127.0.0.1
+    \item \srcfile{src/\_\_tests\_\_/net-010.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify DNS ordering and URL construction:
+
+\begin{lstlisting}[language=TypeScript]
+const dns = await import("dns");
+dns.setDefaultResultOrder("ipv4first");
+strictEqual(typeof dns.setDefaultResultOrder, "function");
+
+const url = new URL("/health", "http://127.0.0.1:3333");
+strictEqual(url.hostname, "127.0.0.1");
+strictEqual(url.port, "3333");
+\end{lstlisting}

@@ -1,0 +1,84 @@
+\section{CQ-025: Unused Imports}
+\label{sec:cq-025}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & CQ-025 \\
+\textbf{Severity} & Low \\
+\textbf{Category} & Code Quality \\
+\textbf{Branch} & \branchref{fix/CQ-025-unused-imports} \\
+\textbf{Changes} & \branchdiff{fix/CQ-025-unused-imports} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+Several TypeScript files import modules that are never used in the file's own code. Examples include \texttt{src/index.ts} importing both \texttt{readFile} from \texttt{fs/promises} and \texttt{existsSync}/\texttt{readFileSync} from \texttt{fs} where some may be unused, and \texttt{src/voice/server.ts} importing a large set of sync FS functions where some have been superseded by async alternatives. Unused imports increase bundle size (when bundling), slow down type checking, and confuse readers.
+
+The fix enables \texttt{noUnusedLocals} and \texttt{noUnusedParameters} in \texttt{tsconfig.json} and removes all detected unused imports across the codebase.
+
+\subsection*{Root Cause Analysis}
+
+Static analysis of import statements across the codebase reveals patterns where imports were either:
+
+\begin{itemize}
+    \item Leftovers from earlier refactoring (e.g., switching from sync to async FS operations)
+    \item Re-exports via \texttt{import ... from} that are never referenced in the file
+    \item Imports of types or values that the developer intended to use but never did
+\end{itemize}
+
+For example, \texttt{src/index.ts} imports both sync and async variants:
+
+\begin{lstlisting}[language=TypeScript]
+// src/index.ts — Before fix: mixed sync/async imports
+import { readFile, mkdir, writeFile, stat, access } from "fs/promises";
+import { existsSync, readFileSync } from "fs";
+\end{lstlisting}
+
+And \texttt{src/voice/server.ts} imports the entire sync FS API alongside async equivalents:
+
+\begin{lstlisting}[language=TypeScript]
+// src/voice/server.ts — Before fix: overlapping imports
+import { readFileSync, readdirSync, statSync, existsSync,
+    writeFileSync, mkdirSync, appendFileSync, rmSync,
+    createReadStream } from "fs";
+import { writeFile, readFile, mkdir, stat } from "fs/promises";
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+
+The fix involves two steps:
+
+\begin{enumerate}
+    \item Enable strict unused checking in \texttt{tsconfig.json}:
+    \begin{lstlisting}[language=TypeScript]
+    // tsconfig.json
+    {
+        "compilerOptions": {
+            "noUnusedLocals": true,
+            "noUnusedParameters": true
+        }
+    }
+    \end{lstlisting}
+    \item Remove all imports flagged by the compiler across the codebase, including:
+    \begin{itemize}
+        \item Removed unused \texttt{access} from \texttt{src/index.ts} FS imports
+        \item Removed duplicate sync FS imports from \texttt{src/voice/server.ts} where async equivalents were already used
+    \end{itemize}
+\end{enumerate}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/index.ts} --- cleaned up mixed sync/async FS imports
+    \item \srcfile{src/voice/server.ts} --- removed unused sync FS imports
+    \item Multiple other \texttt{.ts} files --- removed unreferenced imports across the codebase
+\end{itemize}
+
+\subsection*{Verification}
+Verification is performed by running the TypeScript compiler with the new strict options:
+
+\begin{lstlisting}[language=bash]
+# Verify no unused imports remain
+npx tsc --noEmit 2>&1 | grep -i "unused"
+# Expected output: (empty)
+\end{lstlisting}
+
+If no errors are reported, all unused imports have been successfully removed.

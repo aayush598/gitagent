@@ -1,0 +1,84 @@
+\section{RACE-002: Plugin Config Write Race}
+\label{sec:race-002}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & RACE-002 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Race Condition \\
+\textbf{Branch} & \branchref{fix/RACE-002-plugin-config-race}
+\textbf{Changes} & \branchdiff{fix/RACE-002-plugin-config-race} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \code{addPluginToManifest} function in \srcfile{src/plugin-cli.ts} performs a read-modify-write on \code{agent.yaml}. When two \code{gitclaw plugin install} commands are issued concurrently, or when a plugin install coincides with another CLI operation modifying \code{agent.yaml}, the second write overwrites the first's changes. This can corrupt the YAML file, cause lost plugin entries, or produce malformed YAML from concurrent writes. The race window is widened because the \code{parseDocument} YAML parser is slower than JSON parsing.
+
+\subsection*{Root Cause Analysis}
+The function reads the file, modifies in memory, then writes:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — no lock between read, modify, write
+async function addPluginToManifest(agentDir, name, pluginConf) {
+    const manifestPath = join(agentDir, "agent.yaml");
+    const raw = await readFile(manifestPath, "utf-8");     // READ at T1
+    const doc = parseDocument(raw);
+    // ... modify doc ...
+    await writeFile(manifestPath, doc.toString(), "utf-8"); // WRITE at T2
+}
+\end{lstlisting}
+
+Two concurrent calls produce a lost update: Process A reads, Process B reads (sees stale state), Process A writes, Process B writes (overwrites A's changes).
+
+\subsection*{Fix Implementation}
+A \code{ManifestMutex} serializes all manifest operations:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — mutex serializes agent.yaml writes
+class ManifestMutex {
+    private queue: (() => void)[] = [];
+    private locked = false;
+    async acquire<T>(fn: () => Promise<T>): Promise<T> {
+        await new Promise<void>((resolve) => {
+            if (!this.locked) { this.locked = true; resolve(); }
+            else { this.queue.push(resolve); }
+        });
+        try { return await fn(); }
+        finally {
+            if (this.queue.length > 0) { this.queue.shift()!(); }
+            else { this.locked = false; }
+        }
+    }
+}
+const manifestMutex = new ManifestMutex();
+
+async function addPluginToManifest(agentDir, name, pluginConf) {
+    return manifestMutex.acquire(async () => {
+        const manifestPath = join(agentDir, "agent.yaml");
+        // ... original logic ...
+    });
+}
+
+async function removePluginFromManifest(agentDir, name) {
+    return manifestMutex.acquire(async () => {
+        // ... original logic ...
+    });
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/plugin-cli.ts} — addPluginToManifest() and removePluginFromManifest()
+    \item \srcfile{src/\_\_tests\_\_/plugin-config-race.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify that concurrent manifest writes are serialized:
+
+\begin{lstlisting}[language=TypeScript]
+const mutex = new TestMutex();
+const order: number[] = [];
+await Promise.all([
+    mutex.acquire(async () => { await new Promise((r) => setTimeout(r, 10)); order.push(1); }),
+    mutex.acquire(async () => { order.push(2); }),
+]);
+assert.equal(order[0], 1, "First acquire must complete first");
+\end{lstlisting}

@@ -1,0 +1,94 @@
+\section{DEP-004: Lockfile Not Published}
+\label{sec:dep-004}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & DEP-004 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Dependencies \\
+\textbf{Branch} & \branchref{fix/DEP-004-lockfile-publish} \\
+\textbf{Changes} & \branchdiff{fix/DEP-004-lockfile-publish} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{package.json} \texttt{files} field only includes \texttt{["dist", "README.md"]}, which means the \texttt{package-lock.json} is not included in the published npm package. Consumers who install \texttt{gitclaw} via \texttt{npm install} get non-deterministic dependency resolutions---npm resolves each dependency at install time based on version ranges, which may differ from the versions tested against.
+
+Transitive dependencies are especially vulnerable: a minor/patch update in a transitive dependency could introduce a breaking change or security vulnerability without the project's knowledge. With 11 direct dependencies and hundreds of transitive dependencies using caret ranges, the risk of unreproducible installs is significant.
+
+\subsection*{Root Cause Analysis}
+
+The package configuration excluded the lockfile:
+
+\begin{lstlisting}[language=json]
+// package.json:21-24 — Before fix
+"files": [
+    "dist",
+    "README.md"
+],
+\end{lstlisting}
+
+The \texttt{files} field controls which files are included when the package is published to npm. The lockfile (\texttt{package-lock.json}) is excluded by this configuration. Even if it exists in the repository, it is not included in the published tarball.
+
+All dependencies use \texttt{^} (caret) ranges, meaning npm installs any compatible minor/patch version:
+
+\begin{itemize}
+    \item \texttt{ws: "\^{}8.19.0"} could resolve to \texttt{8.19.0} through \texttt{8.20.x}
+    \item \texttt{@opentelemetry/api: "\^{}1.9.0"} could resolve to \texttt{1.9.0} through \texttt{1.10.x}
+    \item \texttt{baileys: "\^{}7.0.0-rc.9"} could resolve to any 7.x release
+\end{itemize}
+
+\subsection*{Fix Implementation}
+
+The fix adds \texttt{package-lock.json} to the \texttt{files} field:
+
+\begin{lstlisting}[language=diff]
+// package.json — After fix
+"files": [
+    "dist",
+-    "README.md"
++    "README.md",
++    "package-lock.json"
+],
+\end{lstlisting}
+
+This ensures that \texttt{npm install} on the published package resolves dependencies to exactly the same versions tested against.
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{package.json} --- added \texttt{package-lock.json} to \texttt{files} array
+    \item \srcfile{src/\_\_tests\_\_/dep-004.test.ts} --- new lockfile verification tests
+\end{itemize}
+
+\subsection*{Verification}
+\begin{lstlisting}[language=bash]
+# dep-004-verify.sh
+echo "Test 1: Lockfile exists in repository..."
+if [ -f "package-lock.json" ]; then
+    echo "  PASS"
+else
+    echo "  FAIL: package-lock.json not found"
+    exit 1
+fi
+
+echo "Test 2: Lockfile listed in package.json files..."
+if grep -q "package-lock.json" package.json; then
+    echo "  PASS"
+else
+    echo "  FAIL: package-lock.json not in files field"
+    exit 1
+fi
+\end{lstlisting}
+
+\begin{lstlisting}[language=TypeScript]
+// dep-004.test.ts
+test("package-lock.json exists in project root", () => {
+    ok(existsSync("package-lock.json"),
+        "package-lock.json should be present");
+});
+
+test("package-lock.json is included in published files", () => {
+    const pkg = JSON.parse(readFileSync("package.json", "utf-8"));
+    ok(pkg.files.includes("package-lock.json"),
+        "package-lock.json should be in files array");
+});
+\end{lstlisting}

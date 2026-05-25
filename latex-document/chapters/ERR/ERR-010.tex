@@ -1,0 +1,76 @@
+\section{ERR-010: JSON Parse Errors in Tool Output}
+\label{sec:err-010}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & ERR-010 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Error Handling \\
+\textbf{Branch} & \branchref{fix/ERR-010-json-parse-errors}
+\textbf{Changes} & \branchdiff{fix/ERR-010-json-parse-errors} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+In \srcfile{src/tool-loader.ts}, after a declarative tool script exits successfully, the code attempts to parse its stdout as JSON. If the output starts with \code{\{} but is not valid JSON — truncated output, log prefixes, or trailing content — \code{JSON.parse()} will throw and the entire output is treated as raw text, potentially losing structured data. More critically, if stdout is empty or whitespace-only, the empty string is replaced with ``(no output)'' which is misleading.
+
+\subsection*{Root Cause Analysis}
+The original code attempts JSON parsing unconditionally:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — no guard before JSON.parse
+let text = stdout.trim();
+try {
+    const parsed = JSON.parse(text);
+    if (parsed.text) text = parsed.text;
+    else if (parsed.result) text = typeof parsed.result === "string" ? parsed.result : JSON.stringify(parsed.result);
+} catch {
+    // Raw text output is fine
+}
+
+resolve({
+    content: [{ type: "text", text: text || "(no output)" }],
+    details: undefined,
+});
+\end{lstlisting}
+
+If stdout is partial JSON with trailing content (e.g., \code{\{"text": "hello"\}\textbackslash nsome-debug-log}), \code{JSON.parse} throws and the entire string becomes raw text.
+
+\subsection*{Fix Implementation}
+A guard checks for JSON-like output before parsing:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — guard before JSON.parse
+let text = stdout.trim();
+if (text && (text.startsWith("{") || text.startsWith("["))) {
+    try {
+        const parsed = JSON.parse(text);
+        if (parsed.text) text = parsed.text;
+        else if (parsed.result) text = typeof parsed.result === "string" ? parsed.result : JSON.stringify(parsed.result);
+    } catch {
+        // Raw text output is fine
+    }
+}
+
+resolve({
+    content: [{ type: "text", text: text || "(no output)" }],
+    details: undefined,
+});
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tool-loader.ts} — Lines 119-132
+    \item \srcfile{src/\_\_tests\_\_/json-parse-errors.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify that non-JSON output is not parsed:
+
+\begin{lstlisting}[language=TypeScript]
+const text = "some plain text output";
+const shouldParse = text && (text.startsWith("{") || text.startsWith("["));
+assert.equal(shouldParse, false);
+
+const jsonText = '{"text": "hello world"}';
+const shouldParseJson = jsonText && (jsonText.startsWith("{") || jsonText.startsWith("["));
+assert.equal(shouldParseJson, true);
+\end{lstlisting}

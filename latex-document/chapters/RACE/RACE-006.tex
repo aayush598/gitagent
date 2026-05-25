@@ -1,0 +1,80 @@
+\section{RACE-006: Plugin Install Not Locked}
+\label{sec:race-006}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & RACE-006 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Race Condition \\
+\textbf{Branch} & \branchref{fix/RACE-006-plugin-install-race}
+\textbf{Changes} & \branchdiff{fix/RACE-006-plugin-install-race} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \code{installPlugin} function in \srcfile{src/plugins.ts} performs git clone, directory creation, and file existence checks without any locking. If two concurrent \code{gitclaw plugin install} commands target the same plugin, the race between \code{dirExists} checks, \code{rm} operations, and \code{git clone} calls can result in a corrupted plugin directory — partial clones, overwritten files, or broken \code{node\_modules} state.
+
+\subsection*{Root Cause Analysis}
+Two concurrent installs can both pass the directory existence check:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — no dedup or lock for concurrent installs
+export async function installPlugin(source, targetDir, version?, force?) {
+    await mkdir(targetDir, { recursive: true });
+    const pluginDir = join(targetDir, name);
+
+    if (await dirExists(pluginDir)) {
+        if (await fileExists(join(pluginDir, "plugin.yaml"))) {
+            if (force) { await rm(pluginDir, { recursive: true, force: true }); }
+            else { return pluginDir; }
+        } else { await rm(pluginDir, { recursive: true, force: true }); }
+    }
+
+    execFileSync("git", args, { stdio: "pipe" });  // Both processes clone
+    return pluginDir;
+}
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+An in-flight map deduplicates concurrent installs:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — dedup with in-flight map
+const installInFlight = new Map<string, Promise<string>>();
+
+export async function installPlugin(source, targetDir, version?, force?): Promise<string> {
+    const key = `${source}::${version || "latest"}`;
+    const existing = installInFlight.get(key);
+    if (existing && !force) return existing;
+
+    const promise = installPluginInner(source, targetDir, version, force);
+    installInFlight.set(key, promise);
+    try { return await promise; }
+    finally { installInFlight.delete(key); }
+}
+
+async function installPluginInner(source, targetDir, version?, force?) {
+    // Original implementation
+    await mkdir(targetDir, { recursive: true });
+    // ... dir checks ...
+    execFileSync("git", args, { stdio: "pipe" });
+    return pluginDir;
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/plugins.ts} — installPlugin() split into public + inner function
+    \item \srcfile{src/\_\_tests\_\_/plugin-install-race.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify deduplication of concurrent installs:
+
+\begin{lstlisting}[language=TypeScript]
+const [r1, r2] = await Promise.all([
+    installPlugin("test-plugin"),
+    installPlugin("test-plugin"),
+]);
+assert.equal(r1, "/plugins/test-plugin");
+assert.equal(r2, "/plugins/test-plugin");
+assert.equal(callCount.length, 1, "Should only call inner function once");
+\end{lstlisting}

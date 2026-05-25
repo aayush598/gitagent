@@ -1,0 +1,345 @@
+\section{BUG-017: Git Clone Silence on Failure}
+\label{sec:bug-017}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & BUG-017 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Bug Fix \\
+\textbf{Affected File} & \srcfile{src/loader.ts} \\
+\textbf{Branch} & \branchref{fix/BUG-017-git-clone-silence} \\
+\textbf{Changes} & \branchdiff{fix/BUG-017-git-clone-silence} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{resolveInheritance} and \texttt{resolveDependencies} functions in \texttt{src/loader.ts} use \texttt{execSync} to run \texttt{git clone} commands with \texttt{2>/dev/null || true} appended. This shell construct redirects all stderr output from git to \texttt{/dev/null} and then forces the exit code to 0 (success) using \texttt{|| true}. The result is that \textbf{every git clone failure — regardless of cause — is completely invisible} to both the operator and the application logic.
+
+When a parent agent repository is unreachable, the user agent directory has no \texttt{.gitconfig}, the source URL is malformed, the branch does not exist, or the disk is full, the error is swallowed before it reaches the try/catch block. The code then silently continues without the cloned dependency, and the agent loads with a degraded or misconfigured state.
+
+The bug is at \texttt{src/loader.ts:180-183} (for inheritance) and at \texttt{src/loader.ts:226-229} (for dependencies), where \texttt{2>/dev/null || true} is appended to the \texttt{git clone} command inside the \texttt{execSync} call.
+
+This is a diagnostic integrity issue: the errors exist but are discarded. When an agent operator sees unexpected behavior — missing parent rules, unresolved dependencies, or incomplete manifests — there is no error trail to investigate.
+
+---
+
+\subsection*{Root Cause Analysis}
+\#\#\# The Code
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// loader.ts:179-187 — resolveInheritance
+try {
+    execSync(`git clone --depth 1 "${manifest.extends}" "${parentDir}" 2>/dev/null || true`, {
+        cwd: agentDir,
+        stdio: "pipe",
+    });
+} catch {
+    // Clone failed, continue without parent                            ← Dead code — catch is never reached
+    return { manifest, parentRules: "" };
+}
+
+\end{lstlisting}
+
+
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// loader.ts:223-233 — resolveDependencies
+for (const dep of manifest.dependencies) {
+    const depDir = join(depsDir, dep.name);
+    try {
+        execSync(
+            `git clone --depth 1 --branch "${dep.version}" "${dep.source}" "${depDir}" 2>/dev/null || true`,
+            { cwd: agentDir, stdio: "pipe" },
+        );
+    } catch {
+        // Clone failed, skip this dependency                           ← Dead code — catch is never reached
+    }
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# The Shell Redirection Anatomy
+
+The command string \texttt{git clone --depth 1 "..." "..." 2>/dev/null || true} breaks down as follows:
+
+| Component | Effect |
+|---|---|
+| \texttt{git clone --depth 1 "URL" "DIR"} | The actual clone operation |
+| \texttt{2>/dev/null} | Redirects stderr (file descriptor 2) to \texttt{/dev/null} |
+| \texttt{|| true} | If the previous command exits non-zero, run \texttt{true} (which exits 0) |
+
+The \texttt{|| true} is the critical piece: it ensures that \texttt{execSync} itself never sees a non-zero exit code. Without \texttt{|| true}, \texttt{execSync} would throw an error when git clone fails. With \texttt{|| true}, \texttt{execSync} always returns successfully, and the try/catch block is \textbf{dead code} — it never executes.
+
+\#\#\# The Two Failure Points
+
+\textbf{Point 1: \texttt{resolveInheritance} (line 180)}
+
+When \texttt{manifest.extends} points to a URL like \texttt{https://github.com/nonexistent/agent.git}:
+1. \texttt{git clone} tries to connect — fails with \texttt{fatal: repository '...' not found}
+2. Stderr with the error message goes to \texttt{/dev/null}
+3. \texttt{|| true} converts the failure exit code to 0
+4. \texttt{execSync} returns normally
+5. The catch block is skipped
+6. The code reads the cloned directory — which doesn't exist — and falls through to the inner catch (line 194)
+7. \texttt{resolveInheritance} returns \texttt{\{ manifest, parentRules: "" \}} with no error
+
+The operator sees nothing. The parent rules are silently omitted.
+
+\textbf{Point 2: \texttt{resolveDependencies} (line 226)}
+
+When a dependency source is unreachable:
+1. \texttt{git clone} fails with a network error
+2. Error is redirected to \texttt{/dev/null}, exit code neutralized
+3. The catch block is dead code
+4. The loop continues to the next dependency
+5. No dependency files exist on disk
+6. Any agent functionality that depends on the mounted dependency files silently breaks
+
+\#\#\# Why This Is Medium Severity
+
+1. \textbf{Complete diagnostic blindness}: Every git clone failure — network error, auth failure, missing repo, invalid URL — is invisible
+2. \textbf{Dead code}: The try/catch blocks are misleading; the catch will never execute
+3. \textbf{Silent degradation}: The agent loads with missing parent rules or missing dependencies but continues as if nothing is wrong
+4. \textbf{Hard to debug}: Operators must inspect the actual \texttt{deps/} directory and compare with \texttt{agent.yaml} to detect missing clones
+5. \textbf{Compounds other bugs}: BUG-015 (stale session state) and BUG-018 (duplicate dependency names) become harder to diagnose when the underlying git failure is hidden
+
+---
+
+\subsection*{Fix Implementation}
+\#\#\# Option A: Remove \texttt{|| true} and Log Stderr (Recommended)
+
+Remove the \texttt{|| true} construct to allow \texttt{execSync} to throw on failure, and log the actual git error:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// loader.ts — resolveInheritance
+try {
+    execSync(`git clone --depth 1 "${manifest.extends}" "${parentDir}" 2>&1`, {
+        cwd: agentDir,
+        stdio: "pipe",
+        encoding: "utf-8",
+    });
+} catch (err: any) {
+    const stderr = err.stderr || err.message || "unknown error";
+    console.warn(`[loader] Failed to clone parent "${manifest.extends}": ${stderr.toString().trim()}`);
+    return { manifest, parentRules: "" };
+}
+
+\end{lstlisting}
+
+
+\begin{lstlisting}[language=TypeScript]
+// loader.ts — resolveDependencies
+for (const dep of manifest.dependencies) {
+    const depDir = join(depsDir, dep.name);
+    try {
+        execSync(
+            `git clone --depth 1 --branch "${dep.version}" "${dep.source}" "${depDir}" 2>&1`,
+            { cwd: agentDir, stdio: "pipe", encoding: "utf-8" },
+        );
+    } catch (err: any) {
+        const stderr = err.stderr || err.message || "unknown error";
+        console.warn(`[loader] Failed to clone dependency "${dep.name}" from "${dep.source}": ${stderr.toString().trim()}`);
+    }
+}
+
+\end{lstlisting}
+
+
+
+\textbf{What this fixes:}
+1. Git errors are captured and logged with \texttt{console.warn}
+2. The try/catch blocks are no longer dead code
+3. Operators can see exactly why a clone failed
+4. The application continues gracefully (clone failures are still non-fatal)
+
+\#\#\# Option B: Use \texttt{execFile} for Shell-Injection Safety
+
+Replace \texttt{execSync} with \texttt{execFileSync} to avoid shell injection while preserving error output:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// loader.ts — resolveInheritance with execFileSync
+import { execFileSync } from "child_process";
+
+try {
+    execFileSync("git", ["clone", "--depth", "1", manifest.extends, parentDir], {
+        cwd: agentDir,
+        stdio: "pipe",
+        encoding: "utf-8",
+    });
+} catch (err: any) {
+    const stderr = err.stderr || err.message || "unknown error";
+    console.warn(`[loader] Failed to clone parent "${manifest.extends}": ${stderr.toString().trim()}`);
+    return { manifest, parentRules: "" };
+}
+
+\end{lstlisting}
+
+
+
+\textbf{Advantages:}
+1. No shell injection risk (URL strings with special characters are safe)
+2. Git errors are captured in stderr naturally
+3. No need for \texttt{2>\&1} redirection
+
+\textbf{Disadvantages:}
+1. Slightly more verbose (array arguments)
+2. \texttt{--branch} with empty version string requires conditionals
+
+\#\#\# Fix Comparison
+
+---
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/loader.ts}
+\end{itemize}
+
+\subsection*{Verification}
+The fix is verified through unit tests and integration tests that confirm the corrected behavior:
+
+\begin{lstlisting}[language=TypeScript]
+// verification/bug-017-verify.ts
+import { describe, it, before, after } from "node:test";
+import assert from "node:assert";
+import { loadAgent } from "../src/loader";
+import { rmSync, mkdirSync, writeFileSync, readFileSync } from "fs";
+import { join } from "path";
+
+const TEST_DIR = "/tmp/bug-017-verify";
+
+function createAgent(yaml: string) {
+    rmSync(TEST_DIR, { recursive: true, force: true });
+    mkdirSync(TEST_DIR, { recursive: true });
+    writeFileSync(join(TEST_DIR, "agent.yaml"), yaml.trim());
+}
+
+describe("BUG-017: Git Clone Silence on Failure", () => {
+    after(() => {
+        rmSync(TEST_DIR, { recursive: true, force: true });
+    });
+
+    it("should log a warning when inheritance clone fails", async () => {
+        createAgent(`
+name: "Test Agent"
+version: "1.0.0"
+description: "Parent clone test"
+extends: "https://github.com/nonexistent-repo-12345/agent.git"
+model:
+  preferred: "anthropic:claude-sonnet-4-5-20250929"
+  fallback: []
+tools:
+  - memory
+        `);
+
+        const warnings: string[] = [];
+        const origWarn = console.warn;
+        console.warn = (...args: any[]) => {
+            warnings.push(args.join(" "));
+            origWarn.apply(console, args);
+        };
+
+        await loadAgent(TEST_DIR);
+
+        console.warn = origWarn;
+
+        const hasCloneWarning = warnings.some(w => w.includes("clone") && w.includes("parent"));
+        assert.ok(hasCloneWarning, "Should log a warning about the failed parent clone");
+    });
+
+    it("should log a warning when dependency clone fails", async () => {
+        createAgent(`
+name: "Test Agent"
+version: "1.0.0"
+description: "Dep clone test"
+model:
+  preferred: "anthropic:claude-sonnet-4-5-20250929"
+  fallback: []
+tools:
+  - memory
+dependencies:
+  - name: "missing-dep"
+    source: "https://github.com/nonexistent-repo-12345/missing.git"
+    version: "main"
+    mount: "/tmp"
+        `);
+
+        const warnings: string[] = [];
+        const origWarn = console.warn;
+        console.warn = (...args: any[]) => {
+            warnings.push(args.join(" "));
+            origWarn.apply(console, args);
+        };
+
+        await loadAgent(TEST_DIR);
+
+        console.warn = origWarn;
+
+        const hasDepWarning = warnings.some(w => w.includes("clone") && w.includes("dependency"));
+        assert.ok(hasDepWarning, "Should log a warning about the failed dependency clone");
+    });
+
+    it("should still succeed when all clones work", async () => {
+        // Create a valid agent.yaml without extends or deps
+        createAgent(`
+name: "Valid Agent"
+version: "1.0.0"
+description: "No deps needed"
+model:
+  preferred: "anthropic:claude-sonnet-4-5-20250929"
+  fallback: []
+tools:
+  - memory
+        `);
+
+        const agent = await loadAgent(TEST_DIR);
+        assert.strictEqual(agent.manifest.name, "Valid Agent", "Should load successfully");
+    });
+
+    it("should not suppress git error details in warning messages", async () => {
+        createAgent(`
+name: "Test Agent"
+version: "1.0.0"
+description: "Error detail test"
+extends: "https://github.com/invalid-url-that-will-fail.git"
+model:
+  preferred: "anthropic:claude-sonnet-4-5-20250929"
+  fallback: []
+tools:
+  - memory
+        `);
+
+        const warnings: string[] = [];
+        const origWarn = console.warn;
+        console.warn = (...args: any[]) => {
+            warnings.push(args.join(" "));
+            origWarn.apply(console, args);
+        };
+
+        await loadAgent(TEST_DIR);
+
+        console.warn = origWarn;
+
+        // The warning should contain git error details, not just a generic message
+        const cloneWarning = warnings.find(w => w.includes("clone"));
+        assert.ok(cloneWarning, "Should have a clone warning");
+        // Should include either the URL or the error details
+        assert.ok(
+            cloneWarning!.includes("fatal:") ||
+            cloneWarning!.includes("repository") ||
+            cloneWarning!.includes("not found"),
+            "Warning should include git error details"
+        );
+    });
+});
+
+\end{lstlisting}
+

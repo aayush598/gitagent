@@ -1,0 +1,102 @@
+\section{ERR-002: Hooks Error Suppression}
+\label{sec:err-002}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & ERR-002 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Error Handling \\
+\textbf{Branch} & \branchref{fix/ERR-002-hooks-error-suppression}
+\textbf{Changes} & \branchdiff{fix/ERR-002-hooks-error-suppression} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+In \srcfile{src/index.ts} and \srcfile{src/sdk.ts}, the \code{post\_response} hook execution and audit logger calls use \code{.catch(() => \{\})} which silently discards any errors raised during hook execution. If a hook script exits with a non-zero code, throws an exception, or encounters a system error, the error is completely invisible — no console output, audit trail, or diagnostic information. This makes hook authoring and debugging extremely difficult because failures are indistinguishable from successes.
+
+The same pattern appears in \srcfile{src/sdk.ts} for SDK-based \code{post\_response} hooks and programmatic \code{postResponse} hooks, triplicating the problem across the codebase. Audit log failures (\code{logResponse}, \code{logToolUse}, \code{logError}) are similarly swallowed.
+
+\subsection*{Root Cause Analysis}
+The following locations all silently swallow errors:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — all errors silently discarded
+// src/index.ts:155
+runHooks(hooksConfig.hooks.post_response, agentDir, {
+    event: "post_response",
+    session_id: sessionId,
+}).catch(() => {});
+
+// src/index.ts:157
+auditLogger?.logResponse().catch(() => {});
+
+// src/sdk.ts:417
+runHooks(hooksConfig.hooks.post_response, loaded.agentDir, {
+    event: "post_response",
+    session_id: _sessionId,
+}).catch(() => {});
+\end{lstlisting}
+
+Each \code{.catch(() => \{\})} discards the rejection reason, masking hook script errors, audit write failures, and configuration mistakes.
+
+\subsection*{Fix Implementation}
+All silent catch handlers are replaced with error-logging handlers:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — errors are logged to console.error
+// src/index.ts
+runHooks(hooksConfig.hooks.post_response, agentDir, {
+    event: "post_response",
+    session_id: sessionId,
+}).catch((err) => {
+    console.error(`[hooks] post_response hook failed: ${err.message}`);
+});
+
+auditLogger?.logResponse().catch((err) =>
+    console.error('[audit] logResponse failed:', (err as Error).message)
+);
+
+auditLogger?.logToolUse(event.toolName, event.args || {}).catch((err) =>
+    console.error('[audit] logToolUse failed:', (err as Error).message)
+);
+
+auditLogger?.logError(err.message).catch((e) =>
+    console.error('[audit] logError failed:', (e as Error).message)
+);
+\end{lstlisting}
+
+The \srcfile{src/audit.ts} logger itself is also fixed to report write failures:
+
+\begin{lstlisting}[language=TypeScript]
+// src/audit.ts — before
+catch { /* Audit logging failures are non-fatal */ }
+
+// src/audit.ts — after
+catch (err) {
+    console.error(`[audit] write failed: ${err instanceof Error ? err.message : String(err)}`);
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/index.ts} — Hook execution and audit logger calls in handleEvent() and main()
+    \item \srcfile{src/sdk.ts} — SDK-based post\_response and postResponse hooks
+    \item \srcfile{src/audit.ts} — Error reporting in log() method
+    \item \srcfile{src/\_\_tests\_\_/audit.test.ts}
+    \item \srcfile{src/\_\_tests\_\_/sdk.test.ts}
+    \item \srcfile{test/audit.test.ts}
+    \item \srcfile{test/hooks.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify that errors from the audit logger and hooks are captured by the catch handler:
+
+\begin{lstlisting}[language=TypeScript]
+const errorLogs: string[] = [];
+const origError = console.error;
+console.error = (...args: any[]) => { errorLogs.push(args.join(" ")); };
+
+const logger = new AuditLogger("/nonexistent/.gitagent", "test-session", true);
+await logger.logResponse().catch((err) => {
+    console.error("[audit] logResponse failed:", (err as Error).message);
+});
+assert.ok(errorLogs.some((l) => l.includes("[audit] logResponse failed")));
+\end{lstlisting}

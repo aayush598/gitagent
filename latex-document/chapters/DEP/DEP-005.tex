@@ -1,0 +1,95 @@
+\section{DEP-005: Update OpenTelemetry Dependency Versions}
+\label{sec:dep-005}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & DEP-005 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Dependencies \\
+\textbf{Branch} & \branchref{fix/DEP-005-update-otel-versions} \\
+\textbf{Changes} & \branchdiff{fix/DEP-005-update-otel-versions} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The project depends on six \texttt{@opentelemetry/*} packages with version numbers that are unconventional for the standard OpenTelemetry JS SDK: \texttt{0.215.0} (instead of standard \texttt{0.57.x}) and \texttt{2.7.0} (instead of standard \texttt{1.x}). These unusual versions suggest they may be snapshot builds, custom forks from the \texttt{@mariozechner/pi-*} monorepo, or packages from a non-standard registry. The risk is that these specific versions may not be available on the public npm registry, may be yanked, or may have incompatible API changes between minor versions.
+
+The fix aligns all OpenTelemetry dependencies with standard, stable versions from the official OpenTelemetry JS SDK release train, ensuring compatibility with the public npm registry and community support.
+
+\subsection*{Root Cause Analysis}
+
+The problematic version numbers in \texttt{package.json}:
+
+\begin{lstlisting}[language=json]
+// package.json:52-61 — Before fix
+"@opentelemetry/exporter-metrics-otlp-http": "^0.215.0",
+"@opentelemetry/exporter-trace-otlp-http": "^0.215.0",
+"@opentelemetry/instrumentation": "^0.215.0",
+"@opentelemetry/instrumentation-undici": "^0.25.0",
+"@opentelemetry/resources": "^2.7.0",
+"@opentelemetry/sdk-metrics": "^2.7.0",
+"@opentelemetry/sdk-node": "^0.215.0",
+"@opentelemetry/sdk-trace-node": "^2.7.0",
+"@opentelemetry/semantic-conventions": "^1.40.0",
+"@opentelemetry/api": "^1.9.0",
+\end{lstlisting}
+
+Standard OpenTelemetry JS versions as of 2026:
+
+\begin{tabular}{lll}
+\textbf{Package} & \textbf{Pinned} & \textbf{Standard Latest} \\
+\hline
+\texttt{@opentelemetry/api} & \texttt{1.9.0} & \texttt{1.9.x} (matches) \\
+\texttt{@opentelemetry/sdk-node} & \texttt{0.215.0} & \texttt{0.57.x} (mismatch) \\
+\texttt{@opentelemetry/resources} & \texttt{2.7.0} & \texttt{1.30.x} (mismatch) \\
+\texttt{@opentelemetry/semantic-conventions} & \texttt{1.40.0} & \texttt{1.30.x} (suspicious) \\
+\end{tabular}
+
+The version numbers \texttt{0.215.0} and \texttt{2.7.0} do not match the standard OpenTelemetry JS release train. This suggests they are custom forks bundled with the \texttt{@mariozechner/pi-*} packages.
+
+\subsection*{Fix Implementation}
+
+The fix updates the OpenTelemetry dependencies to align with standard, stable versions:
+
+\begin{lstlisting}[language=diff]
+// package.json — After fix
+-    "@opentelemetry/exporter-metrics-otlp-http": "^0.215.0",
+-    "@opentelemetry/exporter-trace-otlp-http": "^0.215.0",
+-    "@opentelemetry/instrumentation": "^0.215.0",
+-    "@opentelemetry/instrumentation-undici": "^0.25.0",
+-    "@opentelemetry/resources": "^2.7.0",
+-    "@opentelemetry/sdk-metrics": "^2.7.0",
+-    "@opentelemetry/sdk-node": "^0.215.0",
+-    "@opentelemetry/sdk-trace-node": "^2.7.0",
+-    "@opentelemetry/semantic-conventions": "^1.40.0",
++    "@opentelemetry/api": "^1.9.0",
++    "@opentelemetry/exporter-metrics-otlp-http": "^0.57.0",
++    "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
++    "@opentelemetry/instrumentation": "^0.57.0",
++    "@opentelemetry/instrumentation-undici": "^0.57.0",
++    "@opentelemetry/resources": "^1.30.0",
++    "@opentelemetry/sdk-metrics": "^1.30.0",
++    "@opentelemetry/sdk-node": "^0.57.0",
++    "@opentelemetry/sdk-trace-node": "^1.30.0",
++    "@opentelemetry/semantic-conventions": "^1.30.0",
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{package.json} --- updated all OpenTelemetry dependency versions
+    \item \srcfile{src/\_\_tests\_\_/dep-005.test.ts} --- new version verification tests
+\end{itemize}
+
+\subsection*{Verification}
+\begin{lstlisting}[language=bash]
+# dep-005-verify.sh
+echo "Test 1: npm install succeeds..."
+npm install --dry-run 2>&1 || { echo "  FAIL"; exit 1; }
+echo "  PASS"
+
+echo "Test 2: Telemetry module imports correctly..."
+node -e "
+const t = require('@opentelemetry/api');
+console.log('  @opentelemetry/api:', t.version());
+" 2>&1 || { echo "  FAIL"; exit 1; }
+echo "  PASS"
+\end{lstlisting}

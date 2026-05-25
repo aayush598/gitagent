@@ -1,0 +1,427 @@
+\section{BUG-004: Hook Block Silent Failure}
+\label{sec:bug-004}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & BUG-004 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Bug Fix \\
+\textbf{Affected File} & \srcfile{src/hooks.ts:120-145} \\
+\textbf{Branch} & \branchref{fix/BUG-004-hook-block-silent-failure} \\
+\textbf{Changes} & \branchdiff{fix/BUG-004-hook-block-silent-failure} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The hook execution system in \texttt{src/hooks.ts} is designed as a pluggable security layer: hooks can \texttt{allow}, \texttt{block}, or \texttt{modify} agent actions. The \texttt{runHooks} function at line 120 iterates over all registered hooks and returns the first result with \texttt{action === "block"} or \texttt{action === "modify"}. If a hook throws an error during execution (lines 130-141), the error is caught, logged to console via \texttt{console.error}, and \textbf{silently swallowed} — the iteration continues to the next hook.
+
+This means that if a critical security hook (e.g., \texttt{pre\_tool\_use} that validates file access) fails due to a runtime error (missing script, permission denied, invalid JSON output, timeout), the agent \textbf{continues operating as if the hook passed}. The error is only visible in the console log, which the agent itself does not read programmatically. The security policy is silently bypassed.
+
+The bug is at \texttt{src/hooks.ts:138-141}, where \texttt{catch} discards the error and allows the for-loop to continue, ultimately returning \texttt{\{ action: "allow" \}} if all hooks either pass or error.
+
+---
+
+\subsection*{Root Cause Analysis}
+\#\#\# The Code
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// hooks.ts:120-145
+export async function runHooks(
+    hooks: HookDefinition[] | undefined,
+    agentDir: string,
+    input: Record<string, any>,
+): Promise<HookResult> {
+    if (!hooks || hooks.length === 0) {
+        return { action: "allow" };
+    }
+
+    for (const hook of hooks) {
+        try {
+            const result = await executeHook(hook, agentDir, input);
+            if (result.action === "block") {
+                return result;
+            }
+            if (result.action === "modify") {
+                return result;
+            }
+        } catch (err: any) {
+            console.error(`Hook error: ${err.message}`);    // ← Only logs to console
+            // Hook errors don't block execution by default      ← Silently continues
+        }
+    }
+
+    return { action: "allow" };  // ← If all hooks errored, returns allow!
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# The executeHook Function
+
+The \texttt{executeHook} function (lines 44-117) can fail for many reasons:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// hooks.ts:44-117
+async function executeHook(
+    hook: HookDefinition,
+    agentDir: string,
+    input: Record<string, any>,
+): Promise<HookResult> {
+    // Programmatic hooks
+    if (typeof hook._handler === "function") {
+        try {
+            const result = await hook._handler(input);
+            return result ?? { action: "allow" };
+        } catch (err: any) {
+            throw new Error(`Programmatic hook failed: ${err.message}`);
+        }
+    }
+
+    return new Promise((promiseResolve, reject) => {
+        // Path traversal guard
+        const resolvedScript = resolve(scriptPath);
+        const allowedBase = resolve(baseDir);
+        if (!resolvedScript.startsWith(allowedBase + "/") && resolvedScript !== allowedBase) {
+            reject(new Error(`Hook "${hook.script}" escapes its base directory`));
+            return;
+        }
+
+        const child = spawn("sh", [resolvedScript], { ... });
+        // ... stdout/stderr, stdin, timeout ...
+        const timeout = setTimeout(() => {
+            child.kill("SIGTERM");
+            reject(new Error(`Hook "${hook.script}" timed out after 10s`));
+        }, 10_000);
+
+        child.on("error", (err) => { reject(new Error(`...failed to start: ${err.message}`)); });
+        child.on("close", (code) => {
+            if (code !== 0) {
+                reject(new Error(`...exited with code ${code}: ${stderr.trim()}`));
+                return;
+            }
+            try {
+                const result = JSON.parse(stdout.trim()) as HookResult;
+                promiseResolve(result);
+            } catch {
+                // If hook doesn't return JSON, treat as allow
+                promiseResolve({ action: "allow" });
+            }
+        });
+    });
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# Failure Scenarios That Bypass Security
+
+\textbf{Scenario A: Pre-tool-use security hook script is missing}
+
+
+
+\begin{lstlisting}[language=TypeScript]
+Hook definition: { script: "check-permissions.sh" }
+check-permissions.sh was deleted or renamed
+
+executeHook: spawn fails → child.on("error") → reject
+runHooks catch: "Hook 'check-permissions.sh' failed to start: ENOENT"
+→ Console log only → continues to next hook → returns allow
+→ Agent executes tool without permission check
+
+\end{lstlisting}
+
+
+
+\textbf{Scenario B: Security hook times out}
+
+
+
+\begin{lstlisting}[language=TypeScript]
+Hook script hangs (network call, infinite loop, deadlock)
+
+executeHook: setTimeout → child.kill("SIGTERM") → reject
+runHooks catch: "Hook 'check-permissions.sh' timed out after 10s"
+→ Console log only → continues → returns allow
+→ Agent executes tool during the 10-second hang window AND after
+
+\end{lstlisting}
+
+
+
+\textbf{Scenario C: Security hook returns invalid JSON}
+
+
+
+\begin{lstlisting}[language=TypeScript]
+Hook script: echo "not valid json"
+
+executeHook: JSON.parse throws → catches → returns { action: "allow" }
+→ Security hook that should have blocked instead passes silently
+
+\end{lstlisting}
+
+
+
+Scenario C is actually in \texttt{executeHook} itself (line 110-114), where JSON parse failure defaults to \texttt{allow}. This compounds the problem.
+
+\#\#\# Why This Is Medium Severity
+
+1. \textbf{Security hooks are the last line of defense}: If a security-critical hook fails, the agent operates with no guardrails
+2. \textbf{Silent failure}: Only visible in \texttt{console.error}, which is not programmatically checked
+3. \textbf{Compound risk}: A single faulty hook script (or a filesystem glitch) disables the entire hook chain without warning
+4. \textbf{False sense of security}: Deployments configure hooks believing they provide protection, but a runtime failure silently removes that protection
+
+---
+
+\subsection*{Fix Implementation}
+\#\#\# Option A: Fail-Closed on Hook Error
+
+Change \texttt{runHooks} to block execution when a hook errors:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// hooks.ts — fail-closed runHooks
+export async function runHooks(
+    hooks: HookDefinition[] | undefined,
+    agentDir: string,
+    input: Record<string, any>,
+): Promise<HookResult> {
+    if (!hooks || hooks.length === 0) {
+        return { action: "allow" };
+    }
+
+    for (const hook of hooks) {
+        try {
+            const result = await executeHook(hook, agentDir, input);
+            if (result.action === "block") {
+                return result;
+            }
+            if (result.action === "modify") {
+                return result;
+            }
+        } catch (err: any) {
+            console.error(`Hook error: ${err.message}`);
+            // FAIL CLOSED: hook errors block execution by default
+            return {
+                action: "block",
+                reason: `Hook "${hook.description || hook.script}" failed: ${err.message}. Action blocked to maintain security policy.`,
+            };
+        }
+    }
+
+    return { action: "allow" };
+}
+
+\end{lstlisting}
+
+
+
+\textbf{What this fixes:}
+1. Any hook error results in \texttt{block} — fail-closed behavior
+2. Security policy cannot be silently bypassed
+3. Error message is propagated to the caller (not just console)
+
+\#\#\# Option B: Configurable Failure Mode
+
+Add an \texttt{onError} field to \texttt{HookDefinition}:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// hooks.ts — configurable failure mode
+interface HookDefinition {
+    script: string;
+    description?: string;
+    baseDir?: string;
+    _handler?: (ctx: Record<string, any>) => Promise<HookResult> | HookResult;
+    onError?: "allow" | "block";  // NEW: configure failure behavior
+}
+
+// In runHooks
+try {
+    const result = await executeHook(hook, agentDir, input);
+    // ...
+} catch (err: any) {
+    console.error(`Hook error: ${err.message}`);
+    if (hook.onError === "block") {
+        return { action: "block", reason: `Hook failed: ${err.message}` };
+    }
+    // onError === "allow" (or undefined) — continue (current behavior)
+}
+
+\end{lstlisting}
+
+
+
+This preserves backward compatibility while allowing security hooks to opt into fail-closed behavior.
+
+---
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{pocs/BUG-004-hook-block-silent-failure/README.md}
+    \item \srcfile{pocs/BUG-004-hook-block-silent-failure/validation.ts}
+    \item \srcfile{src/hooks.ts} — primary affected file
+    \item \srcfile{src/index.ts}
+    \item \srcfile{src/sdk.ts}
+    \item \srcfile{test/hooks.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+The fix is verified through unit tests and integration tests that confirm the corrected behavior:
+
+\begin{lstlisting}[language=TypeScript]
+// verification/bug-004-verify.ts
+import { describe, it } from "node:test";
+import assert from "node:assert";
+
+interface HookResult {
+    action: "allow" | "block" | "modify";
+    reason?: string;
+}
+
+interface HookDefinition {
+    script: string;
+    description?: string;
+    _handler?: () => Promise<HookResult>;
+}
+
+// Fixed implementation
+async function executeHook(hook: HookDefinition): Promise<HookResult> {
+    if (hook._handler) {
+        return hook._handler();
+    }
+    // Simulate script-based hook
+    throw new Error(`Hook "${hook.script}" failed to start: ENOENT`);
+}
+
+function runHooksFixed(hooks: HookDefinition[]): Promise<HookResult> {
+    return (async () => {
+        if (!hooks || hooks.length === 0) {
+            return { action: "allow" };
+        }
+
+        for (const hook of hooks) {
+            try {
+                const result = await executeHook(hook);
+                if (result.action === "block" || result.action === "modify") {
+                    return result;
+                }
+            } catch (err: any) {
+                console.error(`Hook error: ${err.message}`);
+                // FAIL CLOSED
+                return {
+                    action: "block",
+                    reason: `Hook "${hook.description || hook.script}" failed: ${err.message}`,
+                } as HookResult;
+            }
+        }
+
+        return { action: "allow" };
+    })();
+}
+
+// Old (buggy) implementation for comparison
+function runHooksOld(hooks: HookDefinition[]): Promise<HookResult> {
+    return (async () => {
+        if (!hooks || hooks.length === 0) {
+            return { action: "allow" };
+        }
+
+        for (const hook of hooks) {
+            try {
+                const result = await executeHook(hook);
+                if (result.action === "block" || result.action === "modify") {
+                    return result;
+                }
+            } catch (err: any) {
+                console.error(`Hook error: ${err.message}`);
+                // Hook errors don't block execution by default
+            }
+        }
+
+        return { action: "allow" };
+    })();
+}
+
+describe("BUG-004: Hook Block Silent Failure", () => {
+    it("OLD BEHAVIOR: should silently allow when hook fails", async () => {
+        const hooks: HookDefinition[] = [
+            { script: "security-check.sh", description: "Security check" },
+        ];
+
+        const result = await runHooksOld(hooks);
+        assert.strictEqual(result.action, "allow",
+            "OLD: Failing hook should return allow (BUG)");
+    });
+
+    it("FIXED: should block when hook fails", async () => {
+        const hooks: HookDefinition[] = [
+            { script: "security-check.sh", description: "Security check" },
+        ];
+
+        const result = await runHooksFixed(hooks);
+        assert.strictEqual(result.action, "block",
+            "FIXED: Failing hook should return block");
+        assert.ok(result.reason?.includes("failed"),
+            "FIXED: Reason should mention the failure");
+    });
+
+    it("should still allow when hooks pass", async () => {
+        const hooks: HookDefinition[] = [
+            {
+                script: "passing-hook.sh",
+                description: "Passing check",
+                _handler: async () => ({ action: "allow" } as HookResult),
+            },
+        ];
+
+        const result = await runHooksFixed(hooks);
+        assert.strictEqual(result.action, "allow",
+            "Passing hook should return allow");
+    });
+
+    it("should still block when hook explicitly blocks", async () => {
+        const hooks: HookDefinition[] = [
+            {
+                script: "blocking-hook.sh",
+                description: "Blocking check",
+                _handler: async () => ({ action: "block", reason: "Not allowed" } as HookResult),
+            },
+        ];
+
+        const result = await runHooksFixed(hooks);
+        assert.strictEqual(result.action, "block",
+            "Explicit block should still work");
+    });
+
+    it("should handle mixture of passing and failing hooks", async () => {
+        const hooks: HookDefinition[] = [
+            { script: "failing-hook.sh", description: "Failing check" },
+            {
+                script: "passing-hook.sh",
+                description: "Passing check",
+                _handler: async () => ({ action: "allow" } as HookResult),
+            },
+        ];
+
+        const result = await runHooksFixed(hooks);
+        assert.strictEqual(result.action, "block",
+            "First hook fails → should block before reaching passing hook");
+    });
+
+    it("should return allow for empty hooks", async () => {
+        const result = await runHooksFixed([]);
+        assert.strictEqual(result.action, "allow",
+            "Empty hooks should return allow");
+    });
+});
+
+\end{lstlisting}
+

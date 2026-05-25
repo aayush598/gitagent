@@ -1,0 +1,73 @@
+\section{RACE-007: WebSocket Server Broadcast Race}
+\label{sec:race-007}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & RACE-007 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Race Condition \\
+\textbf{Branch} & \branchref{fix/RACE-007-websocket-broadcast-race}
+\textbf{Changes} & \branchdiff{fix/RACE-007-websocket-broadcast-race} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \code{broadcastToBrowsers} function in \srcfile{src/voice/server.ts} iterates over \code{wss.clients} — a live \code{Set<WebSocket>} — while sending messages. If a client disconnects during iteration, the set may be modified concurrently. While JavaScript Set iteration itself is safe from throwing, the \code{send()} call on a closing socket throws \code{ERR\_WS\_NOT\_CONNECTED}. This can cause dropped messages, UI desynchronization, or unhandled exceptions that crash the server.
+
+\subsection*{Root Cause Analysis}
+The broadcast iterates a live set and calls send without try/catch:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — no snapshot, no try/catch
+function broadcastToBrowsers(msg: ServerMessage) {
+    const payload = JSON.stringify(msg);
+    for (const client of wss.clients) {        // Live set iteration
+        if (client.readyState === 1) client.send(payload);  // Can throw
+    }
+}
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+The fix snapshots the client set and wraps send in try/catch:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — snapshot + try/catch
+function broadcastToBrowsers(msg: ServerMessage) {
+    const payload = JSON.stringify(msg);
+    for (const client of [...wss.clients]) {    // Snapshot iteration
+        if (client.readyState === 1) {
+            try { client.send(payload); }
+            catch { /* client may have disconnected */ }
+        }
+    }
+}
+
+// Same pattern for shutdown close()
+for (const client of [...wss.clients]) {
+    try { client.close(1000, "Server shutting down"); }
+    catch { /* already closed */ }
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/voice/server.ts} — broadcastToBrowsers() and shutdown close loop
+    \item \srcfile{src/\_\_tests\_\_/websocket-broadcast-race.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify that disconnected clients don't cause errors:
+
+\begin{lstlisting}[language=TypeScript]
+const clients = new Set([
+    { readyState: 1, send(v) { sent.push(v); } },
+    { readyState: 1, send(v) { throw new Error("disconnected"); } },
+    { readyState: 3, send(v) { sent.push(v); } },  // closed
+]);
+const payload = JSON.stringify({ type: "test" });
+for (const client of [...clients]) {
+    if (client.readyState === 1) {
+        try { client.send(payload); } catch (e) { errors.push(e.message); }
+    }
+}
+assert.equal(sent.length, 1, "Only first client receives");
+assert.equal(errors.length, 1, "Error from disconnected client caught");
+\end{lstlisting}

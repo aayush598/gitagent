@@ -1,0 +1,91 @@
+\section{SEC-004: Template Injection in Shell Commands (Git Remote URL with Token)}
+\label{sec:sec-004}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & SEC-004 \\
+\textbf{Severity} & High (CVSS 7.5) \\
+\textbf{Category} & Security \\
+\textbf{CWE} & CWE-200: Exposure of Sensitive Information \\
+\textbf{Affected File} & \srcfile{src/session.ts} \\
+\textbf{Branch} & \branchref{fix/SEC-004-template-injection-shell} \\
+\textbf{Changes} & \branchdiff{fix/SEC-004-template-injection-shell} \\
+\textbf{Commit} & 5820562037c91189f3176337e94a799aa353fcaa \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{initLocalSession()} function in \srcfile{src/session.ts} originally embedded a GitHub Personal Access Token (PAT) directly into the git remote URL using the \texttt{https://<token>@github.com/org/repo} format. This authenticated URL was then used for \texttt{git clone}, \texttt{git fetch}, \texttt{git pull}, and \texttt{git push} operations throughout the session. While the token was cleaned up in the \texttt{finalize()} method, there were multiple windows during which the token remained exposed.
+
+The vulnerability manifests in three concrete ways: if \texttt{finalize()} is never called (due to error, crash, or early termination), the token remains in the remote URL indefinitely; any \texttt{git remote -v} command executed via the CLI tool during the session displays the token in plaintext; and the token is visible in git error messages if a push or pull fails. Additionally, the \texttt{git()} helper function used \texttt{execSync} with shell string interpolation, creating a secondary command injection vector via branch names or commit messages.
+
+\subsection*{Root Cause Analysis}
+The original code embedded the token directly in the URL via a dedicated helper:
+
+\begin{lstlisting}[language=TypeScript]
+function authedUrl(url: string, token: string): string {
+    return url.replace(/^https:\/\//, `https://${token}@`);
+}
+
+function cleanUrl(url: string): string {
+    return url.replace(/^https:\/\/[^@]+@/, "https://");
+}
+\end{lstlisting}
+
+The \texttt{git()} helper used shell-based \texttt{execSync} with string interpolation, which is vulnerable to shell injection:
+
+\begin{lstlisting}[language=TypeScript]
+function git(args: string, cwd: string): string {
+    return execSync(`git ${args}`, { cwd, stdio: "pipe", encoding: "utf-8" }).trim();
+}
+\end{lstlisting}
+
+This was called with URLs containing the token throughout the session lifecycle---during clone, fetch, checkout, push, and cleanup. A crash before \texttt{finalize()} would leave the token permanently in the remote URL.
+
+\subsection*{Fix Implementation}
+The fix replaces the token-in-URL pattern with Git's credential helper mechanism, which stores authentication material in a separate file with restricted permissions. The \texttt{authedUrl()} function is replaced with \texttt{setupCredentialHelper()}:
+
+\begin{lstlisting}[language=TypeScript]
+function setupCredentialHelper(dir: string, url: string, token: string): void {
+    const host = new URL(url).host;
+    const credentialsPath = join(dir, ".git", ".git-credentials");
+    writeFileSync(credentialsPath, `https://oauth2:${token}@${host}\n`, "utf-8");
+    execFileSync("chmod", ["600", credentialsPath], { stdio: "pipe" });
+    execFileSync("git", ["config", "--local", "credential.helper",
+        `store --file ${credentialsPath}`], { cwd: dir, stdio: "pipe" });
+}
+\end{lstlisting}
+
+The shell-based \texttt{git()} helper is replaced with an argv-array-based version that prevents shell injection:
+
+\begin{lstlisting}[language=TypeScript]
+function git(args: string[], cwd: string): string {
+    return execFileSync("git", args, { cwd, stdio: "pipe", encoding: "utf-8" }).trim();
+}
+\end{lstlisting}
+
+All call sites are updated to pass arguments as arrays: \texttt{git(["checkout", branch], dir)} instead of \texttt{git(`checkout ${branch}`, dir)}. A process exit cleanup handler is registered to remove the credential file even on crash:
+
+\begin{lstlisting}[language=TypeScript}
+function cleanupOnExit(dir: string, url: string, credentialsPath: string): void {
+    process.on("exit", () => {
+        try { execFileSync("git", ["remote", "set-url", "origin", url], ...); } catch {}
+        try { execFileSync("rm", ["-f", credentialsPath]); } catch {}
+    });
+}
+\end{lstlisting}
+
+The \texttt{finalize()} method also explicitly removes the credential file and clears the exit listeners, ensuring no leftover state.
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/session.ts} --- Replaced \texttt{execSync} with \texttt{execFileSync} for shell-injection safety, added \texttt{setupCredentialHelper()} to use Git's credential store instead of embedding tokens in URLs, added \texttt{cleanupOnExit()} for crash-safe token cleanup, updated all git call sites to use argv arrays.
+    \item \srcfile{test/shell-injection.test.ts} --- New tests verifying \texttt{execFileSync} security properties, credential helper token isolation, and the \texttt{git()} helper's argv-array interface.
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify that \texttt{execFileSync} with argv arrays treats all shell metacharacters as literal text (preventing injection), that remote URLs never contain embedded tokens when the credential helper is used, that credential files are written with restrictive \texttt{chmod 600} permissions, and that the \texttt{git()} helper correctly uses \texttt{string[]} arguments.
+
+\subsection*{Test File}
+\srcfile{test/shell-injection.test.ts}
+
+Validates three security properties: (1) \texttt{execFileSync} treats metacharacters like \texttt{\$(...)} and backticks as literal strings, (2) the credential helper pattern ensures remote URLs contain no embedded credentials, and (3) the refactored \texttt{git()} helper accepts \texttt{string[]} arrays rather than interpolated shell strings.

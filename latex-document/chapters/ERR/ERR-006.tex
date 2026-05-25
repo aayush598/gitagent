@@ -1,0 +1,101 @@
+\section{ERR-006: Telemetry Errors Break Agent — Logs Suppressed}
+\label{sec:err-006}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & ERR-006 \\
+\textbf{Severity} & LOW \\
+\textbf{Category} & Error Handling \\
+\textbf{Branch} & \branchref{fix/ERR-006-telemetry-errors-break-agent}
+\textbf{Changes} & \branchdiff{fix/ERR-006-telemetry-errors-break-agent} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The telemetry wrapper code in \srcfile{src/telemetry.ts} and \srcfile{src/sdk.ts} correctly implements try/catch guards to ensure telemetry never crashes the agent, with the comment ``never let telemetry break the agent.'' However, the blanket \code{catch \{ /* ignore */ \}} pattern suppresses error information that would be valuable for diagnosing telemetry infrastructure issues. Unlike ERR-001 through ERR-003 (which use \code{.catch(() => \{\})} on promises), this issue is lower severity because the try/catch blocks prevent crashes.
+
+\subsection*{Root Cause Analysis}
+The telemetry module uses repeated empty catch blocks:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — all telemetry errors silently ignored
+try {
+    recordGenAiCall(msg, { durationMs });
+} catch {
+    /* never let telemetry break the agent */
+}
+
+// In wrapToolWithOtel (src/telemetry.ts:360-367)
+try {
+    span.setAttribute("tool.status", "ok");
+    span.setStatus({ code: SpanStatusCode.OK });
+} catch {
+    /* ignore */
+}
+
+try {
+    span.end();
+} catch {
+    /* ignore */
+}
+
+try {
+    getToolCallCounter().add(1, { "tool.name": tool.name });
+    getToolDurationHistogram().record(durationMs, { "tool.name": tool.name });
+} catch {
+    /* ignore */
+}
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+Empty catch blocks are replaced with a helper that logs to console.error:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — telemetry errors are logged
+function telemetryCatch(err?: unknown): void {
+    console.error(`[telemetry] ${err instanceof Error ? err.message : String(err || "unknown error")}`);
+}
+
+// In sdk.ts
+try {
+    recordGenAiCall(msg, { durationMs });
+} catch (genAiErr) {
+    console.error(`[telemetry] GenAI recording error: ${genAiErr instanceof Error ? genAiErr.message : String(genAiErr)}`);
+}
+
+// In telemetry.ts — span status, span end, and metric recording
+try {
+    span.setAttribute("tool.status", "ok");
+    span.setStatus({ code: SpanStatusCode.OK });
+} catch (spanStatusErr) {
+    telemetryCatch(spanStatusErr);
+}
+
+try {
+    span.end();
+} catch (spanEndErr) {
+    telemetryCatch(spanEndErr);
+}
+
+try {
+    getToolCallCounter().add(1, { "tool.name": tool.name });
+    getToolDurationHistogram().record(durationMs, { "tool.name": tool.name });
+} catch (metricErr) {
+    telemetryCatch(metricErr);
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/telemetry.ts} — Telemetry wrapper functions
+    \item \srcfile{src/sdk.ts} — GenAI recording error handler
+    \item \srcfile{src/\_\_tests\_\_/telemetry-errors.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify that telemetry errors produce visible output:
+
+\begin{lstlisting}[language=TypeScript]
+const err = new Error("telemetry test error");
+console.error(`[telemetry] ${err.message}`);
+assert.ok(captured.includes("[telemetry]"));
+assert.ok(captured.includes("telemetry test error"));
+\end{lstlisting}

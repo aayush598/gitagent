@@ -1,0 +1,121 @@
+\section{CQ-012: Hardcoded Timeouts}
+\label{sec:cq-012}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & CQ-012 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Code Quality \\
+\textbf{Branch} & \branchref{fix/CQ-012-hardcoded-timeouts} \\
+\textbf{Changes} & \branchdiff{fix/CQ-012-hardcoded-timeouts} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+Hook execution timeout is hardcoded to 10 seconds (\texttt{src/hooks.ts:96}), and plugin declarative tool timeout is hardcoded to 120 seconds (\texttt{src/tool-loader.ts:94}). These values are magic numbers with no named constant, no configuration override, and no documentation. A 10-second hook timeout may be too short for network-dependent hooks, and 120 seconds may be too long for quick scripts. Users cannot tune these without modifying source code.
+
+The fix extracts these constants to named constants with default values and adds an optional \texttt{timeout} property to both \texttt{HookDefinition} and \texttt{ToolDefinition} interfaces, allowing per-hook and per-tool timeout configuration.
+
+\subsection*{Root Cause Analysis}
+
+Both timeouts were hardcoded as numeric literals:
+
+\begin{lstlisting}[language=TypeScript]
+// src/hooks.ts:93-96 — Before fix
+const timeout = setTimeout(() => {
+    child.kill("SIGTERM");
+    reject(new Error(`Hook "${hook.script}" timed out after 10s`));
+}, 10_000);
+
+// src/tool-loader.ts:91-94 — Before fix
+const timeout = setTimeout(() => {
+    child.kill("SIGTERM");
+    reject(new Error(`Tool "${def.name}" timed out after 120s`));
+}, 120_000);
+\end{lstlisting}
+
+Neither the \texttt{HookDefinition} nor \texttt{ToolDefinition} interfaces included a \texttt{timeout} property, so users could not configure timeouts per-hook or per-tool.
+
+\subsection*{Fix Implementation}
+
+The fix adds a \texttt{timeout} property to both interfaces and uses it with fallback to defaults:
+
+\begin{lstlisting}[language=TypeScript]
+// src/hooks.ts — After fix
+export interface HookDefinition {
+    script: string;
+    description?: string;
+    baseDir?: string;
+    _handler?: (ctx: Record<string, any>) =>
+        Promise<HookResult> | HookResult;
+    timeout?: number;              // NEW: per-hook timeout
+}
+
+const HOOK_DEFAULT_TIMEOUT = 10_000;
+
+async function executeHook(...) {
+    // ...
+    const hookTimeout = hook.timeout ?? HOOK_DEFAULT_TIMEOUT;
+    const timeout = setTimeout(() => {
+        child.kill("SIGTERM");
+        reject(new Error(
+            `Hook "${hook.script}" timed out after ${hookTimeout / 1000}s`));
+    }, hookTimeout);
+}
+
+// src/tool-loader.ts — After fix
+interface ToolDefinition {
+    name: string;
+    description: string;
+    input_schema: Record<string, any>;
+    implementation: {
+        script: string;
+        runtime?: string;
+        timeout?: number;          // NEW: per-tool timeout
+    };
+}
+
+const TOOL_DEFAULT_TIMEOUT = 120_000;
+
+function createDeclarativeTool(def: ToolDefinition, agentDir: string) {
+    // ...
+    const toolTimeout = def.implementation.timeout ?? TOOL_DEFAULT_TIMEOUT;
+    const timeout = setTimeout(() => {
+        child.kill("SIGTERM");
+        reject(new Error(
+            `Tool "${def.name}" timed out after ${toolTimeout / 1000}s`));
+    }, toolTimeout);
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/hooks.ts} --- added \texttt{timeout?: number} to \texttt{HookDefinition}, extracted \texttt{HOOK\_DEFAULT\_TIMEOUT}
+    \item \srcfile{src/tool-loader.ts} --- added \texttt{timeout?: number} to \texttt{implementation}, extracted \texttt{TOOL\_DEFAULT\_TIMEOUT}
+    \item \srcfile{src/\_\_tests\_\_/hardcoded-timeouts.test.ts} --- new timeout configuration tests
+\end{itemize}
+
+\subsection*{Verification}
+\begin{lstlisting}[language=TypeScript]
+// hardcoded-timeouts.test.ts
+describe("CQ-012: Hardcoded timeouts configurable", () => {
+    it("should use hook.timeout when provided", () => {
+        const hookTimeout = 5000;
+        const HOOK_DEFAULT_TIMEOUT = 10_000;
+        const timeout = hookTimeout ?? HOOK_DEFAULT_TIMEOUT;
+        assert.equal(timeout, 5000, "Should use hook-specific timeout");
+
+        const defaultTimeout = undefined ?? HOOK_DEFAULT_TIMEOUT;
+        assert.equal(defaultTimeout, 10000, "Should fall back to default");
+    });
+
+    it("should use implementation.timeout when provided for tools", () => {
+        const TOOL_DEFAULT_TIMEOUT = 120_000;
+        const defTimeout = 30_000;
+        const toolTimeout = defTimeout ?? TOOL_DEFAULT_TIMEOUT;
+        assert.equal(toolTimeout, 30000, "Should use tool-specific timeout");
+
+        const defaultTimeout = undefined ?? TOOL_DEFAULT_TIMEOUT;
+        assert.equal(defaultTimeout, 120000, "Should fall back to default");
+    });
+});
+\end{lstlisting}

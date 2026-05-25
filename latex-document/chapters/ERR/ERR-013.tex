@@ -1,0 +1,98 @@
+\section{ERR-013: Task Tracker Invalid State Transitions}
+\label{sec:err-013}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & ERR-013 \\
+\textbf{Severity} & HIGH \\
+\textbf{Category} & Error Handling \\
+\textbf{Branch} & \branchref{fix/ERR-013-task-tracker-states}
+\textbf{Changes} & \branchdiff{fix/ERR-013-task-tracker-states} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+In \srcfile{src/tools/task-tracker.ts}, when the \code{end} action is called on a task, the code mutates the in-memory task state before persisting it. If the subsequent \code{saveTasks()} call fails (disk full, permission denied), the in-memory store has the updated state but the file does not — the two are now inconsistent. Additionally, the in-memory mutation happens before async skill-stats operations that could themselves fail, leaving the store in a partially-updated state with no rollback mechanism.
+
+\subsection*{Root Cause Analysis}
+The original code mutates the task object before persistence:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — in-memory mutation before save
+case "end": {
+    const task = store.tasks.find((t) => t.id === params.task_id);
+    if (!task) throw new Error(`Task not found`);
+    if (task.status !== "active") throw new Error(`Task not active`);
+
+    const outcome = params.outcome as "success" | "failure" | "partial";
+    task.outcome = outcome;                           // In-memory mutation
+    task.status = outcome === "success" ? "succeeded" : "failed";
+    task.ended_at = new Date().toISOString();
+    task.failure_reason = params.failure_reason;
+    task.skill_used = params.skill_used;
+
+    // Trigger reinforcement if a skill was used
+    let reinforcementMsg = "";
+    if (params.skill_used) {
+        // ... async skill stats operations (could fail) ...
+    }
+
+    await saveTasks(gitagentDir, store);              // Persist — might fail!
+    // If this fails, in-memory state already mutated — inconsistent
+}
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+The fix builds an updated task object without mutating the original, then atomically replaces it in the store and persists:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — build updated task first, then persist atomically
+case "end": {
+    const task = store.tasks.find((t) => t.id === params.task_id);
+    if (!task) throw new Error(`Task not found`);
+    if (task.status !== "active") throw new Error(`Task not active`);
+
+    const outcome = params.outcome as "success" | "failure" | "partial";
+
+    // Build updated task without mutating original
+    const updatedTask = {
+        ...task,
+        outcome,
+        status: outcome === "success" ? "succeeded" : "failed",
+        ended_at: new Date().toISOString(),
+        failure_reason: params.failure_reason,
+        skill_used: params.skill_used,
+    };
+
+    // Trigger reinforcement if a skill was used
+    let reinforcementMsg = "";
+    if (params.skill_used) { /* ... */ }
+
+    // Update in-memory store and persist atomically
+    const idx = store.tasks.findIndex((t) => t.id === params.task_id);
+    store.tasks[idx] = updatedTask;
+    await saveTasks(gitagentDir, store);
+
+    // Return response using updatedTask (not mutated task)
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tools/task-tracker.ts} — Lines 271-319
+    \item \srcfile{src/\_\_tests\_\_/task-tracker-states.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify the original task is not mutated before persistence:
+
+\begin{lstlisting}[language=TypeScript]
+const task = { id: "test-1", status: "active" as const, outcome: undefined, ended_at: undefined, steps: [] };
+const outcome = "success";
+const updatedTask = {
+    ...task,
+    outcome,
+    status: outcome === "success" ? "succeeded" : "failed",
+    ended_at: new Date().toISOString(),
+};
+assert.equal(task.status, "active", "Original task should not be mutated yet");
+assert.equal(updatedTask.status, "succeeded", "Updated task should have new status");
+\end{lstlisting}

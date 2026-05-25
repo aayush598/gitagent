@@ -1,0 +1,145 @@
+\section{SEC-015: Missing Integrity Check on Plugin Downloads}
+\label{sec:sec-015}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & SEC-015 \\
+\textbf{Severity} & Medium (CVSS 6.8) \\
+\textbf{Category} & Security \\
+\textbf{CWE} & CWE-494: Download of Code Without Integrity Check \\
+\textbf{Affected File} & \srcfile{src/plugins.ts}, \srcfile{src/plugin-types.ts}, \srcfile{src/plugin-cli.ts} \\
+\textbf{Branch} & \branchref{fix/SEC-015-plugin-integrity-check} \\
+\textbf{Changes} & \branchdiff{fix/SEC-015-plugin-integrity-check} \\
+\textbf{Commit} & 962eb56d007f4269ea0193faf23dfe2506e0a405 \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{installPlugin()} function in \srcfile{src/plugins.ts} downloads plugins from remote git repositories specified in \texttt{agent.yaml} without any integrity verification. A plugin source URL is cloned using \texttt{git clone --depth 1}, and the resulting code is loaded and executed without checking a checksum, GPG signature, signed tag, or known-good digest. This creates a supply chain vulnerability: anyone who can compromise the git repository, perform a man-in-the-middle attack on the git clone operation, or modify the plugin source URL can inject malicious code that runs with the agent's full privileges.
+
+The fix introduces a SHA-256 directory hash calculation (\texttt{computeDirHash()}) and an optional \texttt{expectedHash} parameter in \texttt{installPlugin()}. Plugin configurations in \texttt{agent.yaml} can now include a \texttt{hash} field that pins the expected integrity hash. If the computed hash does not match, the plugin directory is deleted and installation is rejected.
+
+\subsection*{Root Cause Analysis}
+The original \texttt{installPlugin()} function cloned repositories without any integrity verification:
+
+\begin{lstlisting}[language=TypeScript]
+export async function installPlugin(
+    source: string,
+    targetDir: string,
+    version?: string,
+    force?: boolean,
+): Promise<string> {
+    // ...
+    const args = ["clone", "--depth", "1"];
+    if (version) args.push("--branch", version);
+    args.push(source, pluginDir);
+    try {
+        execFileSync("git", args, { stdio: "pipe" });
+    } catch (err: any) {
+        throw new Error(\texttt{Failed to install plugin from "\${source}": \${err.message}});
+    }
+    return pluginDir;
+}
+\end{lstlisting}
+
+The function does not verify checksums, GPG signatures, commit hashes, signed tags, or registry digests. An attacker who can modify the plugin source URL (via prompt injection or file write) can substitute a malicious repository. Additionally, the \texttt{PluginConfig} type had no \texttt{hash} field to express integrity expectations.
+
+\subsection*{Fix Implementation}
+The fix adds a \texttt{computeDirHash()} function that generates a deterministic SHA-256 hash of a plugin directory's contents:
+
+\begin{lstlisting}[language=TypeScript]
+export async function computeDirHash(dir: string): Promise<string> {
+    const hash = createHash("sha256");
+    const entries: string[] = [];
+
+    async function walk(current: string) {
+        const entries_ = await readdir(current, { withFileTypes: true });
+        for (const entry of entries_) {
+            const full = join(current, entry.name);
+            if (entry.isDirectory()) {
+                if (entry.name === ".git") continue;
+                await walk(full);
+            } else if (entry.isFile()) {
+                entries.push(relative(dir, full));
+            }
+        }
+    }
+
+    await walk(dir);
+    entries.sort();
+
+    for (const relPath of entries) {
+        const content = await readFile(join(dir, relPath));
+        hash.update(\texttt{\${relPath}\\0});
+        hash.update(content);
+    }
+
+    return hash.digest("hex");
+}
+\end{lstlisting}
+
+The \texttt{installPlugin()} function now accepts an optional \texttt{expectedHash} parameter:
+
+\begin{lstlisting}[language=TypeScript]
+export async function installPlugin(
+    source: string,
+    targetDir: string,
+    version?: string,
+    force?: boolean,
+    expectedHash?: string,
+): Promise<string> {
+    // ... clone as before ...
+
+    if (expectedHash) {
+        let actualHash: string;
+        try {
+            actualHash = await computeDirHash(pluginDir);
+        } catch (err: any) {
+            await rm(pluginDir, { recursive: true, force: true });
+            throw new Error(\texttt{Failed to compute integrity hash: \${err.message}});
+        }
+
+        if (actualHash !== expectedHash) {
+            await rm(pluginDir, { recursive: true, force: true });
+            throw new Error(
+                \texttt{Plugin "\${name}" integrity check failed: expected hash } +
+                \texttt{\${expectedHash}, got \${actualHash}.} +
+                \texttt{The plugin source may have been tampered with.},
+            );
+        }
+
+        console.log(\texttt{Plugin "\${name}" integrity verified (SHA-256: \${actualHash.slice(0, 12)}\textellipsis)});
+    }
+
+    return pluginDir;
+}
+\end{lstlisting}
+
+The \texttt{PluginConfig} type is extended with an optional \texttt{hash} field:
+
+\begin{lstlisting}[language=TypeScript]
+export interface PluginConfig {
+    enabled?: boolean;
+    source?: string;
+    version?: string;
+    hash?: string; // SHA-256 hash of plugin directory contents
+    config?: Record<string, any>;
+}
+\end{lstlisting}
+
+The \texttt{discoverAndLoadPlugins()} function passes the hash to \texttt{installPlugin()}, and \texttt{plugin-cli.ts} is updated to pass the additional parameter.
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/plugins.ts} --- Added \texttt{computeDirHash()} for SHA-256 directory hashing, added \texttt{expectedHash} parameter to \texttt{installPlugin()} with integrity verification and automatic cleanup on mismatch, updated \texttt{discoverAndLoadPlugins()} to pass \texttt{pluginConf.hash}.
+    \item \srcfile{src/plugin-types.ts} --- Added optional \texttt{hash} field to \texttt{PluginConfig} interface for expressing expected integrity hashes in configuration.
+    \item \srcfile{src/plugin-cli.ts} --- Updated \texttt{handleInstall()} to pass \texttt{undefined} for the new \texttt{expectedHash} parameter.
+    \item \srcfile{src/__tests__/plugin-integrity.test.ts} --- New comprehensive test suite for integrity checking.
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify that \texttt{computeDirHash()} produces consistent output for identical directories, changes when file content changes, ignores the \texttt{.git} directory, and returns a 64-character hex string. Integration tests verify that \texttt{installPlugin()} throws an integrity check error when the expected hash does not match, succeeds when the hash matches, and installs without hash when \texttt{expectedHash} is not provided for backward compatibility.
+
+\subsection*{Test File}
+\srcfile{src/__tests__/plugin-integrity.test.ts}
+
+Contains 7 test cases: \texttt{computeDirHash} consistency, hash changes on content modification, \texttt{.git} directory exclusion, hash format validation, \texttt{installPlugin} rejection on hash mismatch, successful installation on hash match, and backward-compatible installation without hash.

@@ -1,0 +1,54 @@
+\section{TYPE-011: Ambiguous Return Types in SDK}
+\label{sec:type-011}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & TYPE-011 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Type Safety \\
+\textbf{Branch} & \branchref{fix/TYPE-011-clear-tool-result-type}
+\textbf{Changes} & \branchdiff{fix/TYPE-011-clear-tool-result-type} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \code{handler} return type at \srcfile{src/sdk-types.ts:104} is \code{Promise<string | \{ text: string; details?: any \}>}. This ambiguous union forces every caller to perform a runtime type check before accessing properties. The \code{details} field is typed as \code{any}, compounding the problem.
+
+\subsection*{Root Cause Analysis}
+The return type forces disambiguation at every call site:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — ambiguous union return type
+handler: (args: any, signal?: AbortSignal) =>
+    Promise<string | { text: string; details?: any }>;
+
+// Every caller must disambiguate
+const result = await def.handler(params, signal);
+const text = typeof result === "string" ? result : result.text;
+const details = typeof result === "object" && "details" in result ? result.details : undefined;
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+A single clear \code{ToolResult} type replaces the union:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — single clear return type
+export interface ToolResult {
+    text: string;
+    details?: Record<string, unknown>;
+}
+
+handler: (args: any, signal?: AbortSignal) => Promise<ToolResult>;
+
+// In toAgentTool — no disambiguation needed
+const result: ToolResult = await def.handler(params, signal);
+return { content: [{ type: "text" as const, text: result.text }], details: result.details };
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/sdk-types.ts} — ToolResult interface and GCToolDefinition.handler
+    \item \srcfile{src/tool-utils.ts} — toAgentTool() return handling
+    \item \srcfile{src/\_\_tests\_\_/type-011.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Callers no longer need runtime type checks to disambiguate the return value.

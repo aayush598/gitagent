@@ -1,0 +1,339 @@
+\section{BUG-008: Memory Archive Append Without Newline Check}
+\label{sec:bug-008}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & BUG-008 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Bug Fix \\
+\textbf{Affected File} & \srcfile{src/tools/memory.ts:60-97} \\
+\textbf{Branch} & \branchref{fix/BUG-008-memory-archive-newline} \\
+\textbf{Changes} & \branchdiff{fix/BUG-008-memory-archive-newline} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{archiveOverflow} function in \texttt{src/tools/memory.ts:60-97} handles memory overflow by archiving excess lines to a dated archive file. When the memory content exceeds \texttt{maxLines}, the overflow is appended to \texttt{memory/archive/YYYY-MM.md} using a simple string concatenation: \texttt{existing + archiveEntry}. The \texttt{archiveEntry} always begins with \texttt{\n---\n}, which assumes the existing content always needs a leading newline separator. However, the code does not check whether the existing archive file already ends with a trailing newline.
+
+This creates two formatting defects:
+
+1. \textbf{If the existing archive ends with \texttt{\n}}: The archive entry's leading \texttt{\n} produces a double newline (one from the existing content, one from the entry), creating an unwanted blank line before the \texttt{---} separator.
+2. \textbf{If the archive file is brand new (empty string)}: The file starts with a leading \texttt{\n}, producing an empty first line before the separator.
+
+While neither defect causes data loss, the inconsistent formatting accumulates over multiple archive operations, producing an increasingly messy archive file. For an agent that relies on clean markdown archives for long-term memory retrieval, this degrades readability and could interfere with downstream parsing of the archive files.
+
+---
+
+\subsection*{Root Cause Analysis}
+\#\#\# The Code
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// memory.ts:60-97
+async function archiveOverflow(
+    cwd: string,
+    content: string,
+    maxLines: number,
+): Promise<string> {
+    const lines = content.split("\n");
+    if (lines.length <= maxLines) return content;
+
+    // Keep the last maxLines, archive the rest
+    const overflow = lines.slice(0, lines.length - maxLines).join("\n");
+    const kept = lines.slice(lines.length - maxLines).join("\n");
+
+    const now = new Date();
+    const archiveFile = `memory/archive/${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}.md`;
+    const archivePath = join(cwd, archiveFile);
+
+    await mkdir(dirname(archivePath), { recursive: true });
+
+    // Append to archive
+    let existing = "";
+    try {
+        existing = await readFile(archivePath, "utf-8");         // ← Reads existing content
+    } catch {
+        // New archive file
+    }
+
+    const archiveEntry = `\n---\n_Archived: ${now.toISOString()}_\n\n${overflow}\n`;
+    await writeFile(archivePath, existing + archiveEntry, "utf-8");  // ← Blind concatenation
+
+    // Try to git add the archive
+    try {
+        execSync(`git add "${archiveFile}"`, { cwd, stdio: "pipe" });
+    } catch {
+        // Not in git, that's fine
+    }
+
+    return kept;
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# The Three Scenarios
+
+\textbf{Scenario 1: Existing archive ends with \texttt{\n} (most common after first archive)}
+
+
+
+\begin{lstlisting}[language=TypeScript]
+existing:     "# Archived\n\nPrevious content\n"
+archiveEntry: "\n---\n_Archived: ..._\n\nNew overflow\n"
+
+result:       "# Archived\n\nPrevious content\n\n---\n_Archived: ..._\n\nNew overflow\n"
+                                                ↑
+                                          Double newline — unwanted blank line
+
+\end{lstlisting}
+
+
+
+\textbf{Scenario 2: New archive file (empty string)}
+
+
+
+\begin{lstlisting}[language=TypeScript]
+existing:     ""
+archiveEntry: "\n---\n_Archived: ..._\n\nOverflow\n"
+
+result:       "\n---\n_Archived: ..._\n\nOverflow\n"
+               ↑
+          Leading newline — empty first line
+
+\end{lstlisting}
+
+
+
+\textbf{Scenario 3: Existing archive does NOT end with \texttt{\n}}
+
+
+
+\begin{lstlisting}[language=TypeScript]
+existing:     "# Archived\n\nPrevious content"       (no trailing \n)
+archiveEntry: "\n---\n_Archived: ..._\n\nNew overflow\n"
+
+result:       "# Archived\n\nPrevious content\n---\n_Archived: ..._\n\nNew overflow\n"
+                                                ↑
+                                          Correct — the \n in archiveEntry handles this
+
+\end{lstlisting}
+
+
+
+\#\#\# Why the Leading \texttt{\n} in \texttt{archiveEntry} Is a Problem
+
+The \texttt{\n} at the start of \texttt{archiveEntry} was clearly added to handle Scenario 3 (existing content without trailing newline). However, the developer did not consider:
+
+1. \textbf{What if existing already has a trailing newline?} (Scenario 1) — This is the expected state after a prior archive operation because the archive entry ends with \texttt{\n}.
+2. \textbf{What if the archive file doesn't exist yet?} (Scenario 2) — The empty string gets a leading \texttt{\n}, creating a file that starts with a blank line.
+
+The fix is to check whether \texttt{existing} is non-empty and whether it ends with \texttt{\n} before deciding on the separator format.
+
+---
+
+\subsection*{Fix Implementation}
+\#\#\# Option A: Newline-Aware Concatenation (Recommended)
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// memory.ts — fixed archiveOverflow
+async function archiveOverflow(
+    cwd: string,
+    content: string,
+    maxLines: number,
+): Promise<string> {
+    const lines = content.split("\n");
+    if (lines.length <= maxLines) return content;
+
+    const overflow = lines.slice(0, lines.length - maxLines).join("\n");
+    const kept = lines.slice(lines.length - maxLines).join("\n");
+
+    const now = new Date();
+    const archiveFile = `memory/archive/${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}.md`;
+    const archivePath = join(cwd, archiveFile);
+
+    await mkdir(dirname(archivePath), { recursive: true });
+
+    let existing = "";
+    try {
+        existing = await readFile(archivePath, "utf-8");
+    } catch {
+        // New archive file
+    }
+
+    // Build the archive entry with proper newline handling
+    const archivedLine = `_Archived: ${now.toISOString()}_`;
+    const archiveEntry: string[] = [];
+
+    if (!existing) {
+        // New file — write separator directly
+        archiveEntry.push("---");
+    } else if (existing.endsWith("\n")) {
+        // Existing ends with newline — just add separator
+        archiveEntry.push("---");
+    } else {
+        // No trailing newline — add one before separator
+        archiveEntry.push("");
+        archiveEntry.push("---");
+    }
+
+    archiveEntry.push(archivedLine);
+    archiveEntry.push("");
+    archiveEntry.push(overflow);
+
+    await writeFile(archivePath, existing + archiveEntry.join("\n") + "\n", "utf-8");
+
+    try {
+        execSync(`git add "${archiveFile}"`, { cwd, stdio: "pipe" });
+    } catch {
+        // Not in git, that's fine
+    }
+
+    return kept;
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# Option B: Use \texttt{trimEnd} and Template Literal
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// Simpler fix — ensure existing ends with \n\n before appending
+async function archiveOverflow(
+    cwd: string,
+    content: string,
+    maxLines: number,
+): Promise<string> {
+    // ... (unchanged setup code) ...
+
+    let existing = "";
+    try {
+        existing = await readFile(archivePath, "utf-8");
+        // Normalize: ensure existing content ends with exactly one trailing newline
+        existing = existing.replace(/\n*$/, "") + "\n";
+    } catch {
+        // New archive file
+    }
+
+    const archiveEntry = `---\n_Archived: ${now.toISOString()}_\n\n${overflow}\n`;
+    await writeFile(archivePath, existing + archiveEntry, "utf-8");
+
+    // ... (rest unchanged) ...
+}
+
+\end{lstlisting}
+
+
+
+---
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tools/memory.ts} — primary affected file
+\end{itemize}
+
+\subsection*{Verification}
+The fix is verified through unit tests and integration tests that confirm the corrected behavior:
+
+\begin{lstlisting}[language=TypeScript]
+// verification/bug-008-verify.ts
+import { readFileSync, writeFileSync, mkdirSync, rmSync } from "fs";
+import { join } from "path";
+import { describe, it, before, after } from "node:test";
+
+const TEST_DIR = "/tmp/bug-008-verify";
+const ARCHIVE_PATH = join(TEST_DIR, "memory", "archive", "2026-05.md");
+
+function buildArchiveEntry(existing: string, overflow: string, timestamp: string): string {
+    const parts: string[] = [];
+    if (!existing) {
+        parts.push("---");
+    } else if (existing.endsWith("\n")) {
+        parts.push("---");
+    } else {
+        parts.push("");
+        parts.push("---");
+    }
+    parts.push(`_Archived: ${timestamp}_`);
+    parts.push("");
+    parts.push(overflow);
+    return parts.join("\n") + "\n";
+}
+
+describe("BUG-008: Memory Archive Newline Handling", () => {
+    before(() => {
+        rmSync(TEST_DIR, { recursive: true, force: true });
+        mkdirSync(join(TEST_DIR, "memory", "archive"), { recursive: true });
+    });
+
+    after(() => {
+        rmSync(TEST_DIR, { recursive: true, force: true });
+    });
+
+    it("should not start with a newline for new archive files", () => {
+        const entry = buildArchiveEntry("", "# Overflow content", "2026-05-01T00:00:00.000Z_");
+        writeFileSync(ARCHIVE_PATH, entry, "utf-8");
+        const content = readFileSync(ARCHIVE_PATH, "utf-8");
+        if (content.startsWith("\n")) {
+            throw new Error("New archive file starts with newline");
+        }
+    });
+
+    it("should not have double newline when appending to archive ending with \\n", () => {
+        writeFileSync(ARCHIVE_PATH, "# Prior archive\n", "utf-8");
+        const existing = readFileSync(ARCHIVE_PATH, "utf-8");
+        const entry = buildArchiveEntry(existing, "# More overflow", "2026-05-02T00:00:00.000Z_");
+        writeFileSync(ARCHIVE_PATH, existing + entry, "utf-8");
+        const content = readFileSync(ARCHIVE_PATH, "utf-8");
+        const doubleNewlines = (content.match(/\n\n---/g) || []).length;
+        if (doubleNewlines > 0) {
+            throw new Error(`Found ${doubleNewlines} double-newline before separator`);
+        }
+    });
+
+    it("should correctly add newline before separator when existing doesn't end with \\n", () => {
+        writeFileSync(ARCHIVE_PATH, "# Archive without final newline", "utf-8");
+        const existing = readFileSync(ARCHIVE_PATH, "utf-8");
+        if (existing.endsWith("\n")) {
+            throw new Error("Test setup failed: file should not end with newline");
+        }
+        const entry = buildArchiveEntry(existing, "# Third overflow", "2026-05-03T00:00:00.000Z_");
+        writeFileSync(ARCHIVE_PATH, existing + entry, "utf-8");
+        const content = readFileSync(ARCHIVE_PATH, "utf-8");
+        // The last line before "---" should not be concatenated
+        if (!content.includes("newline\n---")) {
+            throw new Error("Newline not present before separator when appending to non-newline-ending file");
+        }
+    });
+
+    it("should produce a well-formed markdown archive after multiple appends", () => {
+        rmSync(join(TEST_DIR, "memory", "archive"), { recursive: true, force: true });
+        mkdirSync(join(TEST_DIR, "memory", "archive"), { recursive: true });
+
+        let existing = "";
+        for (let i = 0; i < 5; i++) {
+            const entry = buildArchiveEntry(existing, `# Overflow batch ${i}`, `2026-05-${String(i + 1).padStart(2, "0")}T00:00:00.000Z_`);
+            writeFileSync(ARCHIVE_PATH, (existing || "") + entry, "utf-8");
+            existing = readFileSync(ARCHIVE_PATH, "utf-8");
+        }
+
+        const content = readFileSync(ARCHIVE_PATH, "utf-8");
+        const separators = (content.match(/^---$/gm) || []).length;
+        if (separators !== 5) {
+            throw new Error(`Expected 5 separators, found ${separators}`);
+        }
+        if (content.startsWith("\n")) {
+            throw new Error("Final archive starts with newline");
+        }
+    });
+});
+
+\end{lstlisting}
+

@@ -1,0 +1,115 @@
+\section{SEC-011: Environment Variable Leak in Tool Output}
+\label{sec:sec-011}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & SEC-011 \\
+\textbf{Severity} & High (CVSS 7.5) \\
+\textbf{Category} & Security \\
+\textbf{CWE} & CWE-532: Insertion of Sensitive Information into Log File \\
+\textbf{Affected File} & \srcfile{src/tools/cli.ts}, \srcfile{src/tools/env-redact.ts}, \srcfile{src/tools/sandbox-cli.ts} \\
+\textbf{Branch} & \branchref{fix/SEC-011-env-var-leak} \\
+\textbf{Changes} & \branchdiff{fix/SEC-011-env-var-leak} \\
+\textbf{Commit} & 0ec1493fe791509014c826ad5da4c05a41b9bb17 \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{cli} tool captures stdout and stderr from every command execution and returns the combined output to the LLM. Because \texttt{process.env} was forwarded to child processes via \texttt{env: \{ ...process.env \}}, any shell command could access environment variables and---critically---the output could contain those variables' values. The vulnerability chain is: the LLM calls a CLI command, the command's output includes environment variable values (accidentally or intentionally), the tool captures this output and returns it to the LLM, and the LLM may include the output in its response, log it, save it to memory, or exfiltrate it.
+
+The fix applies a dual-layer defense: (1) the child process receives only a filtered safe environment via \texttt{createSafeEnv()}, preventing sensitive variables from being accessible in the first place, and (2) the output is scrubbed via \texttt{scrubOutput()} to redact any secret patterns that might still appear (e.g., from commands that hard-code or generate credential-like strings).
+
+\subsection*{Root Cause Analysis}
+The original code forwarded all environment variables to the child process and captured all output without filtering:
+
+\begin{lstlisting}[language=TypeScript]
+const child = spawn("sh", ["-c", command], {
+    cwd,
+    stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env },  // ALL env vars forwarded
+});
+
+const onData = (data: Buffer) => {
+    output += data.toString("utf-8");
+    if (onUpdate && output.length <= MAX_OUTPUT) {
+        onUpdate({
+            content: [{ type: "text", text: output }],
+            details: undefined,
+        });
+    }
+};
+\end{lstlisting}
+
+Common exposure scenarios include: commands like \texttt{env} or \texttt{printenv} that dump all environment variables, error messages from \texttt{curl} that echo auth headers, debug commands like \texttt{node -p 'process.env'}, shell expansion in scripts (\texttt{echo "Connecting with \$API\_KEY"}), and git error messages that include credentials from remote URLs.
+
+\subsection*{Fix Implementation}
+A new module \srcfile{src/tools/env-redact.ts} provides two functions:
+
+\begin{lstlisting}[language=TypeScript]
+const SAFE_ENV_KEYS = new Set([
+    "PATH", "HOME", "USER", "SHELL", "TERM",
+    "LANG", "LC_ALL", "TZ", "PWD",
+]);
+
+const SENSITIVE_PATTERNS: RegExp[] = [
+    /sk-[a-zA-Z0-9]{20,}/g,           // OpenAI API keys
+    /gh[opsu]_[a-zA-Z0-9]{36,}/g,     // GitHub tokens
+    /AKIA[0-9A-Z]{16}/g,               // AWS access keys
+    /(?<=https:\/\/)[^:@\s]+:[^@\s]+@/g, // Basic auth in URLs
+    /-----BEGIN (RSA|EC|OPENSSH) PRIVATE KEY-----[\s\S]*?-----END \1 PRIVATE KEY-----/g,
+];
+
+export function createSafeEnv(): Record<string, string | undefined> {
+    const env: Record<string, string | undefined> = {};
+    for (const key of SAFE_ENV_KEYS) {
+        if (key in process.env) env[key] = process.env[key];
+    }
+    return env;
+}
+
+export function scrubOutput(text: string): string {
+    for (const pattern of SENSITIVE_PATTERNS) {
+        text = text.replace(pattern, "[REDACTED]");
+    }
+    return text;
+}
+\end{lstlisting}
+
+In \texttt{cli.ts}, both the environment is filtered and the output is scrubbed:
+
+\begin{lstlisting}[language=TypeScript]
+import { createSafeEnv, scrubOutput } from "./env-redact.js";
+
+// Before spawn:
+const child = spawn("sh", ["-c", command], {
+    cwd,
+    stdio: ["ignore", "pipe", "pipe"],
+    env: createSafeEnv(),
+});
+
+// In onUpdate:
+onUpdate({
+    content: [{ type: "text", text: scrubOutput(output) }],
+    details: undefined,
+});
+
+// In close handler:
+let text = scrubOutput(output);
+\end{lstlisting}
+
+The same \texttt{scrubOutput()} is applied in \texttt{sandbox-cli.ts} for sandboxed CLI operations.
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tools/env-redact.ts} --- New file: \texttt{createSafeEnv()} returns a filtered environment with only safe system variables; \texttt{scrubOutput()} redacts known sensitive patterns from command output.
+    \item \srcfile{src/tools/cli.ts} --- Replaced \texttt{env: \{ ...process.env \}} with \texttt{env: createSafeEnv()}, added \texttt{scrubOutput()} calls in \texttt{onUpdate} callback and output result construction.
+    \item \srcfile{src/tools/sandbox-cli.ts} --- Added \texttt{scrubOutput()} calls in stdout/stderr data handlers and final output truncation.
+    \item \srcfile{src/__tests__/env-redact.test.ts} --- New test suite for both functions.
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify that \texttt{createSafeEnv()} includes \texttt{PATH} while excluding \texttt{OPENAI\_API\_KEY} and arbitrary test secrets. The \texttt{scrubOutput()} tests confirm redaction of OpenAI API keys, GitHub tokens, AWS access keys, basic auth in URLs, and private key blocks, while preserving safe text unchanged. Integration tests confirm that CLI tool output no longer contains secret environment variable values.
+
+\subsection*{Test File}
+\srcfile{src/__tests__/env-redact.test.ts}
+
+Contains two test groups: \texttt{createSafeEnv} tests (safe vars like PATH are present, sensitive vars like OPENAI\_API\_KEY are excluded, custom secrets are excluded) and \texttt{scrubOutput} tests (OpenAI keys redacted, GitHub tokens redacted, AWS access keys redacted, basic auth in URLs redacted, private key blocks redacted, safe text unchanged).

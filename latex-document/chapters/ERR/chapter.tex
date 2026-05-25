@@ -1,0 +1,41 @@
+\chapter{Error Handling Fixes}
+\label{chap:err-fixes}
+
+This chapter documents all error handling fix branches in the GitAgent repository. Each section corresponds to a single exception-safety or error-propagation defect and its corresponding fix branch.
+
+\begin{itemize}
+    \item \hyperref[{sec:err-001}]{ERR-001}: \branchref{fix/ERR-001-silent-catch-main-error-handler} | \branchdiff{fix/ERR-001-silent-catch-main-error-handler}
+    \item \hyperref[{sec:err-002}]{ERR-002}: \branchref{fix/ERR-002-hooks-error-suppression} | \branchdiff{fix/ERR-002-hooks-error-suppression}
+    \item \hyperref[{sec:err-004}]{ERR-004}: \branchref{fix/ERR-004-no-stack-trace} | \branchdiff{fix/ERR-004-no-stack-trace}
+    \item \hyperref[{sec:err-006}]{ERR-006}: \branchref{fix/ERR-006-telemetry-errors-break-agent} | \branchdiff{fix/ERR-006-telemetry-errors-break-agent}
+    \item \hyperref[{sec:err-007}]{ERR-007}: \branchref{fix/ERR-007-exit-cleanup} | \branchdiff{fix/ERR-007-exit-cleanup}
+    \item \hyperref[{sec:err-008}]{ERR-008}: \branchref{fix/ERR-008-git-machine-import-errors} | \branchdiff{fix/ERR-008-git-machine-import-errors}
+    \item \hyperref[{sec:err-009}]{ERR-009}: \branchref{fix/ERR-009-error-in-error-handler} | \branchdiff{fix/ERR-009-error-in-error-handler}
+    \item \hyperref[{sec:err-010}]{ERR-010}: \branchref{fix/ERR-010-json-parse-errors} | \branchdiff{fix/ERR-010-json-parse-errors}
+    \item \hyperref[{sec:err-011}]{ERR-011}: \branchref{fix/ERR-011-channel-pull} | \branchdiff{fix/ERR-011-channel-pull}
+    \item \hyperref[{sec:err-012}]{ERR-012}: \branchref{fix/ERR-012-exit-code-validation} | \branchdiff{fix/ERR-012-exit-code-validation}
+    \item \hyperref[{sec:err-013}]{ERR-013}: \branchref{fix/ERR-013-task-tracker-states} | \branchdiff{fix/ERR-013-task-tracker-states}
+\end{itemize}
+
+\input{chapters/ERR/ERR-001.tex}
+
+\input{chapters/ERR/ERR-002.tex}
+
+\input{chapters/ERR/ERR-004.tex}
+
+\input{chapters/ERR/ERR-006.tex}
+
+\input{chapters/ERR/ERR-007.tex}
+
+\input{chapters/ERR/ERR-008.tex}
+
+\input{chapters/ERR/ERR-009.tex}
+
+\input{chapters/ERR/ERR-010.tex}
+
+\input{chapters/ERR/ERR-011.tex}
+
+\input{chapters/ERR/ERR-012.tex}
+
+\input{chapters/ERR/ERR-013.tex}
+

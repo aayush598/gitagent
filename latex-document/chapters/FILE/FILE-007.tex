@@ -1,0 +1,139 @@
+\section{FILE-007: Race Condition in Directory Creation}
+\label{sec:file-007}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & FILE-007 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & File Operations \\
+\textbf{Branch} & \branchref{fix/FILE-007-race-condition-dir-creation} \\
+\textbf{Changes} & \branchdiff{fix/FILE-007-race-condition-dir-creation} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{mkdir(dirname(...), \{ recursive: true \})} pattern used in \texttt{src/tools/write.ts}, \texttt{src/tools/memory.ts}, and \texttt{src/audit.ts} is vulnerable to a race condition when called concurrently. While Node.js \texttt{fs.mkdir} with \texttt{recursive: true} is atomic, the real issue is that \texttt{mkdir} and \texttt{writeFile} are separate async operations. Between the directory creation and the file write, another process could delete the directory (causing \texttt{ENOENT}) or replace it with a symlink (a TOCTOU security issue).
+
+The fix introduces a \texttt{safeWriteFile} utility in a new \texttt{src/fs-utils.ts} module that handles directory creation with error suppression and provides an \texttt{atomicWriteFile} variant that writes to a temp file and renames atomically. All three call sites were updated to use this utility.
+
+\subsection*{Root Cause Analysis}
+
+The vulnerable pattern appeared in three locations:
+
+\begin{lstlisting}[language=TypeScript]
+// src/tools/write.ts:29-33 — Before fix
+if (createDirs !== false) {
+    await mkdir(dirname(absolutePath), { recursive: true });  // Step 1
+}
+await writeFile(absolutePath, content, "utf-8");               // Step 2
+
+// src/tools/memory.ts:153-154 — Before fix
+await mkdir(dirname(memoryFile), { recursive: true });
+await writeFile(memoryFile, finalContent, "utf-8");
+
+// src/audit.ts:38 — Before fix
+await mkdir(dirname(this.logPath), { recursive: true });
+await appendFile(this.logPath, JSON.stringify(entry) + "\n", "utf-8");
+\end{lstlisting}
+
+Between Step 1 and Step 2:
+\begin{itemize}
+    \item Another concurrent operation could create the same directory structure
+    \item Another process could delete the directory after \texttt{mkdir} succeeds
+    \item Another process could replace the directory with a symlink (security issue)
+    \item A file system transient error could occur
+\end{itemize}
+
+\subsection*{Fix Implementation}
+
+The fix introduces a shared utility module with two functions:
+
+\begin{lstlisting}[language=TypeScript]
+// src/fs-utils.ts — New file
+import { mkdir, writeFile, mkdtemp, rename, rm } from "fs/promises";
+import { dirname, join } from "path";
+import { tmpdir } from "os";
+
+export async function safeWriteFile(
+    path: string, content: string
+): Promise<void> {
+    await mkdir(dirname(path), { recursive: true }).catch(() => {});
+    await writeFile(path, content, "utf-8");
+}
+
+export async function atomicWriteFile(
+    path: string, content: string
+): Promise<void> {
+    await mkdir(dirname(path), { recursive: true }).catch(() => {});
+    const tmpDir = await mkdtemp(join(tmpdir(), "gitclaw-"));
+    const tmpFile = join(tmpDir, "content");
+    try {
+        await writeFile(tmpFile, content, "utf-8");
+        await rename(tmpFile, path);
+    } finally {
+        await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+    }
+}
+\end{lstlisting}
+
+All three call sites were updated:
+
+\begin{lstlisting}[language=TypeScript]
+// src/tools/write.ts — After fix
+if (createDirs !== false) {
+    await safeWriteFile(absolutePath, content);
+} else {
+    await writeFile(absolutePath, content, "utf-8");
+}
+
+// src/tools/memory.ts — After fix
+await safeWriteFile(memoryFile, finalContent);
+
+// src/audit.ts — After fix
+try {
+    await appendFile(this.logPath, JSON.stringify(entry) + "\n", "utf-8");
+} catch (err: any) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+        await safeWriteFile(this.logPath, JSON.stringify(entry) + "\n");
+    }
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/fs-utils.ts} --- new utility module with \texttt{safeWriteFile} and \texttt{atomicWriteFile}
+    \item \srcfile{src/tools/write.ts} --- replaced \texttt{mkdir+writeFile} with \texttt{safeWriteFile}
+    \item \srcfile{src/tools/memory.ts} --- replaced \texttt{mkdir+writeFile} with \texttt{safeWriteFile}
+    \item \srcfile{src/audit.ts} --- added \texttt{safeWriteFile} fallback on \texttt{ENOENT}
+    \item \srcfile{src/\_\_tests\_\_/file-007.test.ts} --- new concurrent write tests
+\end{itemize}
+
+\subsection*{Verification}
+\begin{lstlisting}[language=TypeScript]
+// file-007.test.ts
+test("safeWriteFile handles concurrent writes without race", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "file-007-"));
+    const { safeWriteFile } = await import("../fs-utils.ts");
+
+    const promises = Array.from({ length: 10 }, (_, i) =>
+        safeWriteFile(join(dir, "sub", `file-${i}.txt`), `content-${i}`),
+    );
+
+    await Promise.all(promises);
+
+    for (let i = 0; i < 10; i++) {
+        const content = await readFile(
+            join(dir, "sub", `file-${i}.txt`), "utf-8");
+        strictEqual(content, `content-${i}`);
+    }
+});
+
+test("safeWriteFile creates parent directories", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "file-007-dir-"));
+    const { safeWriteFile } = await import("../fs-utils.ts");
+
+    await safeWriteFile(join(dir, "a", "b", "c", "test.txt"), "nested");
+    const content = await readFile(
+        join(dir, "a", "b", "c", "test.txt"), "utf-8");
+    strictEqual(content, "nested");
+});
+\end{lstlisting}

@@ -1,0 +1,129 @@
+\section{CONFIG-010: Model Constraints Inconsistent Naming}
+\label{sec:config-010}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & CONFIG-010 \\
+\textbf{Severity} & Low \\
+\textbf{Category} & Configuration \\
+\textbf{Branch} & \branchref{fix/CONFIG-010-model-constraints-naming} \\
+\textbf{Changes} & \branchdiff{fix/CONFIG-010-model-constraints-naming} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+In \texttt{src/sdk.ts:286-292}, model constraints from SDK options are checked using both snake\_case and camelCase variants: \texttt{c.maxTokens} and \texttt{c.max\_tokens}, \texttt{c.topP} and \texttt{c.top\_p}, \texttt{c.topK} and \texttt{c.top\_k}. However, the \texttt{AgentManifest} interface in \texttt{src/loader.ts} only defines snake\_case variants. The dual-check pattern creates confusion about which convention is canonical and loses type safety through the \texttt{as any} cast.
+
+The fix introduces a normalization function that maps both naming conventions to a canonical snake\_case form, removing the redundant dual checks and restoring type clarity.
+
+\subsection*{Root Cause Analysis}
+
+The original code checked both variants with no canonical form:
+
+\begin{lstlisting}[language=TypeScript]
+// src/sdk.ts:286-292 — Before fix
+const constraints = options.constraints ?? loaded.manifest.model.constraints;
+if (constraints) {
+    const c = constraints as any;
+    if (c.temperature !== undefined) modelOptions.temperature = c.temperature;
+    if (c.maxTokens !== undefined) modelOptions.maxTokens = c.maxTokens;
+    if (c.max_tokens !== undefined) modelOptions.maxTokens = c.max_tokens;
+    if (c.topP !== undefined) modelOptions.topP = c.topP;
+    if (c.top_p !== undefined) modelOptions.topP = c.top_p;
+    if (c.topK !== undefined) modelOptions.topK = c.topK;
+    if (c.top_k !== undefined) modelOptions.topK = c.top_k;
+}
+\end{lstlisting}
+
+The manifest interface only defines snake\_case:
+
+\begin{lstlisting}[language=TypeScript]
+// src/loader.ts:38-44 — Manifest interface
+model: {
+    preferred: string;
+    fallback: string[];
+    constraints?: {
+        temperature?: number;
+        max_tokens?: number;    // snake_case
+        top_p?: number;         // snake_case
+        top_k?: number;         // snake_case
+        stop_sequences?: string[];
+    };
+};
+\end{lstlisting}
+
+Problems with the dual-check approach:
+\begin{itemize}
+    \item \textbf{No canonical convention}: Config files use \texttt{max\_tokens}, SDK accepts \texttt{maxTokens}
+    \item \textbf{Silent precedence}: If both \texttt{maxTokens} and \texttt{max\_tokens} are provided, \texttt{max\_tokens} wins because it is checked second
+    \item \textbf{Lost type safety}: The \texttt{as any} cast bypasses TypeScript checking
+\end{itemize}
+
+\subsection*{Fix Implementation}
+
+The fix introduces a normalization function with a mapping table:
+
+\begin{lstlisting}[language=TypeScript]
+// src/sdk.ts — After fix
+const CONSTRAINT_MAPPING: Record<string, string> = {
+    maxTokens: "max_tokens",
+    max_tokens: "max_tokens",
+    topP: "top_p",
+    top_p: "top_p",
+    topK: "top_k",
+    top_k: "top_k",
+    temperature: "temperature",
+    stop_sequences: "stop_sequences",
+    stopSequences: "stop_sequences",
+};
+
+function normalizeConstraints(raw: Record<string, any>): Record<string, any> {
+    const result: Record<string, any> = {};
+    for (const [key, value] of Object.entries(raw)) {
+        const canonical = CONSTRAINT_MAPPING[key];
+        if (canonical) result[canonical] = value;
+    }
+    return result;
+}
+\end{lstlisting}
+
+The usage site is now clean and only references the canonical form:
+
+\begin{lstlisting}[language=TypeScript]
+// src/sdk.ts — After fix: usage
+const constraints = options.constraints ?? loaded.manifest.model.constraints;
+if (constraints) {
+    const c = normalizeConstraints(constraints as any);
+    if (c.temperature !== undefined) modelOptions.temperature = c.temperature;
+    if (c.max_tokens !== undefined) modelOptions.maxTokens = c.max_tokens;
+    if (c.top_p !== undefined) modelOptions.topP = c.top_p;
+    if (c.top_k !== undefined) modelOptions.topK = c.top_k;
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/sdk.ts} --- added \texttt{normalizeConstraints} function, removed dual checks
+    \item \srcfile{src/\_\_tests\_\_/config-010.test.ts} --- new normalization tests
+\end{itemize}
+
+\subsection*{Verification}
+\begin{lstlisting}[language=TypeScript]
+// config-010.test.ts
+test("normalizeConstraints maps camelCase to snake_case", () => {
+    const result = normalizeConstraints(
+        { maxTokens: 100, topP: 0.9, topK: 50 });
+    deepStrictEqual(result, { max_tokens: 100, top_p: 0.9, top_k: 50 });
+});
+
+test("normalizeConstraints passes snake_case through unchanged", () => {
+    const result = normalizeConstraints(
+        { max_tokens: 100, top_p: 0.9, top_k: 50 });
+    deepStrictEqual(result, { max_tokens: 100, top_p: 0.9, top_k: 50 });
+});
+
+test("normalizeConstraints prefers snake_case when both forms present", () => {
+    const result = normalizeConstraints(
+        { maxTokens: 50, max_tokens: 100 });
+    deepStrictEqual(result, { max_tokens: 100 });
+});
+\end{lstlisting}

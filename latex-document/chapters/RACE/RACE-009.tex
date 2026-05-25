@@ -1,0 +1,83 @@
+\section{RACE-009: File System Operation Interleaving}
+\label{sec:race-009}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & RACE-009 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Race Condition \\
+\textbf{Branch} & \branchref{fix/RACE-009-file-system-interleaving}
+\textbf{Changes} & \branchdiff{fix/RACE-009-file-system-interleaving} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+Multiple async functions in the codebase write to the same files concurrently without synchronization. The \code{AuditLogger} in \srcfile{src/audit.ts} appends to \code{audit.jsonl} using \code{appendFile}, but Node.js's \code{appendFile} is not atomic for concurrent writes from multiple async contexts — data can be interleaved at chunk boundaries. Similarly, the \code{write} tool in \srcfile{src/tools/write.ts} and background memory saves can produce corrupted output when racing.
+
+\subsection*{Root Cause Analysis}
+Concurrent writes to the same path are not serialized:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — direct appendFile without serialization (src/audit.ts)
+async log(event, data) {
+    try {
+        await mkdir(dirname(this.logPath), { recursive: true });
+        await appendFile(this.logPath, JSON.stringify(entry) + "\n", "utf-8");
+    } catch { /* */ }
+}
+
+// src/tools/write.ts — unconditional overwrite
+await writeFile(absolutePath, content, "utf-8");
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+A per-file write queue serializes writes to the same path:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — src/shared/write-queue.ts
+const writeQueues = new Map();
+
+export async function enqueueWrite(path: string, fn: () => Promise<void>): Promise<void> {
+    while (true) {
+        const prev: Promise<void> = writeQueues.get(path) || Promise.resolve();
+        const next = prev.then(fn, fn);
+        if (writeQueues.get(path) === prev || !writeQueues.has(path)) {
+            writeQueues.set(path, next);
+            return next;
+        }
+    }
+}
+
+// src/audit.ts — use write queue
+await enqueueWrite(this.logPath, () =>
+    appendFile(this.logPath, JSON.stringify(entry) + "\n", "utf-8"),
+);
+
+// src/tools/write.ts — use write queue
+await enqueueWrite(absolutePath, () =>
+    writeFile(absolutePath, content, "utf-8"),
+);
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/shared/write-queue.ts} — New shared write serialization utility
+    \item \srcfile{src/audit.ts} — Log method uses write queue
+    \item \srcfile{src/tools/write.ts} — Write tool uses write queue
+    \item \srcfile{src/\_\_tests\_\_/file-system-interleaving.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify writes to the same path are serialized:
+
+\begin{lstlisting}[language=TypeScript]
+const order: string[] = [];
+await Promise.all([
+    enqueueWrite("/tmp/test.log", async () => {
+        await new Promise((r) => setTimeout(r, 10));
+        order.push("first");
+    }),
+    enqueueWrite("/tmp/test.log", async () => {
+        order.push("second");
+    }),
+]);
+assert.equal(order[0], "first", "First enqueued write should complete first");
+\end{lstlisting}

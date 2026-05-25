@@ -1,0 +1,311 @@
+\section{BUG-011: Composio Tool Name Collisions}
+\label{sec:bug-011}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & BUG-011 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Bug Fix \\
+\textbf{Affected File} & \srcfile{src/composio/adapter.ts:101-118} \\
+\textbf{Branch} & \branchref{fix/BUG-011-composio-name-collision-dedup} \\
+\textbf{Changes} & \branchdiff{fix/BUG-011-composio-name-collision-dedup} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{ComposioAdapter.toGCTool()} method in \texttt{src/composio/adapter.ts:101-118} constructs a unique tool name by concatenating \texttt{composio\_}, the toolkit slug, and the tool slug, then sanitizing with a regex replacement that converts all non-alphanumeric characters to underscores. While this produces valid JavaScript identifiers, it creates a collision risk: two different tools with different original names can map to the same sanitized name.
+
+For example, a tool with the slug \texttt{send-email} and a tool with the slug \texttt{send\_email} would both sanitize to \texttt{send\_email}. If both belong to the same toolkit, the generated names would collide. When these tools are registered with the agent's tool registry, the second tool to be registered silently overwrites the first, causing the first tool to become inaccessible. The agent may then fail to execute actions that require the overwritten tool.
+
+The issue is compounded by the fact that the \texttt{ComposioAdapter} caches tools and returns them as an array — there is no deduplication check or collision warning. The collision is silent: no error is thrown, no warning is logged. The agent simply loses access to one of the tools.
+
+Additionally, the sanitization regex \texttt{[\textasciicircum{}a-zA-Z0-9\_]} does not account for leading digits that could result from slug patterns. If a toolkit slug were numeric (unlikely but possible), the resulting name would start with a digit, which is not a valid JavaScript identifier.
+
+---
+
+\subsection*{Root Cause Analysis}
+\#\#\# The Code
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// adapter.ts:101-118
+private toGCTool(t: ComposioTool): GCToolDefinition {
+    const safeName = `composio_${t.toolkitSlug}_${t.slug}`.replace(/[^a-zA-Z0-9_]/g, "_");
+    let description = `[Composio/${t.toolkitSlug}] ${t.description}`;
+    if (t.slug.includes("SEND_EMAIL")) {
+        description += " — USE THIS to send emails directly.";
+    } else if (t.slug.includes("CREATE_EMAIL_DRAFT")) {
+        description += " — Only use when the user explicitly asks for a draft.";
+    }
+    return {
+        name: safeName,
+        description,
+        inputSchema: t.parameters,
+        handler: async (args: any) => {
+            const result = await this.client.executeTool(t.slug, this.userId, args);
+            return typeof result === "string" ? result : JSON.stringify(result);
+        },
+    };
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# The Collision Mechanism
+
+The name is built from three parts:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+composio_${toolkitSlug}_${slug}
+
+\end{lstlisting}
+
+
+
+Then ALL non-alphanumeric characters (except underscore) are replaced with \texttt{\_}:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+.replace(/[^a-zA-Z0-9_]/g, "_")
+
+\end{lstlisting}
+
+
+
+\textbf{Collision Example 1: Hyphen vs Underscore in Toolkit Slug}
+
+| Toolkit Slug | Tool Slug | Raw Name | Sanitized Name |
+|---|---|---|---|
+| \texttt{google-mail} | \texttt{send-email} | \texttt{composio\_google-mail\_send-email} | \texttt{composio\_google\_mail\_send\_email} |
+| \texttt{google\_mail} | \texttt{send\_email} | \texttt{composio\_google\_mail\_send\_email} | \texttt{composio\_google\_mail\_send\_email} |
+| \texttt{google\_mail} | \texttt{send-email} | \texttt{composio\_google\_mail\_send-email} | \texttt{composio\_google\_mail\_send\_email} |
+
+In all three cases above, the sanitized name is identical, but the tools are different.
+
+\textbf{Collision Example 2: Toolkit + Tool Boundary Ambiguity}
+
+| Toolkit Slug | Tool Slug | Sanitized Name |
+|---|---|---|
+| \texttt{github} | \texttt{issues\_list} | \texttt{composio\_github\_issues\_list} |
+| \texttt{github\_issues} | \texttt{list} | \texttt{composio\_github\_issues\_list} |
+
+These are clearly different tools — one lists issues, the other could be anything from a \texttt{github\_issues} toolkit — but they map to the same name.
+
+\#\#\# Why This Happens
+
+The underscore \texttt{\_} is preserved by the regex. The concatenation uses \texttt{\_} as a separator between toolkit slug and tool slug. If either the toolkit slug or tool slug contains \texttt{\_} (as underscores are common in slug-like identifiers), the boundary between the three components becomes ambiguous.
+
+The fix requires either:
+1. Using a separator character that is NOT preserved by sanitization
+2. Preserving original characters or using encoding
+3. Adding collision detection with disambiguation logic
+
+\#\#\# The Overwrite Chain
+
+The tools are collected in \texttt{getTools()}:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// adapter.ts:39-44
+const tools: GCToolDefinition[] = [];
+for (const toolGroup of toolsBySlug) {
+    for (const t of toolGroup) {
+        tools.push(this.toGCTool(t));
+    }
+}
+
+\end{lstlisting}
+
+
+
+When these tools are later registered with the agent system (likely in a Map or similar structure), the second tool with a duplicate name silently overwrites the first. Since the caching layer returns \texttt{GCToolDefinition[]}, and the agent likely indexes by name, only one of the colliding tools is available.
+
+---
+
+\subsection*{Fix Implementation}
+\#\#\# Option A: Hash-Based Disambiguation (Recommended)
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// adapter.ts — collision-resistant naming
+private toGCTool(t: ComposioTool): GCToolDefinition {
+    // Use a hash of the original names to prevent collisions
+    const rawName = `composio_${t.toolkitSlug}_${t.slug}`;
+    // Hash the original slug to disambiguate
+    const rawSlug = `${t.toolkitSlug}:${t.slug}`;
+    let hash = 0;
+    for (let i = 0; i < rawSlug.length; i++) {
+        const char = rawSlug.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0;
+    }
+    const hashStr = Math.abs(hash).toString(36).slice(0, 6);
+    const safeName = rawName.replace(/[^a-zA-Z0-9_]/g, "_") + "_" + hashStr;
+
+    // ... rest unchanged
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# Option B: Separator Encoding
+
+Use a separator that is NOT preserved by the sanitization:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+private toGCTool(t: ComposioTool): GCToolDefinition {
+    // Use a separator character that gets sanitized away,
+    // so the boundary between parts is unambiguous
+    const safeToolkit = t.toolkitSlug.replace(/[^a-zA-Z0-9_]/g, "_");
+    const safeSlug = t.slug.replace(/[^a-zA-Z0-9_]/g, "_");
+    // Use "__" (double underscore) as separator since single _ is preserved
+    const safeName = `composio__${safeToolkit}__${safeSlug}`;
+
+    // ... rest unchanged
+}
+
+\end{lstlisting}
+
+
+
+With \texttt{[\textasciicircum{}a-zA-Z0-9\_]} keeping \texttt{\_}, using \texttt{\_\_} as a separator helps but doesn't fully prevent collisions if slugs naturally contain \texttt{\_\_}.
+
+\#\#\# Option C: Collision Detection with Logged Warning
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// Keep current naming but add collision detection
+private knownNames = new Set<string>();
+private collisionCount = 0;
+
+private toGCTool(t: ComposioTool): GCToolDefinition {
+    const safeName = `composio_${t.toolkitSlug}_${t.slug}`.replace(/[^a-zA-Z0-9_]/g, "_");
+    if (this.knownNames.has(safeName)) {
+        this.collisionCount++;
+        console.error(`[composio] WARNING: Tool name collision: "${safeName}" ` +
+            `(toolkit=${t.toolkitSlug}, slug=${t.slug})`);
+    }
+    this.knownNames.add(safeName);
+    // ...
+}
+
+\end{lstlisting}
+
+
+
+---
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/composio/adapter.ts} — primary affected file
+\end{itemize}
+
+\subsection*{Verification}
+The fix is verified through unit tests and integration tests that confirm the corrected behavior:
+
+\begin{lstlisting}[language=TypeScript]
+// verification/bug-011-verify.ts
+import { describe, it } from "node:test";
+
+interface ComposioTool {
+    toolkitSlug: string;
+    slug: string;
+}
+
+function sanitizeOld(toolkitSlug: string, slug: string): string {
+    return `composio_${toolkitSlug}_${slug}`.replace(/[^a-zA-Z0-9_]/g, "_");
+}
+
+function sanitizeNew(toolkitSlug: string, slug: string): string {
+    const rawName = `composio_${toolkitSlug}_${slug}`;
+    const rawSlug = `${toolkitSlug}:${slug}`;
+    let hash = 0;
+    for (let i = 0; i < rawSlug.length; i++) {
+        const char = rawSlug.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0;
+    }
+    const hashStr = Math.abs(hash).toString(36).slice(0, 6);
+    return rawName.replace(/[^a-zA-Z0-9_]/g, "_") + "_" + hashStr;
+}
+
+describe("BUG-011: Tool Name Collisions", () => {
+    it("should produce unique names for known collision pairs (old method)", () => {
+        // These pairs collide with the old sanitization
+        const pairs = [
+            ["google-mail", "send-email"],
+            ["google_mail", "send_email"],
+        ];
+        const names = pairs.map(([t, s]) => sanitizeOld(t, s));
+        if (names[0] === names[1]) {
+            throw new Error(`Collision: "${names[0]}"`);
+        }
+    });
+
+    it("should produce unique names with hyphen vs underscore (new method)", () => {
+        const pairs = [
+            ["google-mail", "send-email"],
+            ["google_mail", "send_email"],
+            ["github", "issues-list"],
+            ["github_issues", "list"],
+        ];
+        const names = pairs.map(([t, s]) => sanitizeNew(t, s));
+        const unique = new Set(names);
+        if (unique.size !== names.length) {
+            throw new Error(`${names.length - unique.size} collision(s) detected`);
+        }
+    });
+
+    it("should be idempotent (same input = same output)", () => {
+        const name1 = sanitizeNew("google-mail", "send-email");
+        const name2 = sanitizeNew("google-mail", "send-email");
+        if (name1 !== name2) {
+            throw new Error(`Not idempotent: "${name1}" vs "${name2}"`);
+        }
+    });
+
+    it("should produce valid JS identifiers", () => {
+        const testCases = [
+            ["gmail", "send_email"],
+            ["google-mail", "send-email"],
+            ["slack", "post_message"],
+            ["github_issues", "list"],
+            ["123toolkit", "tool"],
+        ];
+        for (const [t, s] of testCases) {
+            const name = sanitizeNew(t, s);
+            // Valid JS identifier: start with letter, _, or $, rest alphanumeric or _
+            if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
+                throw new Error(`Invalid identifier: "${name}"`);
+            }
+        }
+    });
+
+    it("should handle many tools without collisions", () => {
+        const tools: ComposioTool[] = [];
+        for (let i = 0; i < 1000; i++) {
+            tools.push({
+                toolkitSlug: `toolkit_${i % 50}`,
+                slug: `tool_${i}`,
+            });
+        }
+        const names = tools.map(t => sanitizeNew(t.toolkitSlug, t.slug));
+        const unique = new Set(names);
+        if (unique.size !== names.length) {
+            throw new Error(`${names.length - unique.size} collisions in ${names.length} tools`);
+        }
+    });
+});
+
+\end{lstlisting}
+

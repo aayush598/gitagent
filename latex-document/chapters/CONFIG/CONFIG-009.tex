@@ -1,0 +1,115 @@
+\section{CONFIG-009: GITCLAW\_ENV Only Partially Supported}
+\label{sec:config-009}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & CONFIG-009 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Configuration \\
+\textbf{Branch} & \branchref{fix/CONFIG-009-gitclaw-env-support} \\
+\textbf{Changes} & \branchdiff{fix/CONFIG-009-gitclaw-env-support} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{GITCLAW\_ENV} environment variable is used in \texttt{src/config.ts:45} to determine which config preset to load, but it is only referenced in \texttt{loadEnvConfig()} and nowhere else. Other parts of the system that could benefit from environment-aware behavior---different log levels, error verbosity, model fallbacks---do not check \texttt{GITCLAW\_ENV}. Additionally, there is no validation that the environment name is one of the expected values (\texttt{development}, \texttt{staging}, \texttt{production}); any string is accepted and silently ignored.
+
+The fix adds environment validation with a warning for unknown values and introduces environment-aware variables in the entry point for downstream use.
+
+\subsection*{Root Cause Analysis}
+
+The original code only used \texttt{GITCLAW\_ENV} in one place:
+
+\begin{lstlisting}[language=TypeScript]
+// src/config.ts:43-55 — Before fix
+export async function loadEnvConfig(
+    agentDir: string, env?: string
+): Promise<EnvConfig> {
+    const configDir = join(agentDir, "config");
+    const envName = env || process.env.GITCLAW_ENV;  // Only usage in codebase
+
+    const base = await loadYamlFile(join(configDir, "default.yaml"));
+    if (envName) {
+        const envOverride = await loadYamlFile(join(configDir, envName + ".yaml"));
+        return deepMerge(base, envOverride) as EnvConfig;
+    }
+    return base as EnvConfig;
+}
+\end{lstlisting}
+
+There was no validation of the environment name---any string passed as \texttt{GITCLAW\_ENV} would be used as a filename without asserting it was a known environment.
+
+\subsection*{Fix Implementation}
+
+The fix adds a set of valid environments and validation with a warning:
+
+\begin{lstlisting}[language=TypeScript]
+// src/config.ts — After fix
+const VALID_ENVS = new Set(["development", "staging", "production", "test"]);
+
+export async function loadEnvConfig(
+    agentDir: string, env?: string
+): Promise<EnvConfig> {
+    const configDir = join(agentDir, "config");
+    const envName = env || process.env.GITCLAW_ENV;
+
+    if (envName && !VALID_ENVS.has(envName)) {
+        console.warn(
+            "[config] Unknown environment \"" + envName + "\". " +
+            "Valid values: " + [...VALID_ENVS].join(", "));
+    }
+
+    const base = await loadYamlFile(join(configDir, "default.yaml"));
+    if (envName) {
+        const envOverride = await loadYamlFile(join(configDir, envName + ".yaml"));
+        return deepMerge(base, envOverride) as EnvConfig;
+    }
+    return base as EnvConfig;
+}
+\end{lstlisting}
+
+Additionally, environment-aware variables were introduced in the entry point:
+
+\begin{lstlisting}[language=TypeScript]
+// src/index.ts — After fix
+const _envName = process.env.GITCLAW_ENV || "production";
+const _isDev = _envName === "development";
+\end{lstlisting}
+
+These variables can be used throughout the system to adjust behavior based on the environment, such as enabling verbose logging in development or full stack traces.
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/config.ts} --- added \texttt{VALID\_ENVS} set and validation
+    \item \srcfile{src/index.ts} --- added \texttt{\_envName} and \texttt{\_isDev} constants
+    \item \srcfile{src/\_\_tests\_\_/config-009.test.ts} --- new environment validation tests
+\end{itemize}
+
+\subsection*{Verification}
+\begin{lstlisting}[language=TypeScript]
+// config-009.test.ts
+const VALID_ENVS = new Set(["development", "staging", "production", "test"]);
+
+function validateEnv(name: string | undefined): boolean {
+    if (!name) return true;
+    if (!VALID_ENVS.has(name)) {
+        console.warn("Unknown environment \"" + name + "\"");
+        return false;
+    }
+    return true;
+}
+
+test("valid environment names are accepted", () => {
+    strictEqual(validateEnv("development"), true);
+    strictEqual(validateEnv("staging"), true);
+    strictEqual(validateEnv("production"), true);
+    strictEqual(validateEnv("test"), true);
+});
+
+test("invalid environment name is rejected", () => {
+    strictEqual(validateEnv("invalid-env"), false);
+});
+
+test("undefined environment is accepted (no env set)", () => {
+    strictEqual(validateEnv(undefined), true);
+});
+\end{lstlisting}

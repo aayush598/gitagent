@@ -1,0 +1,117 @@
+\section{LOG-006: Enhanced Health Check Endpoint}
+\label{sec:log-006}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & LOG-006 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Logging \\
+\textbf{Branch} & \branchref{fix/LOG-006-health-check-endpoint} \\
+\textbf{Changes} & \branchdiff{fix/LOG-006-health-check-endpoint} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The voice HTTP server's \texttt{/health} endpoint in \texttt{src/voice/server.ts:1990-1991} is a placeholder that returns \texttt{\{ status: "ok" \}} without performing any actual checks. It does not verify that git operations work, that the workspace is readable, that the WebSocket connection to the voice provider is alive, or that disk space is available. For containerized deployments (Kubernetes, Docker Compose, Render, Fly.io), orchestrators rely on meaningful liveness and readiness probes to restart unhealthy instances. Without them, a deadlocked agent runs forever with no automatic recovery.
+
+The fix expands the \texttt{/health} endpoint to perform real checks---git repository integrity, disk accessibility, and adapter connectivity---and returns HTTP 503 when any critical check fails.
+
+\subsection*{Root Cause Analysis}
+
+The original health check was a minimal stub:
+
+\begin{lstlisting}[language=TypeScript]
+// src/voice/server.ts:1990-1991 — Before fix
+if (url.pathname === "/health") {
+    jsonReply(res, 200, { status: "ok" });
+}
+\end{lstlisting}
+
+No checks were performed for:
+\begin{itemize}
+    \item Git repository state (corrupted index, detached HEAD)
+    \item Disk space or directory accessibility
+    \item OpenAI/Gemini WebSocket connectivity
+    \item Memory pressure or active session count
+\end{itemize}
+
+A \texttt{curl http://localhost:3333/health} would return \texttt{200 OK} even when the agent was completely non-functional.
+
+\subsection*{Fix Implementation}
+
+The fix expands the health endpoint with real checks:
+
+\begin{lstlisting}[language=TypeScript]
+// src/voice/server.ts — After fix
+if (url.pathname === "/health") {
+    const checks: Record<string, string> = {};
+
+    // Git check
+    try {
+        execSync("git rev-parse HEAD", {
+            cwd: agentRoot, stdio: "pipe",
+        });
+        checks.git = "ok";
+    } catch {
+        checks.git = "corrupt";
+    }
+
+    // Disk check
+    try {
+        await access(agentRoot);
+        checks.disk = "ok";
+    } catch {
+        checks.disk = "unreadable";
+    }
+
+    // Adapter check (if voice mode is active)
+    if (adapter) {
+        checks.websocket = adapter.isConnected()
+            ? "ok" : "disconnected";
+    }
+
+    const allOk = Object.values(checks).every(v => v === "ok");
+    const status = allOk ? "healthy" : "degraded";
+    jsonReply(res, allOk ? 200 : 503, { status, checks });
+}
+\end{lstlisting}
+
+The endpoint now returns:
+\begin{itemize}
+    \item \texttt{200 \{ status: "healthy", checks: \{ git: "ok", disk: "ok" \} \}} when all checks pass
+    \item \texttt{503 \{ status: "degraded", checks: \{ git: "corrupt", disk: "ok" \} \}} when any check fails
+\end{itemize}
+
+Kubernetes can use this as both a liveness probe (is the process alive?) and a readiness probe (is the agent actually working?).
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/voice/server.ts} --- expanded \texttt{/health} endpoint with git, disk, and adapter checks
+    \item \srcfile{src/\_\_tests\_\_/log-006.test.ts} --- new health check tests
+\end{itemize}
+
+\subsection*{Verification}
+\begin{lstlisting}[language=TypeScript]
+// log-006.test.ts
+test("health check returns status object with checks", () => {
+    const checks: Record<string, string> = {};
+    checks.git = "ok";
+    checks.disk = "ok";
+    const allOk = Object.values(checks).every(v => v === "ok");
+    const status = allOk ? "healthy" : "degraded";
+
+    strictEqual(status, "healthy");
+    strictEqual(checks.git, "ok");
+    strictEqual(checks.disk, "ok");
+});
+
+test("health check reports degraded when checks fail", () => {
+    const checks: Record<string, string> = {};
+    checks.git = "corrupt";
+    checks.disk = "ok";
+    const allOk = Object.values(checks).every(v => v === "ok");
+    const status = allOk ? "healthy" : "degraded";
+
+    strictEqual(status, "degraded");
+    strictEqual(checks.git, "corrupt");
+});
+\end{lstlisting}

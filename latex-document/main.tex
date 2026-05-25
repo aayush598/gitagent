@@ -1,0 +1,128 @@
+\documentclass[12pt,a4paper,twoside]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tocloft}
+\usepackage{appendix}
+\usepackage{enumitem}
+
+\geometry{margin=1in}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=cyan!70!black,
+    citecolor=blue
+}
+
+% GitHub repository URL — all branch links are derived from this
+\newcommand{\repourl}{https://github.com/aayush598/gitagent}
+\newcommand{\branchurl}[1]{\href{\repourl/tree/#1}{\texttt{#1}}}
+\newcommand{\branchdiff}[1]{\href{\repourl/compare/main...#1}{[\textbf{View Diff on GitHub}]}}
+\newcommand{\fileurl}[1]{\href{\repourl/blob/main/#1}{\texttt{#1}}}
+\newcommand{\commiturl}[1]{\href{\repourl/commit/#1}{\texttt{#1}}}
+% Legacy \branchref maps to clickable \branchurl — avoid name conflicts with packages
+\newcommand{\gitbranch}[1]{\branchurl{#1}}
+\newcommand{\gitdiff}[1]{\branchdiff{#1}}
+
+% Clickable file links on GitHub (main branch)
+\newcommand{\repofile}[1]{\href{\repourl/blob/main/#1}{\texttt{#1}}}
+% \filename may conflict with packages; use a distinct name
+\newcommand{\srcfile}[1]{\href{\repourl/blob/main/#1}{\texttt{#1}}}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    backgroundcolor=\color{gray!10},
+    alsoletter={\&},
+    literate={\&}{\&}1
+}
+
+% Define TypeScript as an alias for JavaScript for listings
+\lstdefinelanguage{TypeScript}{
+    keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, let, const, if, in, while, do, else, case, break, export, import, from, as, async, await, type, interface, class, extends, implements, instanceof, typeof, keyof, readonly, Partial, Required, Pick, Record, Promise, never, unknown, any, void},
+    keywordstyle=\color{blue}\bfseries,
+    ndkeywords={string, number, boolean, undefined, null, Array, Map, Set, Error},
+    ndkeywordstyle=\color{codegreen}\bfseries,
+    sensitive=false,
+    comment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    commentstyle=\color{codegray},
+    stringstyle=\color{codepurple},
+    morestring=[b]',
+    morestring=[b]"
+}
+
+\titleformat{\chapter}[hang]{\Huge\bfseries}{Chapter \thechapter}{20pt}{}
+\titleformat{\section}[hang]{\Large\bfseries}{\thesection}{12pt}{}
+\titleformat{\subsection}[hang]{\large\bfseries}{\thesubsection}{8pt}{}
+\titleformat{\subsubsection}[hang]{\normalfont\bfseries}{\thesubsubsection}{6pt}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\leftmark}
+\fancyhead[RO]{\rightmark}
+\fancyfoot[LE,RO]{\thepage}
+
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\renewcommand{\sectionmark}[1]{\markright{#1}}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+
+\newcommand{\issueid}[1]{\textbf{#1}}
+\newcommand{\filename}[1]{\texttt{#1}}
+\newcommand{\branchref}[1]{\texttt{#1}}
+\newcommand{\severity}[1]{\textbf{Severity:} #1}
+\newcommand{\filelist}[1]{\begin{itemize}#1\end{itemize}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\begin{document}
+
+\title{\Huge\textbf{GitAgent Fix Documentation}\\[1cm]
+\LARGE Comprehensive Technical Report\\of All Bug Fixes, Security Patches,\\
+Code Quality Improvements, and Enhancements\\
+\vspace{0.5cm}
+\large Across 97+ Feature Branches}
+\author{GitAgent Development Team}
+\date{\today}
+\maketitle
+
+\tableofcontents
+\newpage
+
+\input{chapters/introduction.tex}
+
+\input{chapters/SEC/chapter.tex}
+\input{chapters/BUG/chapter.tex}
+\input{chapters/ERR/chapter.tex}
+\input{chapters/RACE/chapter.tex}
+\input{chapters/TYPE/chapter.tex}
+\input{chapters/NET/chapter.tex}
+\input{chapters/PERF/chapter.tex}
+\input{chapters/CONC/chapter.tex}
+\input{chapters/CONFIG/chapter.tex}
+\input{chapters/CQ/chapter.tex}
+\input{chapters/DEP/chapter.tex}
+\input{chapters/FILE/chapter.tex}
+\input{chapters/LOG/chapter.tex}
+
+\end{document}

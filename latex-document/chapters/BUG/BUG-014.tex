@@ -1,0 +1,424 @@
+\section{BUG-014: Cron Parser Fails on Non-Standard Expressions}
+\label{sec:bug-014}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & BUG-014 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Bug Fix \\
+\textbf{Affected File} & \srcfile{src/schedule-runner.ts:45-47} \\
+\textbf{Branch} & \branchref{fix/BUG-014-cron-alias-expansion} \\
+\textbf{Changes} & \branchdiff{fix/BUG-014-cron-alias-expansion} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{startScheduler} function in \texttt{src/schedule-runner.ts} uses \texttt{node-cron}'s \texttt{cron.validate()} to verify schedule expressions before registering them. However, \texttt{node-cron}'s \texttt{validate()} function only accepts standard 5-field cron expressions (e.g., \texttt{*/5 * * * *}). It does \textbf{not} accept non-standard scheduling aliases like \texttt{@daily}, \texttt{@hourly}, \texttt{@every 5 minutes}, or \texttt{@weekly} that are commonly used in other cron implementations (e.g., \texttt{cron} npm package, Linux cron, Quartz).
+
+When a user or plugin defines a schedule using one of these non-standard aliases, \texttt{cron.validate()} returns \texttt{false}, the code logs a "skipping" message, and the schedule is silently dropped. The agent operator has no indication that the schedule was valid in intent but rejected due to parser incompatibility. The schedule definition remains in the \texttt{schedules/} directory with no error state recorded, creating a silent failure that is only detectable by inspecting scheduler logs at startup.
+
+The bug is in \texttt{src/schedule-runner.ts:45-47} (and identically at lines 56-58), where \texttt{cron.validate()} is used as a gate without considering that the expression might be a valid non-standard alias that \texttt{node-cron} does not support.
+
+---
+
+\subsection*{Root Cause Analysis}
+\#\#\# The Code
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// schedule-runner.ts:43-65
+} else if (schedule.mode === "once" && schedule.cron) {
+    // One-time schedule via cron — fires once then auto-disables
+    if (!cron.validate(schedule.cron)) {                              // ← BUG: rejects @daily, @hourly, etc.
+        console.log(dim(`[scheduler] Invalid cron for "${schedule.id}": ${schedule.cron} — skipping`));
+        continue;
+    }
+    const task = cron.schedule(schedule.cron, () => {
+        executeScheduledJob(schedule, opts, true);
+    });
+    activeTasks.set(schedule.id, task);
+    activeCount++;
+} else {
+    // Repeating cron schedule
+    if (!cron.validate(schedule.cron)) {                              // ← BUG: identical check, same rejection
+        console.log(dim(`[scheduler] Invalid cron for "${schedule.id}": ${schedule.cron} — skipping`));
+        continue;
+    }
+    const task = cron.schedule(schedule.cron, () => {
+        executeScheduledJob(schedule, opts, false);
+    });
+    activeTasks.set(schedule.id, task);
+    activeCount++;
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# Why This Happens
+
+\texttt{node-cron} is a lightweight cron parser that implements only the standard 5-field POSIX cron format (\texttt{minute hour day-of-month month day-of-week}). The \texttt{validate()} function performs a strict regex check against this format. Non-standard expressions that are valid in other contexts:
+
+| Expression | Expected Behavior | \texttt{node-cron} Validation |
+|---|---|---|
+| \texttt{@daily} | Run once per day at midnight | \textbf{REJECTED} — not a 5-field expression |
+| \texttt{@hourly} | Run at the start of every hour | \textbf{REJECTED} |
+| \texttt{@weekly} | Run at midnight on Sunday | \textbf{REJECTED} |
+| \texttt{@monthly} | Run at midnight on the 1st | \textbf{REJECTED} |
+| \texttt{@yearly} | Run at midnight on Jan 1st | \textbf{REJECTED} |
+| \texttt{@every 5 minutes} | Run every 5 minutes | \textbf{REJECTED} |
+| \texttt{0 0 * * *} | Standard 5-field (valid) | \textbf{ACCEPTED} |
+| \texttt{*/5 * * * *} | Standard 5-field (valid) | \textbf{ACCEPTED} |
+
+The \texttt{node-cron} library's \texttt{cron.schedule()} function also does \textbf{not} support these aliases at runtime — even if validation were bypassed, the schedule call would throw. The library has no built-in alias expansion.
+
+\#\#\# The Two Rejection Points
+
+There are two identical validation gates in \texttt{startScheduler()}:
+
+1. \textbf{Line 45}: For \texttt{mode === "once"} schedules that use a cron expression (rather than a \texttt{runAt} datetime)
+2. \textbf{Line 56}: For \texttt{mode === "repeat"} schedules (the else branch)
+
+Both use the exact same \texttt{cron.validate()} call, so both suffer from the same limitation. A schedule defined as:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+# schedules/daily-digest.yaml
+id: daily-digest
+prompt: "Summarize recent events"
+cron: "@daily"
+mode: repeat
+enabled: true
+
+\end{lstlisting}
+
+
+
+Will be silently skipped with the log message:
+
+
+\begin{lstlisting}[language=TypeScript]
+[scheduler] Invalid cron for "daily-digest": @daily — skipping
+
+\end{lstlisting}
+
+
+
+\#\#\# Why This Is Medium Severity
+
+1. \textbf{Silent failure}: The schedule is dropped with only a dim (low-visibility) log line
+2. \textbf{No error propagation}: The function returns normally; the caller has no way to know a schedule was skipped
+3. \textbf{User-visible impact}: The scheduled action never runs; the user must investigate why
+4. \textbf{Common expectation}: \texttt{@daily}, \texttt{@hourly} are widely recognized cron aliases — users will naturally try them
+5. \textbf{Low effort to fix}: Adding an alias expansion map resolves the issue completely
+
+---
+
+\subsection*{Fix Implementation}
+\#\#\# Option A: Cron Alias Expansion (Recommended)
+
+Add an alias expansion map that converts non-standard aliases to standard 5-field expressions before validation:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// schedule-runner.ts — cron alias expansion
+const CRON_ALIASES: Record<string, string> = {
+    "@yearly":    "0 0 1 1 *",
+    "@annually":  "0 0 1 1 *",
+    "@monthly":   "0 0 1 * *",
+    "@weekly":    "0 0 * * 0",
+    "@daily":     "0 0 * * *",
+    "@midnight":  "0 0 * * *",
+    "@hourly":    "0 * * * *",
+};
+
+function expandCronAlias(expr: string): string {
+    return CRON_ALIASES[expr.toLowerCase()] || expr;
+}
+
+\end{lstlisting}
+
+
+
+Then use it in both validation gates:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// schedule-runner.ts — updated validation
+const expandedCron = expandCronAlias(schedule.cron);
+if (!cron.validate(expandedCron)) {
+    console.log(dim(`[scheduler] Invalid cron for "${schedule.id}": ${schedule.cron} — skipping`));
+    continue;
+}
+const task = cron.schedule(expandedCron, () => {
+    executeScheduledJob(schedule, opts, false);
+});
+
+\end{lstlisting}
+
+
+
+\#\#\# Option B: Support \texttt{@every N (seconds|minutes|hours)} Syntax
+
+For the \texttt{@every} pattern used in tools like \texttt{node-cron} and \texttt{cron} npm package, add a separate handler that converts relative intervals to cron expressions or uses \texttt{setInterval}:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// schedule-runner.ts — @every handler
+const EVERY_RE = /^@every\s+(\d+)\s*(second|minute|hour)s?$/i;
+
+function parseEveryExpression(expr: string): { type: "cron" | "interval"; value: string | number } | null {
+    const expanded = CRON_ALIASES[expr.toLowerCase()];
+    if (expanded) return { type: "cron", value: expanded };
+
+    const match = expr.match(EVERY_RE);
+    if (match) {
+        const n = parseInt(match[1], 10);
+        const unit = match[2].toLowerCase();
+        const multipliers: Record<string, number> = {
+            second: 1000,
+            minute: 60 * 1000,
+            hour: 60 * 60 * 1000,
+        };
+        return { type: "interval", value: n * multipliers[unit] };
+    }
+
+    return null;
+}
+
+\end{lstlisting}
+
+
+
+Then in \texttt{startScheduler}, handle interval-based expressions separately:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+const parsed = parseEveryExpression(schedule.cron);
+if (!parsed) {
+    console.log(dim(`[scheduler] Invalid cron for "${schedule.id}": ${schedule.cron} — skipping`));
+    continue;
+}
+
+if (parsed.type === "interval") {
+    const timer = setInterval(() => {
+        executeScheduledJob(schedule, opts, false);
+    }, parsed.value as number);
+    activeTimers.set(schedule.id, timer);
+} else {
+    const task = cron.schedule(parsed.value as string, () => {
+        executeScheduledJob(schedule, opts, false);
+    });
+    activeTasks.set(schedule.id, task);
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# Fix Comparison
+
+---
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/schedule-runner.ts} — primary affected file
+\end{itemize}
+
+\subsection*{Verification}
+The fix is verified through unit tests and integration tests that confirm the corrected behavior:
+
+\begin{lstlisting}[language=TypeScript]
+// verification/bug-014-verify.ts
+import { describe, it, before, after } from "node:test";
+import assert from "node:assert";
+import { startScheduler, stopScheduler } from "../src/schedule-runner";
+import { mkdirSync, writeFileSync, rmSync } from "fs";
+import { join } from "path";
+
+const TEST_DIR = "/tmp/bug-014-verify";
+
+function createSchedule(id: string, cron: string, mode: "once" | "repeat" = "repeat") {
+    writeFileSync(join(TEST_DIR, "schedules", `${id}.yaml`), `
+id: ${id}
+prompt: "test prompt"
+cron: "${cron}"
+mode: ${mode}
+enabled: true
+createdAt: "2026-01-01T00:00:00.000Z"
+    `.trim());
+}
+
+describe("BUG-014: Cron Parser Non-Standard Expressions", () => {
+    before(() => {
+        rmSync(TEST_DIR, { recursive: true, force: true });
+        mkdirSync(join(TEST_DIR, "schedules"), { recursive: true });
+    });
+
+    after(() => {
+        stopScheduler();
+        rmSync(TEST_DIR, { recursive: true, force: true });
+    });
+
+    it("should accept @daily alias", async () => {
+        createSchedule("daily-test", "@daily");
+        const logs: string[] = [];
+        const origLog = console.log;
+        console.log = (...args: any[]) => {
+            logs.push(args.join(" "));
+            origLog.apply(console, args);
+        };
+
+        await startScheduler({
+            agentDir: TEST_DIR,
+            runPrompt: async () => "",
+            broadcastToBrowsers: () => {},
+            appendToHistory: () => {},
+        });
+
+        console.log = origLog;
+        const hasInvalid = logs.some(l => l.includes("Invalid cron"));
+        assert.strictEqual(hasInvalid, false, "@daily should not be flagged as invalid");
+        stopScheduler();
+    });
+
+    it("should accept @hourly alias", async () => {
+        createSchedule("hourly-test", "@hourly");
+        const logs: string[] = [];
+        const origLog = console.log;
+        console.log = (...args: any[]) => {
+            logs.push(args.join(" "));
+            origLog.apply(console, args);
+        };
+
+        await startScheduler({
+            agentDir: TEST_DIR,
+            runPrompt: async () => "",
+            broadcastToBrowsers: () => {},
+            appendToHistory: () => {},
+        });
+
+        console.log = origLog;
+        const hasInvalid = logs.some(l => l.includes("Invalid cron"));
+        assert.strictEqual(hasInvalid, false, "@hourly should not be flagged as invalid");
+        stopScheduler();
+    });
+
+    it("should accept @weekly alias", async () => {
+        createSchedule("weekly-test", "@weekly");
+        const logs: string[] = [];
+        const origLog = console.log;
+        console.log = (...args: any[]) => {
+            logs.push(args.join(" "));
+            origLog.apply(console, args);
+        };
+
+        await startScheduler({
+            agentDir: TEST_DIR,
+            runPrompt: async () => "",
+            broadcastToBrowsers: () => {},
+            appendToHistory: () => {},
+        });
+
+        console.log = origLog;
+        const hasInvalid = logs.some(l => l.includes("Invalid cron"));
+        assert.strictEqual(hasInvalid, false, "@weekly should not be flagged as invalid");
+        stopScheduler();
+    });
+
+    it("should accept @monthly alias", async () => {
+        createSchedule("monthly-test", "@monthly");
+        const logs: string[] = [];
+        const origLog = console.log;
+        console.log = (...args: any[]) => {
+            logs.push(args.join(" "));
+            origLog.apply(console, args);
+        };
+
+        await startScheduler({
+            agentDir: TEST_DIR,
+            runPrompt: async () => "",
+            broadcastToBrowsers: () => {},
+            appendToHistory: () => {},
+        });
+
+        console.log = origLog;
+        const hasInvalid = logs.some(l => l.includes("Invalid cron"));
+        assert.strictEqual(hasInvalid, false, "@monthly should not be flagged as invalid");
+        stopScheduler();
+    });
+
+    it("should accept @yearly alias", async () => {
+        createSchedule("yearly-test", "@yearly");
+        const logs: string[] = [];
+        const origLog = console.log;
+        console.log = (...args: any[]) => {
+            logs.push(args.join(" "));
+            origLog.apply(console, args);
+        };
+
+        await startScheduler({
+            agentDir: TEST_DIR,
+            runPrompt: async () => "",
+            broadcastToBrowsers: () => {},
+            appendToHistory: () => {},
+        });
+
+        console.log = origLog;
+        const hasInvalid = logs.some(l => l.includes("Invalid cron"));
+        assert.strictEqual(hasInvalid, false, "@yearly should not be flagged as invalid");
+        stopScheduler();
+    });
+
+    it("should still accept standard 5-field expressions", async () => {
+        createSchedule("standard-test", "*/5 * * * *");
+        const logs: string[] = [];
+        const origLog = console.log;
+        console.log = (...args: any[]) => {
+            logs.push(args.join(" "));
+            origLog.apply(console, args);
+        };
+
+        await startScheduler({
+            agentDir: TEST_DIR,
+            runPrompt: async () => "",
+            broadcastToBrowsers: () => {},
+            appendToHistory: () => {},
+        });
+
+        console.log = origLog;
+        const hasInvalid = logs.some(l => l.includes("Invalid cron"));
+        assert.strictEqual(hasInvalid, false, "Standard expressions should still work");
+        stopScheduler();
+    });
+
+    it("should still reject truly invalid expressions", async () => {
+        createSchedule("invalid-test", "not-a-cron");
+        const logs: string[] = [];
+        const origLog = console.log;
+        console.log = (...args: any[]) => {
+            logs.push(args.join(" "));
+            origLog.apply(console, args);
+        };
+
+        await startScheduler({
+            agentDir: TEST_DIR,
+            runPrompt: async () => "",
+            broadcastToBrowsers: () => {},
+            appendToHistory: () => {},
+        });
+
+        console.log = origLog;
+        const hasInvalid = logs.some(l => l.includes("Invalid cron"));
+        assert.strictEqual(hasInvalid, true, "Truly invalid expressions should still be rejected");
+        stopScheduler();
+    });
+});
+
+\end{lstlisting}
+

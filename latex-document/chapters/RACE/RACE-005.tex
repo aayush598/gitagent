@@ -1,0 +1,80 @@
+\section{RACE-005: Git Add/Commit Race in Memory Save}
+\label{sec:race-005}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & RACE-005 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Race Condition \\
+\textbf{Branch} & \branchref{fix/RACE-005-git-add-commit-race}
+\textbf{Changes} & \branchdiff{fix/RACE-005-git-add-commit-race} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \code{memory} tool's \code{save} action in \srcfile{src/tools/memory.ts} calls \code{execSync("git add ... \&\& git commit ...")}. If two \code{save} calls execute concurrently — from parallel tool invocations or overlapping hook-triggered saves — the git operations interleave. The first commit may include files staged by the second add (and vice versa), leading to commits with incorrect content, wrong messages, or git index corruption.
+
+\subsection*{Root Cause Analysis}
+The git operations run without serialization:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — concurrent saves interleave git operations
+try {
+    execSync(`git add "${memoryPath}" && git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, {
+        cwd,
+        stdio: "pipe",
+    });
+} catch (err: any) { ... }
+\end{lstlisting}
+
+Timeline of a race: Process A writes MEMORY.md with ``foo''; Process B writes MEMORY.md with ``bar''; B's \code{git add} overwrites A's staged content; A's commit says ``save foo'' but actually commits ``bar''; B's commit has nothing to commit.
+
+\subsection*{Fix Implementation}
+A \code{GitMutex} serializes all git operations:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — mutex serializes git operations
+class GitMutex {
+    private queue: (() => void)[] = [];
+    private locked = false;
+    async acquire<T>(fn: () => T): Promise<T> {
+        await new Promise<void>((resolve) => {
+            if (!this.locked) { this.locked = true; resolve(); }
+            else { this.queue.push(resolve); }
+        });
+        try { return fn(); }
+        finally {
+            if (this.queue.length > 0) { this.queue.shift()!(); }
+            else { this.locked = false; }
+        }
+    }
+}
+const gitMutex = new GitMutex();
+
+// In save action:
+try {
+    await gitMutex.acquire(() => {
+        execSync(`git add "${memoryPath}" && git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, {
+            cwd,
+            stdio: "pipe",
+        });
+    });
+} catch (err: any) { ... }
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tools/memory.ts} — Lines 156-172
+    \item \srcfile{src/\_\_tests\_\_/git-add-commit-race.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify serialization and error propagation:
+
+\begin{lstlisting}[language=TypeScript]
+const mutex = new TestMutex();
+const order: number[] = [];
+await Promise.all([
+    mutex.acquire(() => { order.push(1); }),
+    mutex.acquire(() => { order.push(2); }),
+]);
+assert.equal(order.length, 2);
+\end{lstlisting}

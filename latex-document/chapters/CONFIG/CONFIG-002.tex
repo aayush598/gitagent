@@ -1,0 +1,113 @@
+\section{CONFIG-002: Incomplete agent.yaml in Repository}
+\label{sec:config-002}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & CONFIG-002 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Configuration \\
+\textbf{Branch} & \branchref{fix/CONFIG-002-incomplete-agent-yaml} \\
+\textbf{Changes} & \branchdiff{fix/CONFIG-002-incomplete-agent-yaml} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The project's \texttt{agent.yaml} file (used as a template/demo) has an empty \texttt{preferred} model field, making it non-functional out of the box. A user who clones the repository and runs \texttt{gitclaw} without modifying the config sees a confusing error: \texttt{No model configured}. While the scaffolder in \texttt{src/index.ts} creates a correctly populated config, the committed config in the repo should either be functional or contain clear guidance.
+
+The fix addresses both sides: the repository's \texttt{agent.yaml} now defaults to \texttt{openai:gpt-4o-mini}, and the loader validates that \texttt{model.preferred} is not empty, providing a helpful error message when it is.
+
+\subsection*{Root Cause Analysis}
+
+The repository's \texttt{agent.yaml} contained an empty preferred model:
+
+\begin{lstlisting}[language=yaml]
+# agent.yaml — Before fix
+model:
+  preferred: ""
+  fallback: []
+\end{lstlisting}
+
+The scaffolder code in \texttt{src/index.ts} correctly handles new installations by providing a default model, but the committed file in the repository itself was never updated:
+
+\begin{lstlisting}[language=TypeScript]
+// src/index.ts:243-261 — Scaffolder
+const defaultModel = model || "openai:gpt-4o-mini";
+const yaml = [
+    'spec_version: "0.1.0"',
+    `name: ${agentName}`,
+    "version: 0.1.0",
+    `description: Gitclaw agent for ${agentName}`,
+    "model:",
+    `  preferred: "${defaultModel}"`,
+    "  fallback: []",
+    // ...
+].join("\n");
+await writeFile(agentYamlPath, yaml, "utf-8");
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+
+Two changes were made. First, the repository's \texttt{agent.yaml} was given a working default model:
+
+\begin{lstlisting}[language=yaml]
+# agent.yaml — After fix
+model:
+  preferred: "openai:gpt-4o-mini"
+  fallback: []
+\end{lstlisting}
+
+Second, the loader now validates that \texttt{model.preferred} is not empty, with a descriptive error:
+
+\begin{lstlisting}[language=TypeScript]
+// src/loader.ts — After fix: validation
+if (!manifest.model?.preferred || manifest.model.preferred.trim() === "") {
+    throw new Error(
+        "model.preferred is empty or not set.\n" +
+        "Set it in agent.yaml:\n" +
+        '  model:\n    preferred: "provider:model-id"\n' +
+        "Or pass --model provider:model on the command line.",
+    );
+}
+\end{lstlisting}
+
+Additionally, the loader now handles empty files and YAML parse errors gracefully:
+
+\begin{lstlisting}[language=TypeScript]
+// src/loader.ts — After fix: parse validation
+const parsed = yaml.load(manifestRaw);
+if (!parsed || typeof parsed !== "object") {
+    throw new Error(
+        "agent.yaml does not contain a valid configuration object.\n" +
+        "Ensure the file starts with a top-level mapping (e.g., 'name: my-agent').",
+    );
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{agent.yaml} --- fixed empty preferred model
+    \item \srcfile{src/loader.ts} --- added model validation and parse error handling
+    \item \srcfile{src/\_\_tests\_\_/config-002.test.ts} --- new validation tests
+\end{itemize}
+
+\subsection*{Verification}
+\begin{lstlisting}[language=TypeScript]
+// config-002.test.ts
+test("agent.yaml has a valid preferred model", () => {
+    const repoConfig = yaml.load(readFileSync("agent.yaml", "utf-8")) as any;
+    ok(repoConfig.model?.preferred, "agent.yaml should have a preferred model");
+    ok(repoConfig.model.preferred !== "", "model.preferred should not be empty");
+    ok(repoConfig.model.preferred.includes(":"),
+        "model.preferred should be in provider:model format");
+});
+
+test("loadAgent validates empty manifest", async () => {
+    const { loadAgent } = await import("../loader.ts");
+    try {
+        await loadAgent("/nonexistent", undefined);
+        ok(false, "should have thrown");
+    } catch (err: any) {
+        ok(err.message.includes("agent.yaml") ||
+            err.message.includes("model.preferred"));
+    }
+});
+\end{lstlisting}

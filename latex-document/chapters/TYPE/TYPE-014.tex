@@ -1,0 +1,51 @@
+\section{TYPE-014: Static Type From Typebox Not Properly Used}
+\label{sec:type-014}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & TYPE-014 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Type Safety \\
+\textbf{Branch} & \branchref{fix/TYPE-014-typebox-runtime-validation}
+\textbf{Changes} & \branchdiff{fix/TYPE-014-typebox-runtime-validation} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+At \srcfile{src/tools/memory.ts:111}, the \code{Static<typeof memorySchema>} type is used to type parsed parameters, but the schema is never actually used to validate input at runtime. The \code{rawParams as Static<...>} cast trusts that the input matches the schema without checking. If malformed or malicious input is passed, the cast silently produces incorrect types downstream.
+
+\subsection*{Root Cause Analysis}
+The TypeBox schema is defined but not used for validation:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — schema defined but not used for validation
+execute: async (_toolCallId, rawParams: unknown, signal?) => {
+    const { action, content, message } = rawParams as Static<typeof memorySchema>;
+    // ↑ Trusts input without runtime validation
+};
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+Runtime validation is added before the type cast:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — runtime validation before cast
+execute: async (_toolCallId, rawParams: unknown, signal?) => {
+    if (typeof rawParams !== "object" || rawParams === null) {
+        throw new Error("Invalid memory parameters: expected object");
+    }
+    const p = rawParams as Record<string, unknown>;
+    if (p.action !== "load" && p.action !== "save") {
+        throw new Error(`Invalid memory action: ${String(p.action)}`);
+    }
+    const { action, content, message } = rawParams as Static<typeof memorySchema>;
+    // Now safe to use
+};
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tools/memory.ts} — execute() function
+    \item \srcfile{src/\_\_tests\_\_/type-014.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Invalid parameters now throw explicit errors instead of silently producing incorrect types.

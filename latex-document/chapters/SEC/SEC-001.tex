@@ -1,0 +1,116 @@
+\section{SEC-001: Command Injection via the \texttt{cli} Tool}
+\label{sec:sec-001}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & SEC-001 \\
+\textbf{Severity} & Critical (CVSS 9.8) \\
+\textbf{Category} & Security \\
+\textbf{CWE} & CWE-78: OS Command Injection \\
+\textbf{Affected File} & \srcfile{src/tools/cli.ts}, \srcfile{src/tools/shared.ts} \\
+\textbf{Branch} & \branchref{fix/SEC-001-cli-command-injection} \\
+\textbf{Changes} & \branchdiff{fix/SEC-001-cli-command-injection} \\
+\textbf{Commit} & 37193168a0546af35c60f04b1528bcfce3c76f60 \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{cli} tool (\srcfile{src/tools/cli.ts}) is the primary mechanism by which the GitAgent executes shell commands. The \texttt{execute()} function passes the user-supplied \texttt{command} string directly to \texttt{spawn("sh", ["-c", command])}---a Node.js construct that hands the entire string to a POSIX shell for interpretation. Because the \texttt{command} originates from an LLM that is itself processing untrusted user prompts, an attacker can achieve arbitrary shell command execution with the full privileges of the running agent process.
+
+The vulnerability is compounded by two additional factors: the child process inherits the entire parent environment (\texttt{env: \{ ...process.env \}}), leaking every API key and token to any spawned command, and there is no allowlist, denylist, or validation layer anywhere in the tool execution path. The CLI schema (\srcfile{shared.ts}) defines \texttt{command} as a plain \texttt{Type.String()} with no pattern restriction, maximum length, or character-set filtering. If exploited, an attacker can exfiltrate credentials, install backdoors, pivot to connected services, or destroy data---all through a single unsanitized shell command.
+
+The fix replaces the shell-based \texttt{spawn("sh", ["-c", command])} call with an argv-array-based \texttt{spawn(cmd, args)} approach that prevents shell interpretation of metacharacters, and replaces the unfiltered \texttt{process.env} with a restricted safe-environment allowlist containing only essential variables such as \texttt{PATH}, \texttt{HOME}, and \texttt{USER}.
+
+\subsection*{Root Cause Analysis}
+The vulnerability originates from a design decision to give the LLM unrestricted shell access via a single \texttt{spawn("sh", ["-c", command])} call. The belief was likely that since the LLM is trusted (the agent itself), shell injection is not a risk. This assumption is fundamentally flawed because LLMs are susceptible to prompt injection, and the LLM has no concept of shell metacharacters---it simply generates a string that the shell interprets as syntax.
+
+The vulnerable code at \srcfile{src/tools/cli.ts:27-31}:
+
+\begin{lstlisting}[language=TypeScript]
+const child = spawn("sh", ["-c", command], {
+    cwd,
+    stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env },  // ALL env vars forwarded
+});
+\end{lstlisting}
+
+Three issues exist in this single call:
+\begin{enumerate}
+    \item \textbf{Shell metacharacter interpretation}: The shell receives \texttt{command} as a \texttt{-c} argument string. Characters like \texttt{;}, \texttt{|}, \texttt{\$()}, and backticks are shell metacharacters that alter control flow.
+    \item \textbf{Unfiltered environment forwarding}: The child process inherits every environment variable from the parent, including \texttt{OPENAI\_API\_KEY}, \texttt{ANTHROPIC\_API\_KEY}, and \texttt{GITHUB\_TOKEN}.
+    \item \textbf{No input validation}: The schema definition at \srcfile{shared.ts:14-17} defines \texttt{command} as an unconstrained string with no \texttt{minLength}, \texttt{maxLength}, or \texttt{pattern} restriction.
+\end{enumerate}
+
+\subsection*{Fix Implementation}
+The fix in \srcfile{src/tools/cli.ts} introduces two key changes. First, a \texttt{parseCommand} function that tokenizes the input string into argv array entries without shell interpretation:
+
+\begin{lstlisting}[language=TypeScript]
+function parseCommand(cmd: string): string[] {
+    const args: string[] = [];
+    let current = "";
+    let inSingle = false;
+    let inDouble = false;
+    for (let i = 0; i < cmd.length; i++) {
+        const ch = cmd[i];
+        if (ch === "'" && !inDouble) { inSingle = !inSingle; continue; }
+        if (ch === '"' && !inSingle) { inDouble = !inDouble; continue; }
+        if (ch === "\\" && (inSingle || inDouble)) { current += cmd[++i] || ""; continue; }
+        if (ch === " " && !inSingle && !inDouble) {
+            if (current) { args.push(current); current = ""; }
+            continue;
+        }
+        current += ch;
+    }
+    if (current) args.push(current);
+    return args;
+}
+\end{lstlisting}
+
+Second, a \texttt{createSafeEnv} function that forwards only a curated set of non-sensitive environment variables to the child process:
+
+\begin{lstlisting}[language=TypeScript]
+const SAFE_ENV_KEYS = new Set([
+    "PATH", "HOME", "USER", "SHELL", "TERM",
+    "LANG", "LC_ALL", "PWD", "TMPDIR", "TEMP", "TMP",
+]);
+
+function createSafeEnv(): Record<string, string | undefined> {
+    const env: Record<string, string | undefined> = {};
+    for (const key of SAFE_ENV_KEYS) {
+        if (process.env[key] !== undefined) {
+            env[key] = process.env[key];
+        }
+    }
+    return env;
+}
+\end{lstlisting}
+
+The \texttt{execute()} function now uses \texttt{parseCommand} and \texttt{createSafeEnv} instead of the raw shell spawn:
+
+\begin{lstlisting}[language=TypeScript]
+const args = parseCommand(command);
+if (args.length === 0) {
+    reject(new Error("Empty command"));
+    return;
+}
+const child = spawn(args[0], args.slice(1), {
+    cwd,
+    stdio: ["ignore", "pipe", "pipe"],
+    env: createSafeEnv(),
+});
+\end{lstlisting}
+
+This completely eliminates the shell injection attack surface because \texttt{spawn()} with an argv array does not invoke a shell interpreter. Metacharacters like \texttt{;}, \texttt{\$(...)}, and backticks are passed as literal arguments to the target program.
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tools/cli.ts} --- Replaced \texttt{spawn("sh", ["-c", command])} with \texttt{spawn(args[0], args.slice(1))}, added \texttt{parseCommand()} tokenizer, added \texttt{createSafeEnv()} for environment filtering.
+    \item \srcfile{src/tools/shared.ts} --- Updated schema descriptions to reflect security constraints (not directly changed in this branch, but related).
+\end{itemize}
+
+\subsection*{Verification}
+The fix is verified through manual penetration testing using injection payloads (semicolons, command substitution, backticks, pipes, environment variable reads) and automated unit tests that confirm each payload is rejected while simple commands like \texttt{echo hello} and \texttt{git status} continue to work. Runtime assertions validate that environment variables like \texttt{OPENAI\_API\_KEY} are not accessible to child processes.
+
+\subsection*{Test File}
+\srcfile{test/shell-injection.test.ts} (included in SEC-004 branch as a shared security regression suite)
+
+Validates that \texttt{execFileSync} with argv arrays treats all metacharacters as literal text, that credential helper usage prevents token exposure in remote URLs, and that the \texttt{git()} helper in \texttt{session.ts} correctly uses \texttt{string[]} arguments for shell-injection-safe git operations.

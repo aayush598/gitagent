@@ -1,0 +1,88 @@
+\section{RACE-008: Async Initialization Race in query()}
+\label{sec:race-008}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & RACE-008 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Race Condition \\
+\textbf{Branch} & \branchref{fix/RACE-008-async-init-session}
+\textbf{Changes} & \branchdiff{fix/RACE-008-async-init-session} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+In \srcfile{src/sdk.ts}, the \code{query()} function starts an async IIFE immediately, but the \code{\_sessionId} variable is only set after \code{loadAgent()} completes (about 100-500ms later). The \code{sessionId()} accessor returns \code{\_sessionId} synchronously. If a consumer calls \code{sessionId()} before the agent finishes loading — in a hook's \code{onSessionStart} handler or for telemetry tagging — the returned value is an empty string, breaking session correlation.
+
+\subsection*{Root Cause Analysis}
+The \code{\_sessionId} is set asynchronously but accessed synchronously:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — synchronous sessionId() can return ""
+export function query(options: QueryOptions): Query {
+    let _sessionId = options.sessionId ?? "";  // Initialized empty
+
+    const runPromise = (async () => {
+        const loaded = await loadAgent(dir, ...);  // ~100-500ms
+        _sessionId = _sessionId || loaded.sessionId;  // SET here
+    })();
+
+    return {
+        sessionId() {
+            return _sessionId;  // MAY BE EMPTY if called before loadAgent resolves
+        },
+    };
+}
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+A promise-based initialization pattern ensures \code{sessionId()} waits for the agent to load:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — sessionId() returns Promise<string> and waits for init
+export function query(options: QueryOptions): Query {
+    let _sessionId = options.sessionId ?? "";
+    let _sessionIdResolve: (() => void) | null = null;
+    const _sessionIdPromise = new Promise<void>((r) => { _sessionIdResolve = r; });
+    if (_sessionId) _sessionIdResolve?.();
+
+    const runPromise = (async () => {
+        const loaded = await loadAgent(dir, ...);
+        _sessionId = _sessionId || loaded.sessionId;
+        _sessionIdResolve?.();  // Signal that sessionId is ready
+    })();
+
+    return {
+        sessionId(): string | Promise<string> {
+            return _sessionIdPromise.then(() => _sessionId);
+        },
+    };
+}
+\end{lstlisting}
+
+The type signature is also updated to allow returning \code{Promise<string>}:
+
+\begin{lstlisting}[language=TypeScript]
+// src/sdk-types.ts
+export interface Query extends AsyncGenerator<GCMessage, void, undefined> {
+    sessionId(): string | Promise<string>;
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/sdk.ts} — query() function
+    \item \srcfile{src/sdk-types.ts} — Query interface
+    \item \srcfile{src/\_\_tests\_\_/async-init-session.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify sessionId resolves to the correct value after initialization:
+
+\begin{lstlisting}[language=TypeScript]
+async function getSessionId(): Promise<string> {
+    await _sessionIdPromise;
+    return _sessionId;
+}
+setTimeout(() => { _sessionId = "session-123"; _sessionIdResolve!(); }, 10);
+const id = await getSessionId();
+assert.equal(id, "session-123");
+\end{lstlisting}

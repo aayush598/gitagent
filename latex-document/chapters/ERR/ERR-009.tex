@@ -1,0 +1,69 @@
+\section{ERR-009: Error in Error Handler — Console Intercept}
+\label{sec:err-009}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & ERR-009 \\
+\textbf{Severity} & LOW \\
+\textbf{Category} & Error Handling \\
+\textbf{Branch} & \branchref{fix/ERR-009-error-in-error-handler}
+\textbf{Changes} & \branchdiff{fix/ERR-009-error-in-error-handler} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+In \srcfile{src/voice/server.ts}, the console intercept function wraps its log processing logic in a try/catch with the comment ``non-fatal''. If the intercept logic itself throws — \code{formatArg()} receives an un-serializable object, \code{stripAnsi()} encounters unexpected input, or \code{extractSource()} fails to match — the error is silently swallowed. While the primary console output is preserved, the log buffer entry is lost without any diagnostic. The irony is that the console intercept system designed to capture error output makes its own errors invisible.
+
+\subsection*{Root Cause Analysis}
+The intercept function silently swallows its own errors:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — console intercept errors are invisible
+function intercept(level, origFn, ...args) {
+    origFn(...args);  // Original output preserved
+    try {
+        const raw = args.map(formatArg).join(" ");
+        const clean = stripAnsi(raw);
+        if (!clean.trim()) return;
+        const { source, cleaned } = extractSource(clean);
+        const entry = logBuffer.push(source, level, cleaned);
+        if (logBroadcast) logBroadcast(entry);
+    } catch { /* non-fatal */ }  // Error is invisible
+}
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+Errors in the intercept logic are now logged via the original console function:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — intercept failures reported via original console
+function intercept(level, origFn, ...args) {
+    origFn(...args);
+    try {
+        const raw = args.map(formatArg).join(" ");
+        const clean = stripAnsi(raw);
+        if (!clean.trim()) return;
+        const { source, cleaned } = extractSource(clean);
+        const entry = logBuffer.push(source, level, cleaned);
+        if (logBroadcast) logBroadcast(entry);
+    } catch (interceptErr) {
+        origFn(`[console-intercept] Failed: ${interceptErr instanceof Error ? interceptErr.message : String(interceptErr)}`);
+    }
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/voice/server.ts} — Line 87 in installConsoleIntercept()
+    \item \srcfile{src/\_\_tests\_\_/console-intercept-errors.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify that intercept failures are reported:
+
+\begin{lstlisting}[language=TypeScript]
+let capturedOutput = "";
+const fakeOrigFn = (msg: string) => { capturedOutput = msg; };
+const interceptErr = new Error("formatArg failed on circular object");
+fakeOrigFn(`[console-intercept] Failed: ${interceptErr.message}`);
+assert.ok(capturedOutput.includes("[console-intercept]"));
+assert.ok(capturedOutput.includes("formatArg"));
+\end{lstlisting}

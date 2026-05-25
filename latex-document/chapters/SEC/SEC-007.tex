@@ -1,0 +1,106 @@
+\section{SEC-007: SSRF via \texttt{curl}/\texttt{wget} in CLI Tool}
+\label{sec:sec-007}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & SEC-007 \\
+\textbf{Severity} & Medium (CVSS 7.5) \\
+\textbf{Category} & Security \\
+\textbf{CWE} & CWE-918: Server-Side Request Forgery (SSRF) \\
+\textbf{Affected File} & \srcfile{src/tools/shared.ts}, \srcfile{src/tools/cli.ts}, \srcfile{src/tools/sandbox-cli.ts} \\
+\textbf{Branch} & \branchref{fix/SEC-007-ssrf-prevention} \\
+\textbf{Changes} & \branchdiff{fix/SEC-007-ssrf-prevention} \\
+\textbf{Commit} & 81696e8db13342618be562b40357e0a7956ff774 \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{cli} tool gives the LLM full shell access via \texttt{spawn("sh", ["-c", command])}. While this enables arbitrary command execution (SEC-001), a specific high-impact subclass is Server-Side Request Forgery (SSRF)---the ability to make the agent process issue HTTP requests to internal network services. When the LLM is instructed to run commands like \texttt{curl http://169.254.169.254/latest/meta-data/} or \texttt{wget http://internal.corp.network/admin}, the agent becomes a pivot point for network reconnaissance and attack.
+
+The SSRF risk is particularly severe in cloud and CI/CD deployments where the agent may have access to cloud metadata services (AWS \texttt{169.254.169.254}, GCP \texttt{metadata.google.internal}), Kubernetes API servers, internal microservices, and the Docker socket. The fix adds a \texttt{checkSSRF()} function that inspects commands for network tool usage and blocks requests to private IP ranges, internal hostnames, and well-known metadata endpoints.
+
+\subsection*{Root Cause Analysis}
+The \texttt{spawn("sh", ["-c", command])} pattern at \srcfile{src/tools/cli.ts:27} allows the LLM to run any shell command, including network requests. The following commands are particularly dangerous for SSRF:
+
+\begin{lstlisting}[language=bash]
+# Cloud metadata endpoints
+curl http://169.254.169.254/latest/meta-data/iam/security-credentials/
+curl http://metadata.google.internal/computeMetadata/v1/
+
+# Kubernetes API
+curl http://kubernetes.default.svc/api/v1/secrets
+
+# Docker socket (if mounted)
+curl --unix-socket /var/run/docker.sock http://localhost/containers/json
+\end{lstlisting}
+
+The tool had no URL allowlist, IP address validation, internal network detection, or protocol restriction. While SEC-001 covers all command injection, SSRF requires specific mitigations because network-level controls, IP allowlisting, and metadata service protection are distinct security domains.
+
+\subsection*{Fix Implementation}
+The fix adds a \texttt{checkSSRF()} function in \srcfile{src/tools/shared.ts} that detects network commands and validates their targets:
+
+\begin{lstlisting}[language=TypeScript]
+const PRIVATE_IPV4_RANGES = [
+    /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
+    /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
+    /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/,
+    /^192\.168\.\d{1,3}\.\d{1,3}$/,
+    /^169\.254\.\d{1,3}\.\d{1,3}$/,
+    /^0\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
+    /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}$/,
+];
+
+const BLOCKED_HOSTNAMES = [
+    /metadata\.google\.internal$/i,
+    /metadata\.google\.compute$/i,
+    /kubernetes\.default\.svc$/i,
+    /kubernetes\.default$/i,
+    /\.internal$/i,
+    /^localhost$/i,
+];
+
+const NETWORK_TOOLS_PATTERN = /(?:^|\s+)(curl|wget|fetch)(?:\s+|$)/i;
+const URL_PATTERN = /https?:\/\/[^\s"'`<>]+/gi;
+
+export function checkSSRF(command: string): void {
+    const trimmed = command.trim();
+    if (!NETWORK_TOOLS_PATTERN.test(trimmed)) return;
+
+    const urls = trimmed.match(URL_PATTERN);
+    if (!urls) return;
+
+    for (const url of urls) {
+        const match = url.match(/https?:\/\/([^\/:\s\[\]]+)/);
+        if (!match) continue;
+        const hostname = match[1];
+        // Check blocked hostnames, private IPv4, and private IPv6
+        // ...
+    }
+}
+\end{lstlisting}
+
+The function is called at the beginning of the CLI tool's \texttt{execute()} in both \texttt{cli.ts} and \texttt{sandbox-cli.ts}:
+
+\begin{lstlisting}[language=TypeScript]
+try {
+    checkSSRF(command);
+} catch (err) {
+    reject(err);
+    return;
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tools/shared.ts} --- Added \texttt{checkSSRF()} function with private IP range regex patterns, blocked hostname patterns, network tool detection, URL extraction, and IPv6 private address detection.
+    \item \srcfile{src/tools/cli.ts} --- Added \texttt{checkSSRF()} call at the start of the CLI tool's \texttt{execute()} method.
+    \item \srcfile{src/tools/sandbox-cli.ts} --- Added \texttt{checkSSRF()} call at the start of the sandbox CLI tool's \texttt{execute()} method.
+    \item \srcfile{src/__tests__/ssrf.test.ts} --- New comprehensive SSRF prevention test suite.
+\end{itemize}
+
+\subsection*{Verification}
+Eight test cases verify the SSRF prevention: blocks \texttt{curl} to \texttt{192.168.x.x}, blocks \texttt{wget} to \texttt{localhost}, blocks \texttt{fetch} to \texttt{metadata.google.internal}, blocks \texttt{curl} to \texttt{10.x.x.x}, blocks IPv6 loopback (\texttt{[::1]}), allows \texttt{curl} to public IP (\texttt{93.184.216.34}), allows \texttt{curl} to public domain (\texttt{api.example.com}), and passes non-network commands (\texttt{ls -la /tmp}) through without error.
+
+\subsection*{Test File}
+\srcfile{src/__tests__/ssrf.test.ts}
+
+Validates eight SSRF prevention scenarios covering private IPv4 ranges, localhost, cloud metadata endpoints, Kubernetes internal hostnames, IPv6 loopback, and confirms legitimate external requests and non-network commands are unaffected.

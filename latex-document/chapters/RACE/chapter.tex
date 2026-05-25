@@ -1,0 +1,41 @@
+\chapter{Race Condition Fixes}
+\label{chap:race-fixes}
+
+This chapter documents all race condition fix branches in the GitAgent repository. Each section corresponds to a single concurrency or atomicity defect and its corresponding fix branch.
+
+\begin{itemize}
+    \item \hyperref[{sec:race-001}]{RACE-001}: \branchref{fix/RACE-001-toctou-task-file} | \branchdiff{fix/RACE-001-toctou-task-file}
+    \item \hyperref[{sec:race-002}]{RACE-002}: \branchref{fix/RACE-002-plugin-config-race} | \branchdiff{fix/RACE-002-plugin-config-race}
+    \item \hyperref[{sec:race-003}]{RACE-003}: \branchref{fix/RACE-003-schedule-atomic-write} | \branchdiff{fix/RACE-003-schedule-atomic-write}
+    \item \hyperref[{sec:race-004}]{RACE-004}: \branchref{fix/RACE-004-channel-push-after-abort} | \branchdiff{fix/RACE-004-channel-push-after-abort}
+    \item \hyperref[{sec:race-005}]{RACE-005}: \branchref{fix/RACE-005-git-add-commit-race} | \branchdiff{fix/RACE-005-git-add-commit-race}
+    \item \hyperref[{sec:race-006}]{RACE-006}: \branchref{fix/RACE-006-plugin-install-race} | \branchdiff{fix/RACE-006-plugin-install-race}
+    \item \hyperref[{sec:race-007}]{RACE-007}: \branchref{fix/RACE-007-websocket-broadcast-race} | \branchdiff{fix/RACE-007-websocket-broadcast-race}
+    \item \hyperref[{sec:race-008}]{RACE-008}: \branchref{fix/RACE-008-async-init-session} | \branchdiff{fix/RACE-008-async-init-session}
+    \item \hyperref[{sec:race-009}]{RACE-009}: \branchref{fix/RACE-009-file-system-interleaving} | \branchdiff{fix/RACE-009-file-system-interleaving}
+    \item \hyperref[{sec:race-010}]{RACE-010}: \branchref{fix/RACE-010-process-exit-async} | \branchdiff{fix/RACE-010-process-exit-async}
+    \item \hyperref[{sec:race-011}]{RACE-011}: \branchref{fix/RACE-011-sigint-reentrancy} | \branchdiff{fix/RACE-011-sigint-reentrancy}
+\end{itemize}
+
+\input{chapters/RACE/RACE-001.tex}
+
+\input{chapters/RACE/RACE-002.tex}
+
+\input{chapters/RACE/RACE-003.tex}
+
+\input{chapters/RACE/RACE-004.tex}
+
+\input{chapters/RACE/RACE-005.tex}
+
+\input{chapters/RACE/RACE-006.tex}
+
+\input{chapters/RACE/RACE-007.tex}
+
+\input{chapters/RACE/RACE-008.tex}
+
+\input{chapters/RACE/RACE-009.tex}
+
+\input{chapters/RACE/RACE-010.tex}
+
+\input{chapters/RACE/RACE-011.tex}
+

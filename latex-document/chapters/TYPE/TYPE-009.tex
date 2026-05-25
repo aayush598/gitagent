@@ -1,0 +1,59 @@
+\section{TYPE-009: Weakly Typed Telemetry Options}
+\label{sec:type-009}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & TYPE-009 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Type Safety \\
+\textbf{Branch} & \branchref{fix/TYPE-009-type-telemetry-sdk}
+\textbf{Changes} & \branchdiff{fix/TYPE-009-type-telemetry-sdk} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+At \srcfile{src/telemetry.ts:53}, the NodeSDK instance is typed as \code{any} instead of the proper type. This means any method called on \code{\_sdk} is unchecked. Similarly, the \code{\_testProvider} option field is typed as \code{unknown} but used with \code{as any}.
+
+\subsection*{Root Cause Analysis}
+The SDK instance and test provider are weakly typed:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — any types
+let _sdk: any = null;
+_testProvider?: unknown;
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+Proper interfaces are defined and used:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — properly typed
+interface SdkHandle {
+    start(): void;
+    shutdown(): Promise<void>;
+}
+
+let _sdk: SdkHandle | null = null;
+
+_testProvider?: { register?(): void };
+\end{lstlisting}
+
+The \code{initTelemetry} function no longer uses \code{as any}:
+
+\begin{lstlisting}[language=TypeScript]
+if (opts._testProvider) {
+    const provider = opts._testProvider;
+    if (typeof provider.register === "function") {
+        provider.register();
+    }
+    _initialized = true;
+    return;
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/telemetry.ts} — Types and initTelemetry function
+    \item \srcfile{src/\_\_tests\_\_/type-009.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+\code{\_sdk} now has type-checked \code{start()} and \code{shutdown()} methods.

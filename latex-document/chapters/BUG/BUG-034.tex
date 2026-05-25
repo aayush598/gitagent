@@ -1,0 +1,436 @@
+\section{BUG-034: Task Tracker List Doesn't Paginate}
+\label{sec:bug-034}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & BUG-034 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Bug Fix \\
+\textbf{Affected File} & \srcfile{src/tools/task-tracker.ts:321-336} \\
+\textbf{Branch} & \branchref{fix/BUG-034-task-tracker-pagination} \\
+\textbf{Changes} & \branchdiff{fix/BUG-034-task-tracker-pagination} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{task\_tracker} tool's \texttt{"list"} action in \texttt{src/tools/task-tracker.ts:321-336} returns \textbf{all active tasks} in a single response with no pagination, no limiting, and no truncation. The \texttt{lines} array is built from \texttt{store.tasks.filter((t) => t.status === "active")} without any \texttt{limit}, \texttt{offset}, or \texttt{page} parameters. For agents that accumulate hundreds of active tasks, this produces an enormous response that:
+
+1. \textbf{Wastes LLM context window tokens}: The entire task list is sent as tool result text
+2. \textbf{Increases latency}: Building the response string scales linearly with task count
+3. \textbf{Causes context overflow}: A large task list can push other critical context out of the window
+4. \textbf{Provides no navigation mechanism}: Users cannot request "next page" or "show only tasks matching X"
+
+---
+
+\subsection*{Root Cause Analysis}
+\#\#\# The Code
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// task-tracker.ts:321-336
+case "list": {
+    const active = store.tasks.filter((t) => t.status === "active");
+    if (active.length === 0) {
+        return {
+            content: [{ type: "text", text: "No active tasks." }],
+            details: undefined,
+        };
+    }
+
+    const lines = active.map((t) =>
+        `- ${t.id}: "${t.objective}" (${t.steps.length} steps, attempt #${t.attempts})`,
+    );
+    return {
+        content: [{ type: "text", text: `Active tasks:\n${lines.join("\n")}` }],
+        details: { count: active.length },
+    };
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# The Full Task Tracker Context
+
+The task store is loaded from JSON at session start:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// task-tracker.ts:36-44
+async function loadTasks(gitagentDir: string): Promise<TasksStore> {
+    const tasksFile = join(gitagentDir, "learning", "tasks.json");
+    try {
+        const raw = await readFile(tasksFile, "utf-8");
+        return JSON.parse(raw) as TasksStore;
+    } catch {
+        return { tasks: [] };
+    }
+}
+
+\end{lstlisting}
+
+
+
+Tasks are created with \texttt{action: "begin"} and can accumulate over time:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+interface TaskRecord {
+    id: string;
+    objective: string;
+    steps: TaskStep[];
+    attempts: number;
+    status: "active" | "succeeded" | "failed";
+    outcome?: "success" | "failure" | "partial";
+    failure_reason?: string;
+    skill_used?: string;
+    started_at: string;
+    ended_at?: string;
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# What Happens with Many Tasks
+
+Consider an agent that has been running for weeks, creating tasks for each user request:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+Task 1: "Build a Flappy Bird game" (15 steps, attempt #3)
+Task 2: "Refactor the database layer" (8 steps, attempt #1)
+Task 3: "Write unit tests for auth module" (12 steps, attempt #2)
+...
+Task 150: "Update the README documentation" (3 steps, attempt #1)
+
+\end{lstlisting}
+
+
+
+The \texttt{"list"} action produces:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+Active tasks:
+- t1: "Build a Flappy Bird game" (15 steps, attempt #3)
+- t2: "Refactor the database layer" (8 steps, attempt #1)
+...
+- t150: "Update the README documentation" (3 steps, attempt #1)
+
+\end{lstlisting}
+
+
+
+At roughly 80 characters per line + overhead, 150 tasks = \textasciitilde{}12,000 characters of tool result. This consumes roughly \textbf{3,000 tokens} of the LLM's context window — just for the task list. If the context window is 128K tokens, this is \textasciitilde{}2.3\%. If the window is smaller (e.g., 32K), it's \textasciitilde{}9.4\%.
+
+\#\#\# The Pagination Pattern
+
+The task tracker schema (\texttt{src/tools/shared.js}) likely defines the \texttt{list} action without pagination params:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// Expected schema addition:
+{
+    action: "list",
+    limit?: number,   // Max tasks to return (default: 20)
+    offset?: number,  // Offset for pagination (default: 0)
+    status?: string,  // Filter by status (default: "active")
+}
+
+\end{lstlisting}
+
+
+
+Without these, the LLM has no way to request a subset of tasks.
+
+---
+
+\subsection*{Fix Implementation}
+\#\#\# Option A: Add Pagination Parameters (Recommended)
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// Shared schema update (shared.ts)
+export const taskTrackerListSchema = {
+    action: "list",
+    limit: { type: "number", default: 20, description: "Max tasks to return" },
+    offset: { type: "number", default: 0, description: "Offset for pagination" },
+    status: { type: "string", default: "active", enum: ["active", "succeeded", "failed", "all"] },
+};
+
+// task-tracker.ts — updated list action
+case "list": {
+    const limit = Math.min(params.limit || 20, 100);  // Cap at 100
+    const offset = params.offset || 0;
+    const statusFilter = params.status || "active";
+
+    let filtered = store.tasks;
+    if (statusFilter !== "all") {
+        filtered = filtered.filter((t) => t.status === statusFilter);
+    }
+
+    const total = filtered.length;
+    const page = filtered.slice(offset, offset + limit);
+
+    if (page.length === 0) {
+        return {
+            content: [{
+                type: "text",
+                text: `No ${statusFilter} tasks${offset > 0 ? ` at offset ${offset}` : ""}.`,
+            }],
+            details: { count: 0, total, limit, offset },
+        };
+    }
+
+    const lines = page.map((t) =>
+        `- ${t.id}: "${t.objective}" (${t.steps.length} steps, attempt #${t.attempts}, ${t.status})`,
+    );
+
+    const hasMore = offset + limit < total;
+    const nextHint = hasMore
+        ? `\n\nUse offset=${offset + limit}&limit=${limit} for the next page (${total - offset - limit} remaining).`
+        : "";
+
+    return {
+        content: [{
+            type: "text",
+            text: `Active tasks (${Math.min(limit, total)} of ${total}):\n${lines.join("\n")}${nextHint}`,
+        }],
+        details: { count: page.length, total, limit, offset, hasMore },
+    };
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# Option B: Simple Truncation (Quick Fix)
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// task-tracker.ts — truncate to 20 tasks
+case "list": {
+    const active = store.tasks.filter((t) => t.status === "active");
+    if (active.length === 0) {
+        return { content: [{ type: "text", text: "No active tasks." }], details: undefined };
+    }
+
+    const MAX_DISPLAY = 20;
+    const displayTasks = active.slice(0, MAX_DISPLAY);
+    const lines = displayTasks.map((t) =>
+        `- ${t.id}: "${t.objective}" (${t.steps.length} steps, attempt #${t.attempts})`,
+    );
+
+    const remainder = active.length - MAX_DISPLAY;
+    const remainderText = remainder > 0
+        ? `\n... and ${remainder} more task${remainder > 1 ? "s" : ""}.`
+        : "";
+
+    return {
+        content: [{
+            type: "text",
+            text: `Active tasks (showing ${displayTasks.length} of ${active.length}):\n${lines.join("\n")}${remainderText}`,
+        }],
+        details: { count: active.length, shown: displayTasks.length },
+    };
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# Option C: Smart Summary with Detail Drill-Down
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// task-tracker.ts — summary mode
+case "list": {
+    const active = store.tasks.filter((t) => t.status === "active");
+    if (active.length === 0) {
+        return { content: [{ type: "text", text: "No active tasks." }], details: undefined };
+    }
+
+    // Summary mode: group by attempt count
+    const byAttempts = new Map<number, number>();
+    for (const t of active) {
+        byAttempts.set(t.attempts, (byAttempts.get(t.attempts) || 0) + 1);
+    }
+
+    const summary = Array.from(byAttempts.entries())
+        .sort(([a], [b]) => a - b)
+        .map(([attempts, count]) => `${count} tasks with ${attempts} attempt${attempts > 1 ? "s" : ""}`)
+        .join(", ");
+
+    const recentTasks = active.slice(0, 5).map((t) =>
+        `- ${t.id}: "${t.objective.slice(0, 80)}" (${t.steps.length} steps)`
+    ).join("\n");
+
+    return {
+        content: [{
+            type: "text",
+            text: `Active tasks: ${active.length} total (${summary})\n\nMost recent:\n${recentTasks}\n\nUse list action with limit & offset params to page through all tasks.`,
+        }],
+        details: { count: active.length, summary: Object.fromEntries(byAttempts) },
+    };
+}
+
+\end{lstlisting}
+
+
+
+---
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tools/shared.ts}
+    \item \srcfile{src/tools/task-tracker.ts} — primary affected file
+\end{itemize}
+
+\subsection*{Verification}
+The fix is verified through unit tests and integration tests that confirm the corrected behavior:
+
+\begin{lstlisting}[language=TypeScript]
+// verification/bug-034-verify.ts
+import { writeFileSync, mkdirSync, rmSync } from "fs";
+import { join } from "path";
+
+// Simulate the task tracker with pagination
+interface TaskRecord {
+    id: string;
+    objective: string;
+    steps: string[];
+    attempts: number;
+    status: string;
+}
+
+function listTasks(
+    tasks: TaskRecord[],
+    options: { limit?: number; offset?: number; status?: string } = {}
+) {
+    const limit = Math.min(options.limit || 20, 100);
+    const offset = options.offset || 0;
+    const statusFilter = options.status || "active";
+
+    let filtered = tasks;
+    if (statusFilter !== "all") {
+        filtered = filtered.filter((t) => t.status === statusFilter);
+    }
+
+    const total = filtered.length;
+    const page = filtered.slice(offset, offset + limit);
+
+    if (page.length === 0) {
+        return { text: `No tasks.`, count: 0, total };
+    }
+
+    const lines = page.map((t) =>
+        `- ${t.id}: "${t.objective}" (${t.steps.length} steps, attempt #${t.attempts})`,
+    );
+
+    const hasMore = offset + limit < total;
+    let nextHint = "";
+    if (hasMore) {
+        nextHint = `\n\nUse offset=${offset + limit} for next page.`;
+    }
+
+    return {
+        text: `Tasks (${page.length} of ${total}):\n${lines.join("\n")}${nextHint}`,
+        count: page.length,
+        total,
+        hasMore,
+    };
+}
+
+function verify() {
+    let failures = 0;
+
+    // Generate 50 tasks
+    const tasks: TaskRecord[] = [];
+    for (let i = 0; i < 50; i++) {
+        tasks.push({
+            id: `t${i}`,
+            objective: `Task ${i}: do something important`,
+            steps: ["step 1"],
+            attempts: Math.floor(Math.random() * 3) + 1,
+            status: i < 45 ? "active" : "succeeded",
+        });
+    }
+
+    // Test 1: Default limit
+    console.log("Test 1: Default limit (20)...");
+    const r1 = listTasks(tasks, {});
+    if (r1.count === 20 && r1.total === 45) {
+        console.log(`  PASS: 20 of 45 active tasks returned`);
+    } else {
+        console.log(`  FAIL: got ${r1.count}/${r1.total}`);
+        failures++;
+    }
+
+    // Test 2: Custom limit
+    console.log("Test 2: Custom limit (5)...");
+    const r2 = listTasks(tasks, { limit: 5 });
+    if (r2.count === 5 && r2.hasMore) {
+        console.log(`  PASS: 5 of 45 returned, hasMore=${r2.hasMore}`);
+    } else {
+        console.log(`  FAIL: count=${r2.count}, hasMore=${r2.hasMore}`);
+        failures++;
+    }
+
+    // Test 3: Offset pagination
+    console.log("Test 3: Offset pagination...");
+    const r3a = listTasks(tasks, { limit: 10, offset: 0 });
+    const r3b = listTasks(tasks, { limit: 10, offset: 10 });
+    if (r3a.count === 10 && r3b.count === 10 && r3a.text !== r3b.text) {
+        console.log(`  PASS: Page 1 and page 2 differ`);
+    } else {
+        console.log(`  FAIL: Page issue`);
+        failures++;
+    }
+
+    // Test 4: Last page
+    console.log("Test 4: Last page...");
+    const r4 = listTasks(tasks, { limit: 10, offset: 40 });
+    if (r4.count === 5 && !r4.hasMore) {
+        console.log(`  PASS: Last page has 5 tasks, no more pages`);
+    } else {
+        console.log(`  FAIL: count=${r4.count}, hasMore=${r4.hasMore}`);
+        failures++;
+    }
+
+    // Test 5: Status filter
+    console.log("Test 5: Status filter...");
+    const r5 = listTasks(tasks, { limit: 100, status: "succeeded" });
+    if (r5.count === 5 && r5.total === 5) {
+        console.log(`  PASS: 5 succeeded tasks`);
+    } else {
+        console.log(`  FAIL: ${r5.count}/${r5.total}`);
+        failures++;
+    }
+
+    // Test 6: Empty result
+    console.log("Test 6: Empty result...");
+    const r6 = listTasks(tasks, { limit: 10, offset: 100 });
+    if (r6.count === 0) {
+        console.log(`  PASS: Empty result for out-of-range offset`);
+    } else {
+        console.log(`  FAIL: count=${r6.count}`);
+        failures++;
+    }
+
+    console.log(`\n${failures === 0 ? "ALL TESTS PASSED" : `${failures} TEST(S) FAILED`}`);
+    process.exit(failures > 0 ? 1 : 0);
+}
+
+verify();
+
+\end{lstlisting}
+

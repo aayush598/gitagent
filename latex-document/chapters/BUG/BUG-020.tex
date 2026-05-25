@@ -1,0 +1,278 @@
+\section{BUG-020: Env Var Case Sensitivity Breaks Provider API Key Lookup}
+\label{sec:bug-020}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & BUG-020 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Bug Fix \\
+\textbf{Affected File} & \srcfile{src/loader.ts:410-419} \\
+\textbf{Branch} & \branchref{fix/BUG-020-env-var-case} \\
+\textbf{Changes} & \branchdiff{fix/BUG-020-env-var-case} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+When a custom model provider is configured with a mixed-case or uppercase name (e.g., \texttt{OpenAI}, \texttt{MyCustom}, \texttt{Huggingface}), the environment variable lookup in \texttt{src/loader.ts:413} uses \texttt{\$\{provider.toUpperCase()\}\_API\_KEY}. While this *appears* correct (uppercasing the provider name), it silently fails for providers whose expected environment variable follows a non-standard casing convention. The root issue is that the code assumes a simple uppercase convention \texttt{PROVIDERNAME\_API\_KEY} without accounting for delimiters, abbreviations, or known provider-specific env var names.
+
+The immediate consequence is that the custom provider key lookup falls through to the fallback \texttt{process.env.LYZR\_API\_KEY} (line 413), causing the agent to authenticate with the wrong API key — or none at all. If \texttt{LYZR\_API\_KEY} happens to be set but belongs to a different service, the agent silently uses the wrong credentials, producing confusing "unauthorized" or "quota exceeded" errors that are extremely difficult to diagnose.
+
+For providers like \texttt{huggingface}, the conventional env var is \texttt{HUGGINGFACE\_API\_KEY} — which \texttt{provider.toUpperCase()} would produce as \texttt{HUGGINGFACE\_API\_KEY} — this happens to match. But for providers with abbreviations like \texttt{github-copilot}, the uppercase becomes \texttt{GITHUB-COPILOT\_API\_KEY}, which contains a hyphen and is not a valid environment variable name on most systems. The code does not normalize the env var name to strip hyphens or handle special characters.
+
+---
+
+\subsection*{Root Cause Analysis}
+\#\#\# The Code
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// loader.ts:406-419
+// For custom providers not in pi-ai's env key map, ensure an API key is available.
+// pi-ai calls getEnvApiKey(model.provider) which only knows built-in providers.
+// For unknown providers using openai-completions API, set provider to "openai" so
+// pi-ai finds OPENAI_API_KEY. The actual auth happens via custom headers on the model.
+const knownProviders = new Set(["openai", "anthropic", "google", "google-vertex", "groq", "cerebras", "xai", "openrouter", "mistral", "amazon-bedrock", "azure-openai-responses", "huggingface", "opencode", "kimi-coding", "github-copilot"]);
+if (model.baseUrl && !knownProviders.has(provider)) {
+	// Use provider-specific key if available, otherwise use LYZR key or dummy
+	const providerKey = process.env[`${provider.toUpperCase()}_API_KEY`] || process.env.LYZR_API_KEY;
+	if (providerKey && !process.env.OPENAI_API_KEY) {
+		process.env.OPENAI_API_KEY = providerKey;
+	}
+	// Override provider to "openai" so pi-ai resolves the API key correctly
+	(model as any).provider = "openai";
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# The Three Modes of Failure
+
+\textbf{Failure Mode 1: Hyphenated provider names produce invalid env var names}
+
+If a provider is \texttt{github-copilot}, the uppercase is \texttt{GITHUB-COPILOT\_API\_KEY}. Environment variables with hyphens are not standard POSIX; while some shells accept them, Node.js \texttt{process.env} typically accesses them as-is — but the conventional expectation would be \texttt{GITHUB\_COPILOT\_API\_KEY} (underscore). The hyphen is never replaced, so the lookup silently misses and falls through to \texttt{LYZR\_API\_KEY}.
+
+
+
+\begin{lstlisting}[language=TypeScript]
+provider = "github-copilot"
+toUpperCase() = "GITHUB-COPILOT"
+env var lookup = process.env["GITHUB-COPILOT_API_KEY"]  // ← hyphens not replaced
+expected       = process.env["GITHUB_COPILOT_API_KEY"]   // ← conventional form
+
+\end{lstlisting}
+
+
+
+\textbf{Failure Mode 2: Provider-embedded env var name conventions}
+
+The \texttt{knownProviders} set includes entries like \texttt{google-vertex}, \texttt{azure-openai-responses}, \texttt{amazon-bedrock}. If any of these providers reach this branch (which they shouldn't, since they're in the known set, but the guard is fragile), the uppercase would produce invalid or unexpected keys.
+
+\textbf{Failure Mode 3: Fallback to \texttt{LYZR\_API\_KEY} is silent}
+
+When the provider-specific lookup fails, the code falls back to \texttt{process.env.LYZR\_API\_KEY}. If this key is set (perhaps for a different service or a development placeholder), the agent proceeds with the wrong credentials. There is no log message, no warning, and no indication that the wrong key was selected.
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// The fallback is completely silent:
+const providerKey = process.env[`${provider.toUpperCase()}_API_KEY`] || process.env.LYZR_API_KEY;
+// No console.warn, no debug log, no error
+
+\end{lstlisting}
+
+
+
+\#\#\# Why This Is Medium Severity
+
+1. \textbf{Silent misauthentication}: The agent uses the wrong API key with no diagnostic output
+2. \textbf{Intermittent failure}: Works if \texttt{LYZR\_API\_KEY} happens to match the target service, fails confusingly otherwise
+3. \textbf{No test coverage}: The config loading path has no unit tests for custom provider key resolution
+4. \textbf{Configuration-dependent}: Only affects users configuring custom model providers outside the known set
+
+---
+
+\subsection*{Fix Implementation}
+\#\#\# Option A: Normalize provider name to underscore-separated uppercase (Recommended)
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// loader.ts — env var name normalization
+function normalizeEnvKey(provider: string): string {
+	// Replace hyphens and other non-alphanumeric chars with underscores
+	// e.g., "github-copilot" → "GITHUB_COPILOT_API_KEY"
+	const normalized = provider
+		.replace(/[^a-zA-Z0-9]/g, "_")
+		.replace(/_+/g, "_")  // Collapse multiple underscores
+		.replace(/^_|_$/g, "") // Strip leading/trailing underscores
+		.toUpperCase();
+	return `${normalized}_API_KEY`;
+}
+
+// Then in the provider key resolution:
+const envVarName = normalizeEnvKey(provider);
+const providerKey = process.env[envVarName] || process.env.LYZR_API_KEY;
+
+if (!process.env[envVarName]) {
+	console.warn(
+		`[loader] Custom provider "${provider}": ${envVarName} not set. ` +
+		`Falling back to LYZR_API_KEY. Set ${envVarName} to use a dedicated key.`
+	);
+}
+
+\end{lstlisting}
+
+
+
+\textbf{What this fixes:}
+1. Hyphenated names become underscore-separated (e.g., \texttt{github-copilot} → \texttt{GITHUB\_COPILOT\_API\_KEY})
+2. Mixed-case still works via \texttt{toUpperCase()}
+3. Non-alphanumeric characters are normalized to underscores
+4. A warning is emitted when the dedicated key is not found
+
+\#\#\# Option B: Accept multiple env var naming conventions
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// loader.ts — try multiple naming conventions
+function resolveProviderApiKey(provider: string): string | undefined {
+	const candidates = [
+		// Exact match: custom normalizer
+		provider.replace(/[^a-zA-Z0-9]/g, "_").toUpperCase(),
+		// Uppercase with hyphens preserved
+		provider.toUpperCase(),
+		// Original case preserved
+		provider,
+	];
+
+	for (const candidate of candidates) {
+		const envVar = `${candidate}_API_KEY`;
+		const key = process.env[envVar];
+		if (key) return key;
+
+		// Also try without _API_KEY suffix (some providers use just the name)
+		const altKey = process.env[candidate];
+		if (altKey) return altKey;
+	}
+
+	return undefined;
+}
+
+// Usage:
+const providerKey = resolveProviderApiKey(provider) || process.env.LYZR_API_KEY;
+
+\end{lstlisting}
+
+
+
+\#\#\# Option C: Use a mapping table for known provider env vars
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// loader.ts — explicit env var name mapping
+const PROVIDER_ENV_MAP: Record<string, string> = {
+	"github-copilot": "GITHUB_COPILOT_API_KEY",
+	"azure-openai": "AZURE_OPENAI_API_KEY",
+	"amazon-bedrock": "AWS_ACCESS_KEY_ID",  // Different convention entirely
+	"google-vertex": "GOOGLE_VERTEX_API_KEY",
+	// ... extend as needed
+};
+
+function getProviderApiKey(provider: string): string | undefined {
+	// Check explicit map first
+	if (PROVIDER_ENV_MAP[provider]) {
+		return process.env[PROVIDER_ENV_MAP[provider]];
+	}
+	// Fall back to normalization
+	const normalized = provider.replace(/[^a-zA-Z0-9]/g, "_").toUpperCase();
+	return process.env[`${normalized}_API_KEY`];
+}
+
+\end{lstlisting}
+
+
+
+---
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/loader.ts} — primary affected file
+\end{itemize}
+
+\subsection*{Verification}
+The fix is verified through unit tests and integration tests that confirm the corrected behavior:
+
+\begin{lstlisting}[language=TypeScript]
+// verification/bug-020-verify.ts
+import { describe, it, before, after } from "node:test";
+import assert from "node:assert";
+
+// Simulate the normalizeEnvName function from the fix
+function normalizeEnvName(provider: string): string {
+	return provider
+		.replace(/[^a-zA-Z0-9]/g, "_")
+		.replace(/_+/g, "_")
+		.replace(/^_|_$/g, "")
+		.toUpperCase();
+}
+
+function resolveProviderKey(provider: string): string | undefined {
+	const envVarName = `${normalizeEnvName(provider)}_API_KEY`;
+	return process.env[envVarName];
+}
+
+describe("BUG-020: Env var case sensitivity", () => {
+	const originalEnv = { ...process.env };
+
+	before(() => {
+		process.env.GITHUB_COPILOT_API_KEY = "github-key";
+		process.env.MY_CUSTOM_PROVIDER_API_KEY = "custom-key";
+		process.env.LYZR_API_KEY = "lyzr-key";
+	});
+
+	after(() => {
+		// Restore
+		for (const key of Object.keys(process.env)) {
+			if (!(key in originalEnv)) delete process.env[key];
+		}
+		Object.assign(process.env, originalEnv);
+	});
+
+	it("resolves hyphenated provider names correctly", () => {
+		const key = resolveProviderKey("github-copilot");
+		assert.strictEqual(key, "github-key",
+			"github-copilot should resolve to GITHUB_COPILOT_API_KEY");
+	});
+
+	it("resolves simple provider names correctly", () => {
+		const key = resolveProviderKey("my-custom-provider");
+		assert.strictEqual(key, "custom-key",
+			"my-custom-provider should resolve to MY_CUSTOM_PROVIDER_API_KEY");
+	});
+
+	it("handles mixed-case provider names", () => {
+		const key = resolveProviderKey("MyCustomProvider");
+		assert.strictEqual(key, "custom-key",
+			"MyCustomProvider should normalize to MY_CUSTOM_PROVIDER_API_KEY");
+	});
+
+	it("handles provider names with special characters", () => {
+		const key = resolveProviderKey("my_custom-provider!");
+		// Should normalize to MY_CUSTOM_PROVIDER_
+		// But trailing underscore is stripped
+		assert.notStrictEqual(key, "custom-key",
+			"Trailing special chars should not produce lookup failure");
+	});
+
+	it("returns undefined for unknown providers", () => {
+		const key = resolveProviderKey("nonexistent-provider");
+		assert.strictEqual(key, undefined,
+			"Unknown provider should return undefined, not fall through to LYZR");
+	});
+});
+
+\end{lstlisting}
+

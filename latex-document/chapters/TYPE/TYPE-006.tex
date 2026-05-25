@@ -1,0 +1,60 @@
+\section{TYPE-006: Loose Type for Constraint Options}
+\label{sec:type-006}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & TYPE-006 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Type Safety \\
+\textbf{Branch} & \branchref{fix/TYPE-006-type-constraint-options}
+\textbf{Changes} & \branchdiff{fix/TYPE-006-type-constraint-options} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+At \srcfile{src/sdk.ts:284}, the \code{constraints} option is cast as \code{any} before accessing its properties. This defeats TypeScript's checking for constraint field names and types. A misspelled field like \code{temprature} instead of \code{temperature} compiles without error but is silently ignored at runtime. The \code{as any} cast exists to support snake\_case variants (\code{max\_tokens}, \code{top\_p}, \code{top\_k}) that are not in the type definition.
+
+\subsection*{Root Cause Analysis}
+The \code{as any} cast bypasses type checking:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — as any cast to support snake_case
+const c = constraints as any;
+if (c.temperature !== undefined) modelOptions.temperature = c.temperature;
+if (c.maxTokens !== undefined) modelOptions.maxTokens = c.maxTokens;
+if (c.max_tokens !== undefined) modelOptions.maxTokens = c.max_tokens;
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+Snake\_case variants are added to the type definition and the cast is removed:
+
+\begin{lstlisting}[language=TypeScript]
+// src/sdk-types.ts — add snake_case variants
+constraints?: {
+    temperature?: number;
+    maxTokens?: number;
+    max_tokens?: number;
+    topP?: number;
+    top_p?: number;
+    topK?: number;
+    top_k?: number;
+};
+
+// src/sdk.ts — remove as any cast
+const c = constraints;  // No cast needed
+if (c.temperature !== undefined) modelOptions.temperature = c.temperature;
+if (c.maxTokens !== undefined) modelOptions.maxTokens = c.maxTokens;
+if (c.max_tokens !== undefined) modelOptions.maxTokens = c.max_tokens;
+if (c.topP !== undefined) modelOptions.topP = c.topP;
+if (c.top_p !== undefined) modelOptions.topP = c.top_p;
+if (c.topK !== undefined) modelOptions.topK = c.topK;
+if (c.top_k !== undefined) modelOptions.topK = c.top_k;
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/sdk-types.ts} — ConstraintOptions type
+    \item \srcfile{src/sdk.ts} — Constraint mapping logic
+    \item \srcfile{src/\_\_tests\_\_/type-006.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+All constraint properties are now properly typed without \code{as any}.

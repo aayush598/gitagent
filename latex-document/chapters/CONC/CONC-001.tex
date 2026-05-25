@@ -1,0 +1,149 @@
+\section{CONC-001: Shared State Without Locks}
+\label{sec:conc-001}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & CONC-001 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Concurrency \\
+\textbf{Branch} & \branchref{fix/CONC-001-shared-state-without-locks} \\
+\textbf{Changes} & \branchdiff{fix/CONC-001-shared-state-without-locks} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{telemetry.ts} module maintains a shared module-level object \texttt{\_slots} that holds lazily-initialized \texttt{Counter} and \texttt{Histogram} handles. Multiple concurrent tool executions race to initialize these slots via the \texttt{lazyCounter}/\texttt{lazyHistogram} functions. Because \texttt{\_slots} fields are read/written without synchronization, two concurrent calls can both see \texttt{slot.v === null}, causing two \texttt{createCounter} calls for the same metric name. The second creation overwrites \texttt{slot.v}, orphaning the first handle. The orphaned handle's recorded data is silently lost---the metric SDK only tracks data sent through the latest registered handle.
+
+The bug is in \texttt{src/telemetry.ts:197-221}, where \texttt{lazyCounter} and \texttt{lazyHistogram} perform a non-atomic check-then-act pattern on shared module state. Metric loss occurs under concurrent tool execution, which is common in the voice server and SDK \texttt{query()} path. The recommended fix replaces lazy initialization with eagerly-created module-level metric handles, eliminating the race entirely.
+
+\subsection*{Root Cause Analysis}
+
+The root cause is a classic check-then-act race condition on shared mutable state:
+
+\begin{lstlisting}[language=TypeScript]
+// telemetry.ts:197-221 — Before fix
+function lazyCounter(
+    slot: { v: Counter | null },
+    name: string,
+    description: string,
+): Counter {
+    if (!slot.v) {                                    // READ (no lock)
+        slot.v = getMeter().createCounter(name, { description });  // WRITE
+    }
+    return slot.v;
+}
+
+function lazyHistogram(
+    slot: { v: Histogram | null },
+    name: string,
+    description: string,
+    unit?: string,
+): Histogram {
+    if (!slot.v) {                                    // READ (no lock)
+        slot.v = getMeter().createHistogram(name, {   // WRITE
+            description,
+            ...(unit ? { unit } : {}),
+        });
+    }
+    return slot.v;
+}
+\end{lstlisting}
+
+The race scenario unfolds as follows:
+
+\begin{lstlisting}[language=TypeScript]
+Time |  Tool A (thread 1)              |  Tool B (thread 2)
+-----|----------------------------------|----------------------------------
+t1   | lazyCounter(_slots.toolCalls,..) |
+t2   | reads slot.v -> null             |
+t3   |                                  | lazyCounter(_slots.toolCalls,..)
+t4   |                                  | reads slot.v -> null (still null!)
+t5   | slot.v = meter.createCounter()   |
+t6   |                                  | slot.v = meter.createCounter() (ORPHANS A)
+t7   | A.add(1) writes to ORPHAN       | B.add(1) writes to CURRENT
+\end{lstlisting}
+
+After t6, any \texttt{add()} through the A code path writes to the orphaned handle whose data is never read by the exporter. Metric data is silently under-counted.
+
+\subsection*{Fix Implementation}
+
+The fix replaces the lazy-initialization pattern with eagerly-created module-level metric handles. All six metric handles are created once at module load time, eliminating the race entirely:
+
+\begin{lstlisting}[language=TypeScript]
+// telemetry.ts — After fix: Eager initialization at module scope
+const _toolCallsCounter = getMeter().createCounter("gitclaw.tool.calls", {
+    description: "Number of tool executions",
+});
+const _toolDurationHistogram = getMeter().createHistogram("gitclaw.tool.duration_ms", {
+    description: "Tool execution duration in milliseconds",
+    unit: "ms",
+});
+const _sessionDurationHistogram = getMeter().createHistogram("gitclaw.session.duration_ms", {
+    description: "Agent session duration in milliseconds",
+    unit: "ms",
+});
+const _sessionCostCounter = getMeter().createCounter("gitclaw.session.cost_usd", {
+    description: "Cumulative agent session cost in USD",
+});
+const _genAiTokenCounter = getMeter().createCounter("gen_ai.client.token.usage", {
+    description: "Token usage by GenAI calls",
+});
+const _genAiDurationHistogram = getMeter().createHistogram("gen_ai.client.operation.duration", {
+    description: "GenAI operation duration in milliseconds",
+    unit: "ms",
+});
+\end{lstlisting}
+
+The \texttt{lazyCounter} and \texttt{lazyHistogram} helper functions and the entire \texttt{\_slots} infrastructure were removed. Each getter now returns the eagerly-created handle directly:
+
+\begin{lstlisting}[language=TypeScript]
+// telemetry.ts — After fix: Simplified getters
+function getToolCallCounter(): Counter {
+    return _toolCallsCounter;
+}
+function getToolDurationHistogram(): Histogram {
+    return _toolDurationHistogram;
+}
+// ... etc for all six metrics
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/telemetry.ts} --- removed lazy init, added eager metric handles
+    \item \srcfile{src/\_\_tests\_\_/telemetry-conc.test.ts} --- new concurrency tests
+\end{itemize}
+
+\subsection*{Verification}
+\begin{lstlisting}[language=TypeScript]
+// telemetry-conc.test.ts
+describe("CONC-001: Telemetry slot initialization race", () => {
+    it("eagerly-initialized metric handles are stable across repeated access", () => {
+        const { getToolCallCounter, getToolDurationHistogram } =
+            require("../telemetry.js");
+
+        const results: any[] = [];
+        for (let i = 0; i < 50; i++) {
+            results.push(getToolCallCounter());
+        }
+        const first = results[0];
+        for (const r of results) {
+            assert.strictEqual(r, first,
+                "All calls must return the same Counter handle");
+        }
+    });
+
+    it("all six metric getters return non-null objects", () => {
+        const {
+            getToolCallCounter, getToolDurationHistogram,
+            getSessionDurationHistogram, getSessionCostCounter,
+            getGenAiTokenCounter, getGenAiDurationHistogram,
+        } = require("../telemetry.js");
+
+        assert.ok(getToolCallCounter());
+        assert.ok(getToolDurationHistogram());
+        assert.ok(getSessionDurationHistogram());
+        assert.ok(getSessionCostCounter());
+        assert.ok(getGenAiTokenCounter());
+        assert.ok(getGenAiDurationHistogram());
+    });
+});
+\end{lstlisting}

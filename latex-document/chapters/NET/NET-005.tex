@@ -1,0 +1,91 @@
+\section{NET-005: No Request Timeout for API Calls}
+\label{sec:net-005}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & NET-005 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Network \\
+\textbf{Branch} & \branchref{fix/NET-005-request-timeout}
+\textbf{Changes} & \branchdiff{fix/NET-005-request-timeout} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \code{fetch()} calls throughout the codebase have no timeout configuration. If an API endpoint hangs — TCP connection stuck, server not responding, DNS deadlock — the fetch promise never settles. This blocks the agent indefinitely: tool executions never complete, the Telegram poller stops, and voice sessions enter a dead state. The GitHub clone operation in \srcfile{src/plugins.ts} also lacks a timeout.
+
+\subsection*{Root Cause Analysis}
+No timeout on any \code{fetch()} or \code{execFileSync} call:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — no timeout on fetch (src/composio/client.ts)
+const resp = await fetch(url, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+});
+
+// BEFORE — no timeout on git clone (src/plugins.ts)
+execFileSync("git", args, { stdio: "pipe" });
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+A shared \code{fetchWithTimeout} wrapper is created and used everywhere:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — src/fetch.ts
+const DEFAULT_TIMEOUT = 30_000;
+
+export async function fetchWithTimeout(
+    url: string | URL,
+    options: RequestInit & { timeout?: number } = {},
+): Promise<Response> {
+    const timeout = options.timeout ?? DEFAULT_TIMEOUT;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    let combined: AbortSignal;
+    if (options.signal) {
+        combined = AbortSignal.any([options.signal, controller.signal]);
+    } else {
+        combined = controller.signal;
+    }
+
+    try {
+        return await fetch(url, { ...options, signal: combined });
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+// All fetch calls replaced:
+const resp = await fetchWithTimeout(url, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+    timeout: REQUEST_TIMEOUT,
+});
+
+// Git clone timeout added:
+execFileSync("git", args, { stdio: "pipe", timeout: 120000 });
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/fetch.ts} — New fetchWithTimeout wrapper
+    \item \srcfile{src/http-client.ts} — Timeout configuration
+    \item \srcfile{src/composio/client.ts} — Composio API calls
+    \item \srcfile{src/loader.ts} — configureHttpClient call
+    \item \srcfile{src/plugins.ts} — Git clone timeout
+    \item \srcfile{src/\_\_tests\_\_/net-005.test.ts}
+    \item \srcfile{package.json}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify timeout behavior:
+
+\begin{lstlisting}[language=TypeScript]
+const result = await fetchWithTimeout("http://localhost:19999", { timeout: 50 }).then(
+    () => "resolved",
+    () => "rejected",
+);
+strictEqual(result, "rejected");
+\end{lstlisting}

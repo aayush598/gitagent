@@ -1,0 +1,77 @@
+\section{RACE-003: Schedule Metadata Write Race}
+\label{sec:race-003}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & RACE-003 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Race Condition \\
+\textbf{Branch} & \branchref{fix/RACE-003-schedule-atomic-write}
+\textbf{Changes} & \branchdiff{fix/RACE-003-schedule-atomic-write} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \code{updateScheduleMeta} function in \srcfile{src/schedules.ts} reads a schedule file, modifies it in memory, then writes the entire file back. If two updates happen concurrently for the same schedule — two scheduled jobs finishing at the same time — one update's \code{lastRunAt} or \code{lastResult} fields will be lost. The \code{saveSchedule} function has a similar vulnerability: it reads no existing state and overwrites the file completely, discarding metadata written by other processes.
+
+\subsection*{Root Cause Analysis}
+Both \code{updateScheduleMeta} and \code{saveSchedule} use direct \code{writeFile}:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — direct write without atomic rename
+export async function updateScheduleMeta(agentDir, id, updates) {
+    const filePath = join(agentDir, "schedules", `${id}.yaml`);
+    const raw = await readFile(filePath, "utf-8");
+    const data = yaml.load(raw);
+    Object.assign(data, updates);
+    const content = yaml.dump(data, { lineWidth: 120 });
+    await writeFile(filePath, content, "utf-8");  // Non-atomic write
+}
+
+export async function saveSchedule(agentDir, schedule) {
+    const content = yaml.dump({ ... });
+    await writeFile(filePath, content, "utf-8");  // Blind overwrite
+}
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+Both functions now use atomic write via temp file + rename:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — atomic write with tmp file and rename
+import { rename } from "fs/promises";
+
+export async function updateScheduleMeta(agentDir, id, updates) {
+    const filePath = join(agentDir, "schedules", `${id}.yaml`);
+    const raw = await readFile(filePath, "utf-8");
+    const data = yaml.load(raw);
+    Object.assign(data, updates);
+    const content = yaml.dump(data, { lineWidth: 120 });
+    const tmpPath = filePath + ".tmp";
+    await writeFile(tmpPath, content, "utf-8");
+    await rename(tmpPath, filePath);
+}
+
+export async function saveSchedule(agentDir, schedule) {
+    const content = yaml.dump({ ... });
+    const tmpPath = filePath + ".tmp";
+    await writeFile(tmpPath, content, "utf-8");
+    await rename(tmpPath, filePath);
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/schedules.ts} — updateScheduleMeta() and saveSchedule()
+    \item \srcfile{src/\_\_tests\_\_/schedule-atomic-write.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify the atomic write pattern:
+
+\begin{lstlisting}[language=TypeScript]
+const filePath = "/tmp/race-003-test.yaml";
+const tmpPath = filePath + ".tmp";
+await writeFile(tmpPath, "test: value\n", "utf-8");
+await rename(tmpPath, filePath);
+const content = await readFile(filePath, "utf-8");
+assert.equal(content.trim(), "test: value");
+\end{lstlisting}

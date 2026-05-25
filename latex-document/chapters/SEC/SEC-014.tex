@@ -1,0 +1,127 @@
+\section{SEC-014: Secrets in Git History via Memory Tool}
+\label{sec:sec-014}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & SEC-014 \\
+\textbf{Severity} & High (CVSS 8.2) \\
+\textbf{Category} & Security \\
+\textbf{CWE} & CWE-200: Exposure of Sensitive Information \\
+\textbf{Affected File} & \srcfile{src/tools/memory.ts}, \srcfile{src/tools/sandbox-memory.ts} \\
+\textbf{Branch} & \branchref{fix/SEC-014-secrets-git-history} \\
+\textbf{Changes} & \branchdiff{fix/SEC-014-secrets-git-history} \\
+\textbf{Commit} & e6efc22389002497c3bd5a14889e54ae142c04cf \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+Every \texttt{save} operation in the \texttt{memory} tool writes content to a file and commits it to git via \texttt{git add \&\& git commit}. If the saved content contains sensitive information---API keys, tokens, passwords, private data---that information becomes permanently embedded in the git repository's history with no automated mechanism to remove it. Even if a subsequent save removes the secret from the current content, the old commit still contains it. Standard git garbage collection (\texttt{git gc}) does not remove historical commits containing secrets.
+
+Unlike SEC-002 (which focuses on detection of secrets before they are committed), SEC-014 addresses the permanence of secrets once they reach git history. The fix introduces automatic git history squashing: when the number of memory commits exceeds a threshold (50), the entire memory file history is rewritten into a single commit using \texttt{git filter-branch}, effectively removing all historical content. Additionally, archive files are no longer git-tracked, and lightweight \texttt{git gc} is run after each save to prune unreachable objects.
+
+\subsection*{Root Cause Analysis}
+Each memory save creates a git commit:
+
+\begin{lstlisting}[language=TypeScript]
+// memory.ts:153-160
+await mkdir(dirname(memoryFile), { recursive: true });
+await writeFile(memoryFile, finalContent, "utf-8");
+
+try {
+    execSync(`git add "${memoryPath}" && git commit -m "..."`, {
+        cwd, stdio: "pipe",
+    });
+} catch (err: any) {
+\end{lstlisting}
+
+The content is committed as a blob, tree, and commit object in git. These objects are immutable---once created, they persist until explicitly garbage-collected. An attacker with repository access can search all git history:
+
+\begin{lstlisting}[language=bash]
+git log -p --all -S "sk-proj" -- memory/MEMORY.md
+\end{lstlisting}
+
+The \texttt{archiveOverflow()} function also git-added archive files, creating additional permanent records of older content:
+
+\begin{lstlisting}[language=TypeScript]
+try {
+    execSync(`git add "${archiveFile}"`, { cwd, stdio: "pipe" });
+} catch {
+    // Not in git, that's fine
+}
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+The fix introduces three protections. First, a commit-counting mechanism triggers history squashing when the threshold is exceeded:
+
+\begin{lstlisting}[language=TypeScript]
+const MAX_MEMORY_COMMITS = 50;
+
+function countMemoryCommits(cwd: string, memoryPath: string): number {
+    try {
+        const out = execSync(
+            \texttt{git log --oneline -- "\${memoryPath}" 2>/dev/null | wc -l},
+            { cwd, encoding: "utf-8", stdio: "pipe" },
+        ).trim();
+        return parseInt(out, 10) || 0;
+    } catch { return 0; }
+}
+
+async function squashMemoryHistory(
+    cwd: string, memoryPath: string, memoryFile: string,
+    commitCount: number,
+): Promise<void> {
+    const content = await readFile(memoryFile, "utf-8");
+    const branch = getCurrentBranch(cwd);
+
+    try {
+        execSync(
+            \texttt{git filter-branch --force --prune-empty --index-filter } +
+            \texttt{'git rm --cached --ignore-unmatch "\${memoryPath}"' HEAD},
+            { cwd, stdio: "pipe", timeout: 60000, maxBuffer: 10 * 1024 * 1024 },
+        );
+        execSync(\texttt{git update-ref -d refs/original/refs/heads/\${branch} } +
+            \texttt{2>/dev/null; rm -rf .git/refs/original}, { cwd, stdio: "pipe" });
+        await writeFile(memoryFile, content, "utf-8");
+        execSync(\texttt{git add "\${memoryPath}" && git commit -m "Memory history } +
+            \texttt{squashed (\${commitCount} commits \textrightarrow{} 1)"},
+            { cwd, stdio: "pipe" });
+        execSync(\texttt{git gc --aggressive --prune=now},
+            { cwd, stdio: "pipe", timeout: 120000 });
+    } catch (err: any) {
+        console.error(\texttt{SEC-014: Memory history squash failed: \${err.message}});
+    }
+}
+\end{lstlisting}
+
+Second, archive files are no longer git-added:
+
+\begin{lstlisting}[language=TypeScript]
+// SEC-014: Do NOT git-add archive files --- they contain old content that
+// may include secrets. Archive stays on disk but is not version-controlled.
+\end{lstlisting}
+
+Third, the integration point in \texttt{execute()} checks the commit count after each save:
+
+\begin{lstlisting}[language=TypeScript]
+const commitCount = countMemoryCommits(cwd, memoryPath);
+if (commitCount >= MAX_MEMORY_COMMITS) {
+    await squashMemoryHistory(cwd, memoryPath, memoryFile, commitCount);
+}
+await runGitGC(cwd);
+\end{lstlisting}
+
+The same archive-add removal and \texttt{git gc} call are applied in \texttt{sandbox-memory.ts}.
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/tools/memory.ts} --- Added \texttt{MAX\_MEMORY\_COMMITS} threshold (50), \texttt{countMemoryCommits()} counting function, \texttt{squashMemoryHistory()} filter-branch based squashing, \texttt{runGitGC()} for periodic pruning, removed git-add from \texttt{archiveOverflow()}, integrated squash check in \texttt{execute()} after each save.
+    \item \srcfile{src/tools/sandbox-memory.ts} --- Removed git-add from \texttt{archiveOverflow()}, added \texttt{git gc --auto --quiet} after saves.
+    \item \srcfile{src/__tests__/memory-sec-014.test.ts} --- New comprehensive test suite for git history protections.
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify that after saving more than 50 times (exceeding MAX\_MEMORY\_COMMITS), the commit count for the memory file drops to 1 or 2 (squashed), that the latest content is preserved after a squash cycle, that \texttt{git gc --auto} runs without error after saves, and that archive files exist on disk but are not tracked in git.
+
+\subsection*{Test File}
+\srcfile{src/__tests__/memory-sec-014.test.ts}
+
+Contains four test cases: (1) squash removes old commits after 51 saves, (2) current content preserved after squash, (3) git gc runs without error, (4) archive files are not git-tracked after path-level filtering.

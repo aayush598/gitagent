@@ -1,0 +1,61 @@
+\section{TYPE-007: Unsafe Access to Event Properties}
+\label{sec:type-007}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & TYPE-007 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Type Safety \\
+\textbf{Branch} & \branchref{fix/TYPE-007-remove-as-any-from-event-handler}
+\textbf{Changes} & \branchdiff{fix/TYPE-007-remove-as-any-from-event-handler} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+At \srcfile{src/index.ts:142-158}, the \code{handleEvent} function receives an \code{AgentEvent} (a discriminated union) but casts it to \code{any} to access the \code{.message} property. This bypasses TypeScript's ability to narrow the type based on \code{event.type}, allowing access to properties that may not exist on all event variants. Similarly, \srcfile{src/sdk.ts:348} uses \code{event.message as any} unnecessarily.
+
+\subsection*{Root Cause Analysis}
+The \code{as any} cast prevents proper type narrowing:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — as any bypasses discriminated union
+case "message_end": {
+    const _msgEnd = event as any;
+    if (_msgEnd.message?.role !== "user") {
+        if (_msgEnd.message?.stopReason === "error") {
+            process.stderr.write(red(`\nError: ${_msgEnd.message?.errorMessage ?? "LLM error"}\n`));
+        } else { process.stdout.write("\n"); }
+    }
+    break;
+}
+
+// src/sdk.ts:348
+const raw = event.message as any;
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+The discriminated union is used directly:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — proper discriminated union narrowing
+case "message_end": {
+    if (event.message?.role !== "user") {
+        if (event.message?.stopReason === "error") {
+            process.stderr.write(red(`\nError: ${event.message?.errorMessage ?? "LLM error"}\n`));
+        } else { process.stdout.write("\n"); }
+    }
+    break;
+}
+
+// src/sdk.ts — no cast needed
+const msg = event.message;
+if (!msg?.role || msg.role !== "assistant") break;
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/index.ts} — handleEvent() message\_end case
+    \item \srcfile{src/sdk.ts} — Event handler cast removed
+    \item \srcfile{src/\_\_tests\_\_/type-007.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+TypeScript now correctly narrows the \code{event} type based on \code{event.type}.

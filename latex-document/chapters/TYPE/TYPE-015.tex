@@ -1,0 +1,62 @@
+\section{TYPE-015: Incomplete Type Export}
+\label{sec:type-015}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & TYPE-015 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Type Safety \\
+\textbf{Branch} & \branchref{fix/TYPE-015-add-missing-type-exports}
+\textbf{Changes} & \branchdiff{fix/TYPE-015-add-missing-type-exports} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \srcfile{src/exports.ts} file serves as the public API surface for the SDK. Several internal types used in public function signatures are not exported, forcing consumers to use \code{Parameters<typeof fn>[0]} workarounds or define their own types. This leads to type duplication and version drift between the SDK's internal types and consumer-defined types.
+
+\subsection*{Root Cause Analysis}
+Missing exports force consumers to guess types:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — missing exports force consumer workarounds
+export type { Query, QueryOptions, ... } from "./sdk-types.js";
+// GCHooks, HookResult, MemoryLayerDef, etc. are NOT exported
+
+// Consumer must guess:
+const result = query({
+    hooks: {
+        // No type information — consumer must guess the shape
+        onSessionStart: async (ctx) => {
+            return { action: "allow" };
+        },
+    },
+});
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+Missing types are added to the exports:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — all public types exported
+// Hooks
+export type { HookDefinition, HooksConfig, HookResult } from "./hooks.js";
+
+// Workflows
+export type { SkillFlowDefinition, SkillFlowStep } from "./workflows.js";
+
+// Schedules
+export type { ScheduleDefinition } from "./schedules.js";
+
+// Plugin internals
+export type { MemoryLayerDef } from "./plugin-types.js";
+
+// Tool result
+export type { ToolResult } from "./sdk-types.js";
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/exports.ts} — Added missing type exports
+    \item \srcfile{src/\_\_tests\_\_/type-015.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Consumers can now import all public types from the SDK entry point without reaching into internal paths.

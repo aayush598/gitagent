@@ -1,0 +1,75 @@
+\section{TYPE-013: Missing Generic on Channel — IteratorResult}
+\label{sec:type-013}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & TYPE-013 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Type Safety \\
+\textbf{Branch} & \branchref{fix/TYPE-013-channel-iterator-result-type}
+\textbf{Changes} & \branchdiff{fix/TYPE-013-channel-iterator-result-type} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \code{Channel<T>} interface at \srcfile{src/sdk.ts:35-39} uses \code{undefined as any} in \code{finish()} and \code{pull()} to work around \code{IteratorResult<T>} expecting \code{value: T} even when \code{done: true}. This breaks the generic contract and allows consumers to see \code{undefined} when they expect \code{T}.
+
+\subsection*{Root Cause Analysis}
+The \code{as any} casts hide a type mismatch:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — as any casts break generic contract
+interface Channel<T> {
+    push(v: T): void;
+    finish(): void;
+    pull(): Promise<IteratorResult<T>>;
+}
+
+// In finish():
+resolve({ value: undefined as any, done: true });
+
+// In pull():
+return Promise.resolve({ value: undefined as any, done: true });
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+The \code{IteratorResult<T, undefined>} type properly expresses the second type argument:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — proper IteratorResult typing
+interface Channel<T> {
+    push(v: T): void;
+    finish(): void;
+    pull(): Promise<IteratorResult<T, undefined>>;
+}
+
+function createChannel<T>(): Channel<T> {
+    let resolve: ((v: IteratorResult<T, undefined>) => void) | null = null;
+
+    return {
+        finish() {
+            done = true;
+            if (resolve) {
+                resolve({ value: undefined, done: true });
+                resolve = null;
+            }
+        },
+        pull(): Promise<IteratorResult<T, undefined>> {
+            if (buffer.length) {
+                return Promise.resolve({ value: buffer.shift()!, done: false });
+            }
+            if (done) {
+                return Promise.resolve({ value: undefined, done: true });
+            }
+            return new Promise((r) => { resolve = r; });
+        },
+    };
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/sdk.ts} — Channel interface, createChannel()
+    \item \srcfile{src/\_\_tests\_\_/type-013.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+No more \code{as any} casts needed — the type correctly allows \code{undefined} when \code{done} is \code{true}.

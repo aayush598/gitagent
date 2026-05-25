@@ -1,0 +1,86 @@
+\section{RACE-010: Process Exit During Async Operations}
+\label{sec:race-010}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & RACE-010 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Race Condition \\
+\textbf{Branch} & \branchref{fix/RACE-010-process-exit-async}
+\textbf{Changes} & \branchdiff{fix/RACE-010-process-exit-async} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+Multiple locations in \srcfile{src/index.ts} call \code{process.exit()} inside \code{.finally()} callbacks. Because \code{process.exit()} terminates the process immediately without waiting for pending promises or async operations, this truncates cleanup operations like sandbox teardown, telemetry flush, audit log writes, and session finalization. The agent exits with data loss or incomplete finalization.
+
+\subsection*{Root Cause Analysis}
+The \code{process.exit()} in \code{.finally()} races with async cleanup:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — process.exit(0) truncates pending async work
+process.on("SIGINT", () => {
+    if (stopping) { process.exit(1); }  // Force exit — no cleanup
+    stopping = true;
+    cleanup().finally(() => process.exit(0));  // Race: process.exit in finally
+});
+
+process.on("SIGTERM", () => {
+    shutdownTelemetry().catch(() => {}).finally(() => process.exit(0));
+});
+\end{lstlisting}
+
+Any async operations started inside \code{cleanup()} that haven't resolved will be cut off: telemetry export spans won't flush, audit entries won't write, and sandbox VMs won't stop.
+
+\subsection*{Fix Implementation}
+A graceful shutdown drain ensures pending promises complete before exit:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — drain pending shutdown promises before exit
+const pendingShutdown = new Set<Promise<void>>();
+
+function trackShutdown<T>(p: Promise<T>): Promise<T> {
+    pendingShutdown.add(p);
+    p.finally(() => pendingShutdown.delete(p));
+    return p;
+}
+
+async function drainShutdown(timeoutMs = 5000): Promise<void> {
+    if (pendingShutdown.size === 0) return;
+    const all = Promise.allSettled([...pendingShutdown]);
+    const timer = new Promise<void>((r) => setTimeout(r, timeoutMs));
+    await Promise.race([all, timer]);
+}
+
+// In signal handlers:
+process.on("SIGINT", () => {
+    if (stopping) { process.exit(1); }
+    stopping = true;
+    cleanup().finally(() => drainShutdown().finally(() => process.exit(0)));
+});
+
+process.on("SIGTERM", () => {
+    trackShutdown(shutdownTelemetry()).finally(() => drainShutdown().finally(() => process.exit(0)));
+});
+
+// In main() finally:
+.finally(() => trackShutdown(shutdownTelemetry()))
+.catch((err) => {
+    drainShutdown().finally(() => process.exit(1));
+});
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/index.ts} — Signal handlers and main() error handler
+    \item \srcfile{src/\_\_tests\_\_/process-exit-async.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify shutdown promises drain before exit:
+
+\begin{lstlisting}[language=TypeScript]
+const slowOp = trackShutdown(
+    new Promise<void>((r) => setTimeout(() => { order.push("cleanup"); r(); }, 20)),
+);
+await drainShutdown();
+assert.equal(order.length, 1, "Cleanup should complete before drain returns");
+\end{lstlisting}

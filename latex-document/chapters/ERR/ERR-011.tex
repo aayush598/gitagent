@@ -1,0 +1,76 @@
+\section{ERR-011: Channel Pull After Finish Returns Undefined}
+\label{sec:err-011}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & ERR-011 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Error Handling \\
+\textbf{Branch} & \branchref{fix/ERR-011-channel-pull}
+\textbf{Changes} & \branchdiff{fix/ERR-011-channel-pull} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+In \srcfile{src/sdk.ts}, the \code{Channel} implementation's \code{pull()} method returns \code{\{ value: undefined, done: true \}} after \code{finish()} has been called. The type signature says \code{Promise<IteratorResult<T>>}, but \code{IteratorResult<T>.value} is typed as \code{T} (not \code{T | undefined}). Consumers that don't check \code{done} before accessing \code{value} will receive \code{undefined} at runtime, even though TypeScript believes the value is of type \code{T}. This type unsoundness can cause subtle bugs in SDK consumers.
+
+\subsection*{Root Cause Analysis}
+The \code{undefined as any} cast bypasses TypeScript's type system:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — as any cast breaks type safety
+pull(): Promise<IteratorResult<T>> {
+    if (buffer.length) {
+        return Promise.resolve({ value: buffer.shift()!, done: false });
+    }
+    if (done) {
+        return Promise.resolve({ value: undefined as any, done: true });
+    }
+    return new Promise((r) => { resolve = r; });
+}
+
+finish() {
+    done = true;
+    if (resolve) {
+        resolve({ value: undefined as any, done: true });
+        resolve = null;
+    }
+}
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+The \code{as any} casts are replaced with \code{as unknown as T} to be more explicit about the intentional unsoundness:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — more explicit about the type widening
+finish() {
+    done = true;
+    if (resolve) {
+        resolve({ value: undefined as unknown as T, done: true });
+        resolve = null;
+    }
+}
+
+pull(): Promise<IteratorResult<T>> {
+    if (buffer.length) {
+        return Promise.resolve({ value: buffer.shift()!, done: false });
+    }
+    if (done) {
+        return Promise.resolve({ value: undefined as unknown as T, done: true });
+    }
+    return new Promise((r) => { resolve = r; });
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/sdk.ts} — Lines 56-57 and 64-65
+    \item \srcfile{src/\_\_tests\_\_/channel.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify the contract that \code{IteratorResult.value} is \code{undefined} when \code{done} is \code{true}:
+
+\begin{lstlisting}[language=TypeScript]
+const result: IteratorResult<string> = { value: undefined as unknown as string, done: true };
+assert.strictEqual(result.done, true);
+assert.strictEqual(result.value, undefined);
+\end{lstlisting}

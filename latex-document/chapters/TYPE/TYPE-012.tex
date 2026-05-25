@@ -1,0 +1,58 @@
+\section{TYPE-012: Config Property Type Not Enforced at Runtime}
+\label{sec:type-012}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & TYPE-012 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Type Safety \\
+\textbf{Branch} & \branchref{fix/TYPE-012-validate-nan-in-coerceValue}
+\textbf{Changes} & \branchdiff{fix/TYPE-012-validate-nan-in-coerceValue} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \code{coerceValue} function at \srcfile{src/plugins.ts:98-104} converts string values to \code{number} or \code{boolean} types. When a non-numeric string is passed with \code{type: "number"}, \code{Number(value)} returns \code{NaN} instead of throwing or returning a sensible default. The \code{NaN} propagates through the system, silently breaking numeric configuration.
+
+\subsection*{Root Cause Analysis}
+The function does not validate \code{NaN}:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — NaN silently propagates
+function coerceValue(value: string, type: string): any {
+    switch (type) {
+        case "number": return Number(value);  // Returns NaN for "abc"
+        case "boolean": return value === "true" || value === "1";
+        default: return value;
+    }
+}
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+The function now validates numeric results and handles undefined:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — NaN is caught and reported
+function coerceValue(value: string | undefined, type: string): unknown {
+    if (value === undefined || value === "") return undefined;
+    switch (type) {
+        case "number": {
+            const n = Number(value);
+            if (!Number.isFinite(n)) {
+                console.warn(`Plugin config: invalid number value "${value}", defaulting to undefined`);
+                return undefined;
+            }
+            return n;
+        }
+        case "boolean": return value === "true" || value === "1";
+        default: return value;
+    }
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/plugins.ts} — coerceValue() function
+    \item \srcfile{src/\_\_tests\_\_/type-012.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Invalid number values now return \code{undefined} instead of \code{NaN}, with a warning.

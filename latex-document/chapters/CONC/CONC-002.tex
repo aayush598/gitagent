@@ -1,0 +1,142 @@
+\section{CONC-002: Async Hook Execution Ordering}
+\label{sec:conc-002}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & CONC-002 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Concurrency \\
+\textbf{Branch} & \branchref{fix/CONC-002-async-hook-execution-ordering} \\
+\textbf{Changes} & \branchdiff{fix/CONC-002-async-hook-execution-ordering} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{executeHook} function in \texttt{src/hooks.ts} spawns a child process and races a \texttt{setTimeout} against the \texttt{close} event. If the timeout fires at exactly the same time as the hook exits, both \texttt{reject} and \texttt{promiseResolve} can be called, leading to a double-settle on the promise. Node.js promises ignore the second call, but when combined with the \texttt{setTimeout} callback calling \texttt{child.kill()} after the process has already exited, this creates an unhandled rejection risk.
+
+The bug is in \texttt{src/hooks.ts:92-113}, where the timeout-based rejection and close-based resolution are not properly gated. The fix introduces a \texttt{settled} flag that ensures the promise settles exactly once, regardless of event ordering.
+
+\subsection*{Root Cause Analysis}
+
+The race occurs between the \texttt{setTimeout} callback and the \texttt{close} event handler:
+
+\begin{lstlisting}[language=TypeScript]
+// hooks.ts:59-117 — Before fix
+const timeout = setTimeout(() => {
+    child.kill("SIGTERM");
+    reject(new Error(`Hook "${hook.script}" timed out after 10s`));
+}, 10_000);
+
+child.on("error", (err) => {
+    clearTimeout(timeout);
+    reject(new Error(`Hook "${hook.script}" failed to start: ${err.message}`));
+});
+
+child.on("close", (code) => {
+    clearTimeout(timeout);
+    if (code !== 0) {
+        reject(new Error(/* ... */));
+        return;
+    }
+    try {
+        const result = JSON.parse(stdout.trim());
+        promiseResolve(result);
+    } catch {
+        promiseResolve({ action: "allow" });
+    }
+});
+\end{lstlisting}
+
+If the \texttt{close} event and \texttt{setTimeout} fire in the same microtask tick, both \texttt{reject} and \texttt{promiseResolve} are called. While only one settles the promise, the \texttt{child.kill("SIGTERM")} in the timeout callback may execute after the process has already exited, sending a signal to a dead process (harmless but wasteful).
+
+\subsection*{Fix Implementation}
+
+The fix introduces a \texttt{settled} guard and a unified \texttt{settle} function:
+
+\begin{lstlisting}[language=TypeScript]
+// hooks.ts — After fix
+async function executeHook(
+    hook: HookDefinition,
+    agentDir: string,
+    input: Record<string, any>,
+): Promise<HookResult> {
+    return new Promise<HookResult>((promiseResolve, reject) => {
+        const child = spawn(/* ... */);
+        let stdout = "";
+        let stderr = "";
+        let settled = false;
+
+        function settle(resolveVal: HookResult | null, rejectErr: Error | null) {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            if (rejectErr) reject(rejectErr);
+            else if (resolveVal) promiseResolve(resolveVal);
+        }
+
+        const timeout = setTimeout(() => {
+            child.kill("SIGTERM");
+            settle(null, new Error(
+                `Hook "${hook.script}" timed out after 10s`));
+        }, 10_000);
+
+        child.on("error", (err) => {
+            settle(null, new Error(
+                `Hook "${hook.script}" failed to start: ${err.message}`));
+        });
+
+        child.on("close", (code) => {
+            if (code !== 0) {
+                settle(null, new Error(
+                    `Hook "${hook.script}" exited with code ${code}: ${stderr.trim()}`));
+                return;
+            }
+            try {
+                const result = JSON.parse(stdout.trim());
+                settle(result, null);
+            } catch {
+                settle({ action: "allow" }, null);
+            }
+        });
+    });
+}
+\end{lstlisting}
+
+The key change is that all exit paths---timeout, error, close---route through \texttt{settle()}, which checks the \texttt{settled} flag and clears the timeout. This guarantees the promise resolves or rejects exactly once.
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/hooks.ts} --- added \texttt{settled} guard to prevent double settle
+    \item \srcfile{src/\_\_tests\_\_/hooks-conc.test.ts} --- new concurrency tests
+\end{itemize}
+
+\subsection*{Verification}
+\begin{lstlisting}[language=TypeScript]
+// hooks-conc.test.ts
+describe("CONC-002: Hook execution ordering", () => {
+    it("executeHook settles exactly once even if close and timeout race", async () => {
+        const { executeHook } = await import("../hooks.js");
+        const fastHook = {
+            script: "echo '{\"action\":\"allow\"}'",
+            baseDir: "/tmp",
+        } as any;
+
+        const result = await executeHook(fastHook, "/tmp", {});
+        assert.ok(result);
+        assert.strictEqual(result.action, "allow");
+    });
+
+    it("executeHook rejects on timeout", async () => {
+        const { executeHook } = await import("../hooks.js");
+        const hangingHook = {
+            script: "sleep 15",
+            baseDir: "/tmp",
+        } as any;
+
+        await assert.rejects(
+            () => executeHook(hangingHook, "/tmp", {}),
+            { message: /timed out/ },
+            "Should reject with timeout error",
+        );
+    });
+});
+\end{lstlisting}

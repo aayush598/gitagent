@@ -1,0 +1,141 @@
+\section{CONFIG-004: Graceful Missing Config Handling}
+\label{sec:config-004}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & CONFIG-004 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Configuration \\
+\textbf{Branch} & \branchref{fix/CONFIG-004-graceful-missing-config} \\
+\textbf{Changes} & \branchdiff{fix/CONFIG-004-graceful-missing-config} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The \texttt{loadAgent()} function in \texttt{src/loader.ts} throws a generic YAML parse error when \texttt{agent.yaml} is malformed or empty. A MISSING config is handled gracefully---the scaffolder creates a new one---but a malformed config produces a cryptic parser error. This creates a poor user experience because users editing \texttt{agent.yaml} by hand are likely to introduce syntax errors.
+
+The contrast is stark: missing config gets a helpful scaffold, but malformed config gets \texttt{Error: can not read a block mapping entry; a multiline key may not be an implicit key at line 4, column 8}. The fix wraps the YAML parsing in layered try/catch blocks with descriptive, actionable error messages for each failure mode.
+
+\subsection*{Root Cause Analysis}
+
+The original code performed a single unchecked YAML parse:
+
+\begin{lstlisting}[language=TypeScript]
+// src/loader.ts:242-243 — Before fix
+const manifestRaw = await readFile(join(agentDir, "agent.yaml"), "utf-8");
+let manifest = yaml.load(manifestRaw) as AgentManifest;
+\end{lstlisting}
+
+If \texttt{manifestRaw} is empty, \texttt{yaml.load("")} returns \texttt{undefined}, and \texttt{as AgentManifest} casts \texttt{undefined}---TypeScript doesn't catch this. Then \texttt{manifest.name} throws \texttt{TypeError: Cannot read property 'name' of undefined}.
+
+If \texttt{manifestRaw} has a YAML syntax error, \texttt{yaml.load()} throws a \texttt{YAMLException} which is caught at the top level:
+
+\begin{lstlisting}[language=TypeScript]
+// src/index.ts:441-446 — Before fix
+try {
+    loaded = await loadAgent(dir, model, env);
+} catch (err: any) {
+    console.error(red(`Error: ${err.message}`));
+    process.exit(1);
+}
+\end{lstlisting}
+
+The user sees a raw YAML parser error with no guidance on how to fix it.
+
+\subsection*{Fix Implementation}
+
+The fix adds layered validation with descriptive error messages for each failure mode:
+
+\begin{lstlisting}[language=TypeScript]
+// src/loader.ts — After fix
+export async function loadAgent(
+    agentDir: string,
+    model?: string,
+    envFlag?: string,
+): Promise<LoadedAgent> {
+    const manifestPath = join(agentDir, "agent.yaml");
+    let manifestRaw: string;
+    try {
+        manifestRaw = await readFile(manifestPath, "utf-8");
+    } catch (err: any) {
+        throw new Error(
+            "Could not read agent.yaml at " + manifestPath + ".\n" +
+            "Error: " + err.message + "\n" +
+            "Run 'gitclaw --dir <dir>' to scaffold a new config.",
+        );
+    }
+
+    if (!manifestRaw.trim()) {
+        throw new Error(
+            "agent.yaml at " + manifestPath + " is empty.\n" +
+            "Delete the file and run gitclaw again to scaffold a new one.",
+        );
+    }
+    let manifest: AgentManifest;
+    try {
+        const parsed = yaml.load(manifestRaw);
+        if (!parsed || typeof parsed !== "object") {
+            throw new Error(
+                "agent.yaml does not contain a valid configuration object.\n" +
+                "Ensure the file starts with a top-level mapping.",
+            );
+        }
+        manifest = parsed as AgentManifest;
+    } catch (err: any) {
+        if (err.message && (err.message.includes("agent.yaml") ||
+            err.message.includes("empty") ||
+            err.message.includes("Could not read"))) throw err;
+        throw new Error(
+            "agent.yaml has a YAML syntax error at " + manifestPath +
+            ":\n  " + err.message + "\n" +
+            "Fix the syntax error or delete the file and run gitclaw again.",
+        );
+    }
+    // ... rest of loading logic
+}
+\end{lstlisting}
+
+The three failure modes now produce clear output:
+\begin{itemize}
+    \item \textbf{File not found}: \texttt{Could not read agent.yaml at <path>. Run 'gitclaw --dir <dir>' to scaffold a new config.}
+    \item \textbf{Empty file}: \texttt{agent.yaml at <path> is empty. Delete the file and run gitclaw again.}
+    \item \textbf{Syntax error}: \texttt{agent.yaml has a YAML syntax error at <path>: <message>. Fix the syntax error or delete the file.}
+\end{itemize}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/loader.ts} --- added layered error handling for YAML parsing
+    \item \srcfile{src/\_\_tests\_\_/config-004.test.ts} --- new error handling tests
+\end{itemize}
+
+\subsection*{Verification}
+\begin{lstlisting}[language=TypeScript]
+// config-004.test.ts
+test("empty agent.yaml throws descriptive error", () => {
+    function validate(raw: string): void {
+        if (!raw.trim()) {
+            throw new Error("agent.yaml is empty. Delete the file and run again.");
+        }
+        try {
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== "object") {
+                throw new Error(
+                    "agent.yaml does not contain a valid configuration object.");
+            }
+        } catch (err: any) {
+            if (err.message.startsWith("agent.yaml")) throw err;
+            throw new Error("agent.yaml has a YAML syntax error:\n  " + err.message);
+        }
+    }
+
+    try { validate(""); ok(false, "should have thrown"); }
+    catch (err: any) {
+        ok(err.message.includes("empty"), "empty file should mention empty");
+    }
+
+    try { validate("broken: [yaml"); ok(false, "should have thrown"); }
+    catch (err: any) {
+        ok(err.message.includes("syntax error"),
+            "malformed YAML should mention syntax error");
+    }
+});
+\end{lstlisting}

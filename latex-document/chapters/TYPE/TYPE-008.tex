@@ -1,0 +1,53 @@
+\section{TYPE-008: Plugin Hook Handler Untyped Context}
+\label{sec:type-008}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & TYPE-008 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Type Safety \\
+\textbf{Branch} & \branchref{fix/TYPE-008-type-hook-handler-context}
+\textbf{Changes} & \branchdiff{fix/TYPE-008-type-hook-handler-context} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+At \srcfile{src/plugin-sdk.ts:8}, hook handlers receive context as \code{Record<string, any>}. This loses all type information about the context shape. Plugin authors don't know what properties are available on the context object, leading to runtime errors when accessing missing properties or using wrong types.
+
+\subsection*{Root Cause Analysis}
+The context is typed as \code{Record<string, any>}:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — untyped context
+type HookHandler = (ctx: Record<string, any>) => Promise<HookResult> | HookResult;
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+A discriminated union provides proper typing per event:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — typed context discriminated union
+type HookContext =
+    | { event: "on_session_start"; sessionId: string; agentName: string }
+    | { event: "pre_tool_use"; sessionId: string; agentName: string; toolName: string; args: Record<string, unknown> }
+    | { event: "post_response"; sessionId: string; agentName: string }
+    | { event: "on_error"; sessionId: string; agentName: string; error: string };
+
+type HookHandler = (ctx: HookContext) => Promise<HookResult> | HookResult;
+\end{lstlisting}
+
+The \srcfile{src/hooks.ts} types are also updated from \code{Record<string, any>} to \code{Record<string, unknown>}:
+
+\begin{lstlisting}[language=TypeScript]
+// hooks.ts — tighter types
+_handler?: (ctx: Record<string, unknown>) => Promise<HookResult> | HookResult;
+input: Record<string, unknown>;
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/plugin-sdk.ts} — HookContext and HookHandler types
+    \item \srcfile{src/hooks.ts} — HookDefinition and executeHook signatures
+    \item \srcfile{src/\_\_tests\_\_/type-008.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Plugin authors now get autocomplete and type checking per event type.

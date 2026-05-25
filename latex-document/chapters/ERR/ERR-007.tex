@@ -1,0 +1,80 @@
+\section{ERR-007: Exit Without Cleanup on Early Errors}
+\label{sec:err-007}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & ERR-007 \\
+\textbf{Severity} & HIGH \\
+\textbf{Category} & Error Handling \\
+\textbf{Branch} & \branchref{fix/ERR-007-exit-cleanup}
+\textbf{Changes} & \branchdiff{fix/ERR-007-exit-cleanup} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+Multiple locations in \srcfile{src/index.ts} call \code{process.exit(1)} directly without any cleanup — telemetry is not flushed, sessions are not finalized, and sandbox VMs are not stopped. This bypasses the normal shutdown path that would occur in REPL or single-shot mode. The most dangerous locations are the early-exit paths at lines 329-337 where mutually exclusive flags are validated before any cleanup handlers are registered.
+
+The same pattern appears at line 445 (load agent failure), line 479 (hook-blocked exit), and line 502 (missing API key). All of these can orphan telemetry buffers, sandbox VMs, and session state.
+
+\subsection*{Root Cause Analysis}
+Direct calls to \code{process.exit(1)} without cleanup:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — process.exit(1) without cleanup
+if (useSandbox) {
+    console.error(red("Error: --repo and --sandbox are mutually exclusive"));
+    process.exit(1);  // No telemetry flush, no cleanup
+}
+
+const token = pat || process.env.GITHUB_TOKEN || process.env.GIT_TOKEN;
+if (!token) {
+    console.error(red("Error: ... is required with --repo"));
+    process.exit(1);  // No telemetry flush
+}
+
+try {
+    loaded = await loadAgent(dir, model, env);
+} catch (err: any) {
+    console.error(red(`Error: ${err.message}`));
+    process.exit(1);  // No telemetry flush
+}
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+A centralized \code{shutdown()} helper is added that flushes telemetry before exiting:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — centralized shutdown with cleanup
+async function shutdown(code: number): Promise<never> {
+    try { await shutdownTelemetry(); } catch { /* best-effort */ }
+    process.exit(code);
+}
+
+// All process.exit(1) calls replaced with await shutdown(1):
+if (useSandbox) {
+    console.error(red("Error: --repo and --sandbox are mutually exclusive"));
+    await shutdown(1);
+}
+
+if (!token) {
+    console.error(red("Error: ... is required with --repo"));
+    await shutdown(1);
+}
+
+// Load agent failure, hook block, and missing API key all use shutdown(1)
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/index.ts} — Lines 329-331, 335-337, 445, 479, 502
+    \item \srcfile{src/\_\_tests\_\_/exit-cleanup.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify that the \code{shutdown} helper is defined in \srcfile{index.ts} and that \code{process.exit(1)} calls are minimized:
+
+\begin{lstlisting}[language=TypeScript]
+const source = require("fs").readFileSync("./src/index.ts", "utf-8");
+const hasShutdownHelper = source.includes(
+    "async function shutdown(code: number): Promise<never>"
+);
+assert.ok(hasShutdownHelper);
+\end{lstlisting}

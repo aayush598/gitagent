@@ -1,0 +1,84 @@
+\section{ERR-004: No Stack Trace in Error Messages}
+\label{sec:err-004}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & ERR-004 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Error Handling \\
+\textbf{Branch} & \branchref{fix/ERR-004-no-stack-trace}
+\textbf{Changes} & \branchdiff{fix/ERR-004-no-stack-trace} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+Multiple error handlers in \srcfile{src/index.ts} log only \code{err.message} when failures occur, discarding the stack trace that is critical for debugging. The stack trace contains the exact call chain, file paths, and line numbers that tell developers where the error originated. Without it, users see cryptic one-liners like ``Cannot read properties of undefined'' with no indication whether the bug is in \code{agent.yaml}, a plugin file, or the loader itself.
+
+The affected locations include the \code{loadAgent()} failure handler at line 444, the REPL mode error handler at line 777, hook errors at line 482, and the fatal error handler at line 829.
+
+\subsection*{Root Cause Analysis}
+All error handlers used \code{err.message} exclusively:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — only err.message, no stack trace
+try {
+    loaded = await loadAgent(dir, model, env);
+} catch (err: any) {
+    console.error(red(`Error: ${err.message}`));  // No stack trace
+    process.exit(1);
+}
+
+// Hook errors
+} catch (err: any) {
+    console.error(red(`Hook error: ${err.message}`));  // No stack trace
+}
+
+// Fatal errors
+.catch((err) => {
+    console.error(red(`Fatal: ${err.message}`));  // No stack trace
+    process.exit(1);
+});
+\end{lstlisting}
+
+The \code{err.message} field is often generic (e.g., ``Unexpected token'' from a YAML parse error) and does not identify which file, line, or function caused the failure.
+
+\subsection*{Fix Implementation}
+The error message output is changed to include the stack trace as a fallback:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — uses err.stack || err.message
+try {
+    loaded = await loadAgent(dir, model, env);
+} catch (err: any) {
+    console.error(red(`Error: ${err.stack || err.message}`));
+    process.exit(1);
+}
+
+// Hook errors
+} catch (err: any) {
+    console.error(red(`Hook error: ${err.stack || err.message}`));
+}
+
+// Fatal errors — also includes shutdown telemetry
+.catch((err) => {
+    console.error(red(`Fatal: ${err.stack || err.message}`));
+    await shutdownTelemetry().catch(() => {});
+    process.exit(1);
+});
+\end{lstlisting}
+
+If \code{err.stack} is unavailable, it falls back to \code{err.message}, preserving backward compatibility.
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/index.ts} — Lines 444, 479, 777, 829
+    \item \srcfile{src/\_\_tests\_\_/stack-trace.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests confirm that stack trace information is included in error output:
+
+\begin{lstlisting}[language=TypeScript]
+const err = new Error("test error");
+const msg = `Error: ${err.stack || err.message}`;
+assert.ok(msg.includes("test error"));
+assert.ok(msg.includes("stack-trace.test.ts"));
+\end{lstlisting}

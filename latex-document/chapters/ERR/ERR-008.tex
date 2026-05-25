@@ -1,0 +1,68 @@
+\section{ERR-008: Git Machine Import Errors Not Translated}
+\label{sec:err-008}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & ERR-008 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Error Handling \\
+\textbf{Branch} & \branchref{fix/ERR-008-git-machine-import-errors}
+\textbf{Changes} & \branchdiff{fix/ERR-008-git-machine-import-errors} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+In \srcfile{src/sandbox.ts}, when the optional \code{gitmachine} package fails to load, the catch block throws a hardcoded error message telling the user to install it. However, the actual import error is discarded entirely. If the user has \code{gitmachine} installed but it fails to load due to a broken dependency, version mismatch, or syntax error, they get the misleading message ``Sandbox mode requires the 'gitmachine' package'' instead of the actual error.
+
+\subsection*{Root Cause Analysis}
+The catch block discards the real error:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — original error discarded
+let gitmachine: any;
+try {
+    gitmachine = await import("gitmachine");
+} catch {
+    throw new Error(
+        "Sandbox mode requires the 'gitmachine' package.\n" +
+        "Install it with: npm install gitmachine",
+    );
+}
+\end{lstlisting}
+
+Real scenarios where this causes confusion: the package is installed but has a broken dependency (user sees ``Install gitmachine''), version incompatibility, or a syntax error in the package itself.
+
+\subsection*{Fix Implementation}
+The original error is now preserved in the thrown message:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — original error included
+try {
+    gitmachine = await import("gitmachine");
+} catch (err) {
+    throw new Error(
+        "Sandbox mode requires the 'gitmachine' package.\n" +
+        `Install it with: npm install gitmachine\nOriginal error: ${err instanceof Error ? err.message : String(err)}`,
+    );
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/sandbox.ts} — Lines 51-58
+    \item \srcfile{src/\_\_tests\_\_/git-machine-errors.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify the original error is preserved in the thrown message:
+
+\begin{lstlisting}[language=TypeScript]
+const originalErr = new Error("MODULE_NOT_FOUND: cannot find module 'gitmachine'");
+try {
+    throw new Error(
+        "Sandbox mode requires the 'gitmachine' package.\n" +
+        `Install it with: npm install gitmachine\nOriginal error: ${originalErr.message}`,
+    );
+} catch (err: any) {
+    assert.ok(err.message.includes("Original error"));
+    assert.ok(err.message.includes("MODULE_NOT_FOUND"));
+}
+\end{lstlisting}

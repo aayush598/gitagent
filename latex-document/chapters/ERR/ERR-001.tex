@@ -1,0 +1,75 @@
+\section{ERR-001: Silent Catch in Main Error Handler}
+\label{sec:err-001}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & ERR-001 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Error Handling \\
+\textbf{Branch} & \branchref{fix/ERR-001-silent-catch-main-error-handler}
+\textbf{Changes} & \branchdiff{fix/ERR-001-silent-catch-main-error-handler} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The main entry point in \srcfile{src/index.ts} calls \code{shutdownTelemetry()} inside a \code{.finally()} handler and catches errors with an empty \code{catch(() => \{\})} block. If the OpenTelemetry SDK shutdown fails — due to exporter timeout, network unreachability, or an unresponsive backend — the error is completely invisible: no logging, no stderr output, no diagnostic trace. This violates observability best practices because the telemetry subsystem itself is the tool meant to diagnose failures, yet its own errors are swallowed.
+
+The same pattern appears on the SIGTERM handler at \srcfile{src/index.ts} where \code{shutdownTelemetry().catch(() => \{\})} silently swallows failures. While the principle of ``never let telemetry break the agent'' is intentional, the complete absence of diagnostic output makes it impossible to debug telemetry misconfiguration or SDK bugs in production.
+
+\subsection*{Root Cause Analysis}
+The root cause is the use of empty \code{.catch(() => \{\})} handlers on the telemetry shutdown promise:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — silent catch swallows all errors
+process.on("SIGTERM", () => {
+    shutdownTelemetry().catch(() => {}).finally(() => process.exit(0));
+});
+
+main()
+  .finally(() => shutdownTelemetry().catch(() => {}))
+  .catch((err) => {
+    console.error(red(`Fatal: ${err.message}`));
+    process.exit(1);
+  });
+\end{lstlisting}
+
+The \code{.catch(() => \{\})} on both \code{shutdownTelemetry()} calls discards the rejection reason entirely. The IIFE wrapping \code{main()} has a dedicated \code{.catch()} that prints fatal errors, but \code{shutdownTelemetry()} runs inside \code{.finally()} — if it throws, the \code{.catch()} on the outer promise is bypassed because \code{.finally()} does not receive rejections from its callback.
+
+\subsection*{Fix Implementation}
+The fix replaces empty catch handlers with error-logging catch handlers:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — telemetry errors are logged to console.error
+process.on("SIGTERM", () => {
+    shutdownTelemetry()
+        .catch((err) => console.error(`[telemetry] shutdown error: ${err.message}`))
+        .finally(() => process.exit(0));
+});
+
+main()
+  .finally(() =>
+      shutdownTelemetry().catch((err) =>
+          console.error(`[telemetry] shutdown error: ${err.message}`)
+      )
+  )
+  .catch((err) => {
+    console.error(red(`Fatal: ${err.message}`));
+    process.exit(1);
+  });
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/index.ts} — Lines 822-831, SIGTERM handler and main() finally block
+    \item \srcfile{src/\_\_tests\_\_/error-handling.test.ts} — New test coverage
+\end{itemize}
+
+\subsection*{Verification}
+The fix is verified by asserting that errors from \code{shutdownTelemetry()} are captured by the \code{.catch()} handler rather than being silently discarded:
+
+\begin{lstlisting}[language=TypeScript]
+const promise = Promise.reject(new Error("OTLP exporter timeout"));
+await promise.catch((err: Error) => {
+    console.error(`[telemetry] shutdown error: ${err.message}`);
+});
+assert.ok(capturedOutput.includes("shutdown error"));
+assert.ok(capturedOutput.includes("OTLP exporter timeout"));
+\end{lstlisting}

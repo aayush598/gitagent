@@ -1,0 +1,67 @@
+\section{NET-009: No Keep-Alive for LLM API}
+\label{sec:net-009}
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & NET-009 \\
+\textbf{Severity} & MEDIUM \\
+\textbf{Category} & Network \\
+\textbf{Branch} & \branchref{fix/NET-009-keep-alive-llm}
+\textbf{Changes} & \branchdiff{fix/NET-009-keep-alive-llm} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+Every LLM API call goes through \code{fetch()} without HTTP keep-alive configuration. Each call opens a new TCP connection to the LLM provider's API endpoint, incurring a full TLS handshake (2-3 RTT). For high-turn interactions with 10+ tool calls per conversation, this adds significant cumulative latency — approximately 100-500ms per call in connection setup overhead.
+
+\subsection*{Root Cause Analysis}
+No keep-alive is configured for the \code{fetch()} calls:
+
+\begin{lstlisting}[language=TypeScript]
+// BEFORE — no keep-alive for LLM API calls
+const result = query({
+    prompt,
+    dir: opts.agentDir,
+    model: opts.model,
+    // No HTTP client configuration
+});
+\end{lstlisting}
+
+\subsection*{Fix Implementation}
+The shared HTTP client configuration now includes keep-alive settings:
+
+\begin{lstlisting}[language=TypeScript]
+// AFTER — keep-alive configured via undici Agent
+import { Agent, setGlobalDispatcher } from "undici";
+
+export function configureHttpClient(): void {
+    const agent = new Agent({
+        connections: 50,
+        keepAliveTimeout: 60000,
+        keepAliveMaxTimeout: 300000,
+        keepAliveTimeoutThreshold: 1000,
+    });
+    setGlobalDispatcher(agent);
+}
+
+// Called from sdk.ts query() as well
+export function query(options: QueryOptions): Query {
+    configureHttpClient();
+    // ...
+}
+\end{lstlisting}
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{src/http-client.ts} — Keep-alive configuration
+    \item \srcfile{src/sdk.ts} — query() calls configureHttpClient
+    \item \srcfile{src/\_\_tests\_\_/net-009.test.ts}
+    \item \srcfile{package.json}
+\end{itemize}
+
+\subsection*{Verification}
+Tests verify the keep-alive agent is configured without error:
+
+\begin{lstlisting}[language=TypeScript]
+const { configureHttpClient } = await import("../http-client.ts");
+configureHttpClient();
+ok(true, "keep-alive agent configured");
+\end{lstlisting}

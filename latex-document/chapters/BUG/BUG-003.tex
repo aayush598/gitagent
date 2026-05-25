@@ -1,0 +1,389 @@
+\section{BUG-003: Channel Push After Finish}
+\label{sec:bug-003}
+
+\subsection*{Metadata}
+\begin{tabular}{ll}
+\textbf{Issue ID} & BUG-003 \\
+\textbf{Severity} & Medium \\
+\textbf{Category} & Bug Fix \\
+\textbf{Affected File} & \srcfile{src/sdk.ts:41-72} \\
+\textbf{Branch} & \branchref{fix/BUG-003-channel-push-after-finish} \\
+\textbf{Changes} & \branchdiff{fix/BUG-003-channel-push-after-finish} \\
+\end{tabular}
+
+\subsection*{Executive Summary}
+The event channel implementation in \texttt{src/sdk.ts:41-72} uses a hand-rolled asynchronous push/pull mechanism to stream agent events (assistant messages, tool calls, tool results, system events) to the consumer. The channel is finalized via \texttt{channel.finish()} at line 490 inside the \texttt{finally} block of the main query execution. However, event subscriptions registered via \texttt{agent.on("message", ...)} at line 397 may fire *after* \texttt{channel.finish()} has already been called. When \texttt{push()} is called on a finished channel whose internal buffer is empty and whose \texttt{resolve} is null (the consumer has already pulled everything), the pushed value is buffered — but since \texttt{done} is already \texttt{true}, the consumer will never pull again, and the buffered data is silently dropped.
+
+Worse, if the consumer is blocked on \texttt{pull()} waiting for data when \texttt{finish()} is called, the \texttt{resolve} callback has already been consumed by the \texttt{finish()} call. A subsequent \texttt{push()} will buffer the value, but the consumer has already received \texttt{\{ done: true \}} and will not call \texttt{pull()} again. The pushed event is orphaned.
+
+---
+
+\subsection*{Root Cause Analysis}
+\#\#\# The Channel Implementation
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// sdk.ts:41-72
+function createChannel<T>(): Channel<T> {
+    const buffer: T[] = [];
+    let resolve: ((v: IteratorResult<T>) => void) | null = null;
+    let done = false;
+
+    return {
+        push(v: T) {
+            if (resolve) {                         // ← R1: consumer is waiting
+                resolve({ value: v, done: false });
+                resolve = null;
+            } else {
+                buffer.push(v);                    // ← R2: buffer for later pull
+            }                                      //    BUT: no check for `done`!
+        },
+        finish() {
+            done = true;                           // ← F1: mark finished
+            if (resolve) {                         // ← F2: wake waiting consumer
+                resolve({ value: undefined as any, done: true });
+                resolve = null;
+            }                                      // ← F3: if no waiter, done stays true
+        },
+        pull(): Promise<IteratorResult<T>> {
+            if (buffer.length) {                   // ← P1: drain buffer
+                return Promise.resolve({ value: buffer.shift()!, done: false });
+            }
+            if (done) {                            // ← P2: already finished
+                return Promise.resolve({ value: undefined as any, done: true });
+            }
+            return new Promise((r) => { resolve = r; });  // ← P3: wait for push/finish
+        },
+    };
+}
+
+\end{lstlisting}
+
+
+
+\#\#\# The Race Sequence
+
+The channel is used in the main agent query loop (lines 370-460). The agent emits events asynchronously via \texttt{agent.on("message", callback)}. The channel is finalized with \texttt{channel.finish()} at line 490 in the \texttt{finally} block:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// sdk.ts:489-490 (simplified)
+// Ensure channel finishes even if no agent_end event
+channel.finish();
+
+\end{lstlisting}
+
+
+
+However, event subscriptions may still fire after \texttt{channel.finish()}:
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// sdk.ts:396-398
+agent.on("message", (msg) => {
+    // ... process message ...
+    pushMsg(msg);  // ← may be called after channel.finish()
+});
+
+\end{lstlisting}
+
+
+
+\textbf{Scenario A: Consumer is waiting on pull()}
+
+
+
+\begin{lstlisting}[language=TypeScript]
+Time    Producer (message handler)        Consumer (async iterator)      Channel State
+────    ───────────────────────────        ──────────────────────────     ────────────
+T1      agent emits "assistant" msg
+        pushMsg(msg)                       pull() → waits via Promise    buffer=[], resolve=set
+T2                                          resolve(msg)                  buffer=[], resolve=null
+T3      agent emits "agent_end"
+        pushMsg(endMsg)                                                  
+        channel.finish()                   done=true
+T4                                           pull() → sees done          returns {done:true}
+T5      program exits — OK
+
+\end{lstlisting}
+
+
+
+\textbf{Scenario B: Consumer already pulled, then finish(), then late push (THE BUG)}
+
+
+
+\begin{lstlisting}[language=TypeScript]
+Time    Producer                          Consumer                       Channel State
+────    ───────────────────────────        ──────────────────────────     ────────────
+T1      agent emits last msg
+        pushMsg(lastMsg)                   pull() → returns lastMsg      buffer=[], resolve=null
+T2      (loop ends)
+        channel.finish()                   [consumer processing]         done=true
+T3                                          consumer calls pull()        sees done=true, returns done
+T4      agent.on("message") fires again!
+        pushMsg(lateMsg)                   [consumer already stopped]    buffer=[lateMsg], done=true
+T5                                          — NEVER PULLS AGAIN —        DATA LOST
+
+\end{lstlisting}
+
+
+
+\#\#\# The Bug in \texttt{push()}
+
+The \texttt{push()} function has \textbf{no guard against the \texttt{done} flag}. When \texttt{push()} is called after \texttt{finish()}:
+
+1. If a consumer is waiting on \texttt{pull()} (via \texttt{resolve}): impossible after \texttt{finish()} because \texttt{finish()} already consumed \texttt{resolve}
+2. If no consumer is waiting: \texttt{buffer.push(v)} stores the value, but \texttt{pull()} will never be called because the consumer already saw \texttt{\{ done: true \}} and stopped iterating
+
+The data is buffered but unreachable — a silent memory leak and data loss.
+
+\#\#\# Why This Is Medium Severity
+
+1. \textbf{Silent data loss}: Events pushed after \texttt{finish()} are silently dropped
+2. \textbf{Timing-dependent}: Only occurs when the agent emits events after the natural completion point
+3. \textbf{Frustrating debugging}: Developers adding new event types may not realize they fire after official "end"
+4. \textbf{Potential for partial state}: If a final tool result or error message is the late event, the consumer may miss critical diagnostic information
+
+---
+
+\subsection*{Fix Implementation}
+\#\#\# Option A: Guard \texttt{push()} Against \texttt{done}
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// sdk.ts — guarded push
+push(v: T) {
+    if (done) {
+        console.warn(`Channel: dropping event after finish: ${JSON.stringify(v).slice(0, 100)}`);
+        return;  // Silently drop or warn
+    }
+    if (resolve) {
+        resolve({ value: v, done: false });
+        resolve = null;
+    } else {
+        buffer.push(v);
+    }
+},
+
+\end{lstlisting}
+
+
+
+\textbf{What this fixes:}
+1. Prevents buffering after \texttt{done} is set
+2. Warns in console for debugging (can be removed in production)
+3. Minimal change, preserves all existing behavior
+
+\#\#\# Option B: Reject with Error on Push After Finish
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// sdk.ts — throw on push after finish
+push(v: T) {
+    if (done) {
+        throw new Error("Cannot push to a finished channel");
+    }
+    if (resolve) {
+        resolve({ value: v, done: false });
+        resolve = null;
+    } else {
+        buffer.push(v);
+    }
+},
+
+\end{lstlisting}
+
+
+
+\textbf{What this fixes:}
+1. Makes the contract explicit — push after finish is an error
+2. Forces callers to fix their ordering
+3. May break existing code that accidentally depends on the silent-drop behavior
+
+\#\#\# Option C: Buffer After Finish for Late Consumers
+
+
+
+\begin{lstlisting}[language=TypeScript]
+// sdk.ts — allow late push, re-openable
+push(v: T) {
+    if (done) {
+        // Buffer anyway — if a new consumer starts, they'll get it
+        buffer.push(v);
+        return;
+    }
+    if (resolve) {
+        resolve({ value: v, done: false });
+        resolve = null;
+    } else {
+        buffer.push(v);
+    }
+},
+
+\end{lstlisting}
+
+
+
+This doesn't fix the problem — the data is still buffered and the consumer has already stopped.
+
+---
+
+\subsection*{Affected Files}
+\begin{itemize}
+    \item \srcfile{pocs/bug-003/README.md}
+    \item \srcfile{pocs/bug-003/poc.ts}
+    \item \srcfile{src/sdk.ts} — primary affected file
+    \item \srcfile{test/channel.test.ts}
+\end{itemize}
+
+\subsection*{Verification}
+The fix is verified through unit tests and integration tests that confirm the corrected behavior:
+
+\begin{lstlisting}[language=TypeScript]
+// verification/bug-003-verify.ts
+import { describe, it } from "node:test";
+import assert from "node:assert";
+
+interface Channel<T> {
+    push(v: T): void;
+    finish(): void;
+    pull(): Promise<IteratorResult<T>>;
+}
+
+function createFixedChannel<T>(): Channel<T> {
+    const buffer: T[] = [];
+    let resolve: ((v: IteratorResult<T>) => void) | null = null;
+    let done = false;
+    let pushAfterFinish = false;
+
+    return {
+        push(v: T) {
+            if (done) {
+                pushAfterFinish = true;
+                return;  // Fixed: drop instead of buffer
+            }
+            if (resolve) {
+                resolve({ value: v, done: false });
+                resolve = null;
+            } else {
+                buffer.push(v);
+            }
+        },
+        finish() {
+            done = true;
+            if (resolve) {
+                resolve({ value: undefined as any, done: true });
+                resolve = null;
+            }
+        },
+        pull(): Promise<IteratorResult<T>> {
+            if (buffer.length) {
+                return Promise.resolve({ value: buffer.shift()!, done: false });
+            }
+            if (done) {
+                return Promise.resolve({ value: undefined as any, done: true });
+            }
+            return new Promise((r) => { resolve = r; });
+        },
+        // Test helper
+        _wasPushAfterFinish(): boolean { return pushAfterFinish; }
+    };
+}
+
+describe("BUG-003: Channel Push After Finish", () => {
+    it("should not lose data pushed before finish", async () => {
+        const ch = createFixedChannel();
+        const received: string[] = [];
+
+        // Consumer
+        const consume = (async () => {
+            while (true) {
+                const { value, done } = await ch.pull();
+                if (done) break;
+                received.push(value);
+            }
+        })();
+
+        ch.push("a");
+        ch.push("b");
+        ch.finish();
+        await consume;
+
+        assert.deepStrictEqual(received, ["a", "b"],
+            "All pre-finish messages should be received");
+    });
+
+    it("should drop data pushed after finish (no data loss, just drop)", async () => {
+        const ch = createFixedChannel();
+        const received: string[] = [];
+
+        const consume = (async () => {
+            while (true) {
+                const { value, done } = await ch.pull();
+                if (done) break;
+                received.push(value);
+            }
+        })();
+
+        ch.push("a");
+        ch.finish();
+        ch.push("b");  // Late push — should be dropped
+        await consume;
+
+        assert.deepStrictEqual(received, ["a"],
+            "Only pre-finish message should be received");
+        assert.strictEqual(ch._wasPushAfterFinish(), true,
+            "Push-after-finish should be detected");
+    });
+
+    it("should handle finish with no prior pushes", async () => {
+        const ch = createFixedChannel();
+        const received: string[] = [];
+
+        const consume = (async () => {
+            while (true) {
+                const { value, done } = await ch.pull();
+                if (done) break;
+                received.push(value);
+            }
+        })();
+
+        ch.finish();
+        await consume;
+
+        assert.deepStrictEqual(received, [],
+            "Empty channel should produce no messages");
+    });
+
+    it("should handle concurrent push and pull", async () => {
+        const ch = createFixedChannel();
+        const received: string[] = [];
+
+        const consume = (async () => {
+            while (true) {
+                const { value, done } = await ch.pull();
+                if (done) break;
+                received.push(value);
+            }
+        })();
+
+        // Push during consumer processing
+        ch.push("x");
+        await new Promise(setImmediate);
+        ch.push("y");
+        ch.finish();
+        await consume;
+
+        assert.deepStrictEqual(received, ["x", "y"],
+            "Concurrent push/pull should work");
+    });
+});
+
+\end{lstlisting}
+
