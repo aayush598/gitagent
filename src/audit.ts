@@ -1,6 +1,7 @@
 import { appendFile, mkdir } from "fs/promises";
 import { join, dirname } from "path";
 import type { HooksConfig } from "./hooks.js";
+import { enqueueWrite } from "./shared/write-queue.js";
 
 export interface AuditEntry {
 	timestamp: string;
@@ -36,7 +37,9 @@ export class AuditLogger {
 
 		try {
 			await mkdir(dirname(this.logPath), { recursive: true });
-			await appendFile(this.logPath, JSON.stringify(entry) + "\n", "utf-8");
+			await enqueueWrite(this.logPath, () =>
+				appendFile(this.logPath, JSON.stringify(entry) + "\n", "utf-8"),
+			);
 		} catch {
 			// Audit logging failures are non-fatal
 		}

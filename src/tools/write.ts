@@ -3,6 +3,7 @@ import { dirname, resolve } from "path";
 import { homedir } from "os";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { writeSchema } from "./shared.js";
+import { enqueueWrite } from "../shared/write-queue.js";
 
 function resolvePath(path: string, cwd: string): string {
 	if (path.startsWith("~/") || path === "~") {
@@ -30,7 +31,9 @@ export function createWriteTool(cwd: string): AgentTool<typeof writeSchema> {
 				await mkdir(dirname(absolutePath), { recursive: true });
 			}
 
-			await writeFile(absolutePath, content, "utf-8");
+			await enqueueWrite(absolutePath, () =>
+				writeFile(absolutePath, content, "utf-8"),
+			);
 
 			const bytes = Buffer.byteLength(content, "utf-8");
 			return {
