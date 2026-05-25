@@ -20,6 +20,7 @@ import type { ExampleEntry } from "./examples.js";
 import { validateCompliance, loadComplianceContext, formatComplianceWarnings } from "./compliance.js";
 import type { ComplianceWarning } from "./compliance.js";
 import { discoverAndLoadPlugins } from "./plugins.js";
+import { configureHttpClient } from "./http-client.js";
 import type { LoadedPlugin } from "./plugin-types.js";
 import type { PluginConfig } from "./plugin-types.js";
 
@@ -238,6 +239,8 @@ export async function loadAgent(
 	modelFlag?: string,
 	envFlag?: string,
 ): Promise<LoadedAgent> {
+	configureHttpClient();
+
 	// Parse agent.yaml
 	const manifestRaw = await readFile(join(agentDir, "agent.yaml"), "utf-8");
 	let manifest = yaml.load(manifestRaw) as AgentManifest;

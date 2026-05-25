@@ -158,7 +158,7 @@ export async function installPlugin(
 	}
 	args.push(source, pluginDir);
 	try {
-		execFileSync("git", args, { stdio: "pipe" });
+		execFileSync("git", args, { stdio: "pipe", timeout: 120000 });
 	} catch (err: any) {
 		throw new Error(`Failed to install plugin from "${source}": ${err.message}`);
 	}

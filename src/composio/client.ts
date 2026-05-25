@@ -1,6 +1,9 @@
-// Composio REST API v3 client — zero dependencies, uses native fetch()
+// Composio REST API v3 client — uses native fetch()
+
+import { fetchWithTimeout } from "../fetch.js";
 
 const BASE_URL = "https://backend.composio.dev/api/v3";
+const REQUEST_TIMEOUT = parseInt(process.env.COMPOSIO_TIMEOUT || "15000", 10);
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -225,10 +228,11 @@ export class ComposioClient {
 		};
 		if (body) headers["Content-Type"] = "application/json";
 
-		const resp = await fetch(url, {
+		const resp = await fetchWithTimeout(url, {
 			method,
 			headers,
 			body: body ? JSON.stringify(body) : undefined,
+			timeout: REQUEST_TIMEOUT,
 		});
 
 		if (!resp.ok) {
