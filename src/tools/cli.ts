@@ -2,6 +2,38 @@ import { spawn } from "child_process";
 import type { AgentTool, AgentToolUpdateCallback } from "@mariozechner/pi-agent-core";
 import { cliSchema, MAX_OUTPUT, DEFAULT_TIMEOUT } from "./shared.js";
 
+const SAFE_ENV_KEYS = new Set(["PATH", "HOME", "USER", "SHELL", "TERM", "LANG", "LC_ALL", "PWD", "TMPDIR", "TEMP", "TMP"]);
+
+function createSafeEnv(): Record<string, string | undefined> {
+	const env: Record<string, string | undefined> = {};
+	for (const key of SAFE_ENV_KEYS) {
+		if (process.env[key] !== undefined) {
+			env[key] = process.env[key];
+		}
+	}
+	return env;
+}
+
+function parseCommand(cmd: string): string[] {
+	const args: string[] = [];
+	let current = "";
+	let inSingle = false;
+	let inDouble = false;
+	for (let i = 0; i < cmd.length; i++) {
+		const ch = cmd[i];
+		if (ch === "'" && !inDouble) { inSingle = !inSingle; continue; }
+		if (ch === '"' && !inSingle) { inDouble = !inDouble; continue; }
+		if (ch === "\\" && (inSingle || inDouble)) { current += cmd[++i] || ""; continue; }
+		if (ch === " " && !inSingle && !inDouble) {
+			if (current) { args.push(current); current = ""; }
+			continue;
+		}
+		current += ch;
+	}
+	if (current) args.push(current);
+	return args;
+}
+
 export function createCliTool(cwd: string, defaultTimeout?: number): AgentTool<typeof cliSchema> {
 	const baseTimeout = defaultTimeout ?? DEFAULT_TIMEOUT;
 	return {
@@ -24,10 +56,16 @@ export function createCliTool(cwd: string, defaultTimeout?: number): AgentTool<t
 					return;
 				}
 
-				const child = spawn("sh", ["-c", command], {
+				const args = parseCommand(command);
+				if (args.length === 0) {
+					reject(new Error("Empty command"));
+					return;
+				}
+
+				const child = spawn(args[0], args.slice(1), {
 					cwd,
 					stdio: ["ignore", "pipe", "pipe"],
-					env: { ...process.env },
+					env: createSafeEnv(),
 				});
 
 				let output = "";
