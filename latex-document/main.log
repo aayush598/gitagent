@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.5.25)  25 MAY 2026 22:05
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.5.25)  25 MAY 2026 22:41
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -414,36 +414,10 @@ Package: enumitem 2025/02/06 v3.11 Customized lists
 )
 Package hyperref Info: Option `colorlinks' set `true' on input line 27.
 
-
-! LaTeX Error: Command \branchref already defined.
-               Or name \end... illegal, see p.192 of the manual.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.93 \newcommand{\branchref}[1]{\texttt{#1}}
-                                            
-Your command was ignored.
-Type  I <command> <return>  to replace it with another command,
-or  <return>  to continue without it.
-
 (/usr/share/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count327
 ) (./main.aux)
-Runaway argument?
-{\con 
-! File ended while scanning use of \@writefile.
-<inserted text> 
-                \par 
-l.98 \begin{document}
-                     
-I suspect you have forgotten a `}', causing me
-to read past where you wanted me to stop.
-I'll try to recover; but if the error is serious,
-you'd better type `E' or `X' now and fix your file.
-
 \openout1 = `main.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 98.
@@ -464,6 +438,7 @@ LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 98.
 LaTeX Font Info:    ... okay on input line 98.
 LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 98.
 LaTeX Font Info:    ... okay on input line 98.
+
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
@@ -500,45 +475,11 @@ LaTeX Font Info:    ... okay on input line 98.
 
 Package hyperref Info: Link coloring ON on input line 98.
 (./main.out) (./main.out)
-! Missing \endcsname inserted.
-<to be read again> 
-                   \__kernel_tl_set:Nx 
-l.98 \begin{document}
-                     
-The control sequence marked <to be read again> should
-not appear between \csname and \endcsname.
-
-! Missing number, treated as zero.
-<to be read again> 
-                   }
-l.98 \begin{document}
-                     
-A number should have been here; I inserted `0'.
-(If you can't figure out why I needed to see a number,
-look up `weird error' in the index to The TeXbook.)
-
-! Missing { inserted.
-<to be read again> 
-                   }
-l.98 \begin{document}
-                     
-A left brace was mandatory here, so I've put one in.
-You might want to delete and/or insert some corrections
-so that I will find a matching right brace soon.
-(If you're confused by all this, try typing `I}' now.)
-
-! Missing \endcsname inserted.
-<to be read again> 
-                   \__kernel_tl_set:Nx 
-l.98 \begin{document}
-                     
-The control sequence marked <to be read again> should
-not appear between \csname and \endcsname.
-
 \@outlinefile=\write3
 \openout3 = `main.out'.
 
 \c@lstlisting=\count328
+
 (/usr/share/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count329
@@ -563,6 +504,41 @@ e
 ))
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: End \AtBeginDocument code.
+ [1
+
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf-dist/fonts
+/enc/dvips/cm-super/cm-super-t1.enc}] (./main.toc
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <12> on input line 1.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 1.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 1.
+ [2]
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 14.49998pt, for example:
+(fancyhdr)                \setlength{\headheight}{14.49998pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
+
+[3]
+! Misplaced alignment tab character &.
+<argument> ...clinkstart {\numberline {6}Network &
+                                                   Connectivity Fixes}\Hy@to...
+l.88 ...work & Connectivity Fixes}{357}{chapter.6}
+                                                  %
+I can't figure out why you would want to use a tab mark
+here. If you just want an ampersand, the remedy is
+simple: Just type `I\&' now. But if some right brace
+up above has ended a previous alignment prematurely,
+you're probably due for more error messages, and you
+might try typing `S' now just to see what is salvageable.
+
+)
+\tf@toc=\write4
+\openout4 = `main.toc'.
+
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -571,50 +547,38 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[1
+[4] (./chapters/introduction.tex [5
 
-{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf-dist/fonts
-/enc/dvips/cm-super/cm-super-t1.enc}]
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <14.4> on input line 108.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 108.
+{/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]) (./chapters
+/SEC/chapter.tex
 
-pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has 
-been already used, duplicate ignored
-<to be read again> 
-                   \relax 
-l.108 
-       [1] (./main.toc)
-\tf@toc=\write4
-\openout4 = `main.toc'.
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 14.49998pt, for example:
+(fancyhdr)                \setlength{\headheight}{14.49998pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
- [2] (./chapters/introduction.tex)
-(./chapters/SEC/chapter.tex [3
+[6]
 
-{/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 14.49998pt, for example:
+(fancyhdr)                \setlength{\headheight}{14.49998pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
+
+[7]
 Chapter 1.
 
 Overfull \hbox (10.94089pt too wide) in paragraph at lines 15--16
-[][][]\T1/cmr/m/n/12 SEC-010[][]: [][]\T1/cmtt/m/n/12 fix/SEC-010-rate-limiting
--tool-execution[][] \T1/cmr/m/n/12 | [][][\T1/cmr/bx/n/12 View Diff on GitHub\T
-1/cmr/m/n/12 ][][] 
+[][][]\T1/cmr/m/n/12 SEC-010[][]: \T1/cmtt/m/n/12 fix/SEC-010-rate-limiting-too
+l-execution \T1/cmr/m/n/12 | [][][\T1/cmr/bx/n/12 View Diff on GitHub\T1/cmr/m/
+n/12 ][][] 
  []
-
-
-LaTeX Warning: Hyper reference `sec:sec-023' on page 4 undefined on input line 
-21.
 
 (./chapters/SEC/SEC-001.tex
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <17.28> not available
 (Font)              Font shape `T1/cmtt/m/n' tried instead on input line 1.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <12> on input line 5.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 5.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 5.
- [4
+ [8
 
 ]
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <10.95> not available
@@ -627,7 +591,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[5]
+[9]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -635,7 +599,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[6]
+[10]
 Overfull \hbox (28.60753pt too wide) in paragraph at lines 106--107
 [][][]\T1/cmtt/m/n/12 src/tools/cli.ts[][] \T1/cmr/m/n/12 --- Re-placed \T1/cmt
 t/m/n/12 spawn("sh", ["-c", command]) \T1/cmr/m/n/12 with \T1/cmtt/m/n/12 spawn
@@ -649,7 +613,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[7]) (./chapters/SEC/SEC-002.tex
+[11]) (./chapters/SEC/SEC-002.tex
 Overfull \hbox (11.5887pt too wide) in paragraph at lines 1--1
 |[]\T1/cmr/bx/n/17.28 SEC-002: API Key Ex-po-sure in Mem-ory (Git-Backed
  []
@@ -671,7 +635,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[8]
+[12]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -679,7 +643,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[9]
+[13]
 ! Missing $ inserted.
 <inserted text> 
                 $
@@ -748,7 +712,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[10]) (./chapters/SEC/SEC-003.tex
+[14]) (./chapters/SEC/SEC-003.tex
 Overfull \hbox (15.8482pt too wide) in paragraph at lines 17--18
 \T1/cmr/m/n/12 key, to-ken, and se-cret the agent uses: \T1/cmtt/m/n/12 OPENAI_
 API_KEY\T1/cmr/m/n/12 , \T1/cmtt/m/n/12 ANTHROPIC_API_KEY\T1/cmr/m/n/12 , \T1/c
@@ -762,7 +726,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[11]
+[15]
 Overfull \hbox (52.90297pt too wide) in paragraph at lines 79--80
 []\T1/cmr/m/n/12 This pat-tern is ap-plied iden-ti-cally to [][]\T1/cmtt/m/n/12
  src/hooks.ts[][]\T1/cmr/m/n/12 , [][]\T1/cmtt/m/n/12 src/tool-loader.ts[][]\T1
@@ -783,7 +747,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[12]
+[16]
 ! Missing $ inserted.
 <inserted text> 
                 $
@@ -858,7 +822,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[13]
+[17]
 Overfull \hbox (18.93304pt too wide) in paragraph at lines 45--46
 \T1/cmr/m/n/12 stores au-then-ti-ca-tion ma-te-rial in a sep-a-rate file with r
 e-stricted per-mis-sions. The \T1/cmtt/m/n/12 authedUrl()
@@ -871,7 +835,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[14]
+[18]
 ! Extra }, or forgotten $.
 <recently read> \egroup 
                         
@@ -1073,7 +1037,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[15]
+[19]
 Overfull \hbox (47.08499pt too wide) in paragraph at lines 17--18
 \T1/cmtt/m/n/12 The read, write, and edit tools each contained a duplicate reso
 lvePath() function
@@ -1194,7 +1158,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[16]
+[20]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 36--37
 \T1/cmtt/m/n/12 The fix introduces a single resolveSafePath() function in [][]s
 rc/tools/shared.ts[][]
@@ -1231,7 +1195,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[17]
+[21]
 Overfull \hbox (39.41873pt too wide) in paragraph at lines 75--76
 [][][]\T1/cmtt/m/n/12 src/tools/write.ts[][] --- Removed duplicate resolvePath(
 ), replaced with shared
@@ -1473,7 +1437,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[18]
+[22]
 Overfull \hbox (40.9115pt too wide) in paragraph at lines 19--20
 []\T1/cmtt/m/n/12 The vulnerability is amplified by the fact that the CLI tool 
 can create symlinks
@@ -1540,7 +1504,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[19]
+[23]
 Overfull \hbox (2.37778pt too wide) in paragraph at lines 70--71
 [][][]\T1/cmtt/m/n/12 src/tools/shared.ts[][] --- Added assertNotSymlink() expo
 rt function using
@@ -1665,7 +1629,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[20]
+[24]
 Overfull \hbox (28.56451pt too wide) in paragraph at lines 17--18
 \T1/cmtt/m/n/12 The cli tool gives the LLM full shell access via spawn("sh", ["
 -c", command]).
@@ -1773,7 +1737,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[21]
+[25]
 Overfull \hbox (34.738pt too wide) in paragraph at lines 39--40
 \T1/cmtt/m/n/12 The fix adds a checkSSRF() function in [][]src/tools/shared.ts[
 ][] that detects network
@@ -1792,7 +1756,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[22]
+[26]
 Overfull \hbox (14.72476pt too wide) in paragraph at lines 94--95
 [][][]\T1/cmtt/m/n/12 src/tools/shared.ts[][] --- Added checkSSRF() function wi
 th private IP range
@@ -2001,7 +1965,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[23]
+[27]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 17--18
 \T1/cmtt/m/n/12 The GitAgent voice server ([][]src/voice/server.ts[][]) provide
 s both an HTTP server
@@ -2080,7 +2044,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[24]
+[28]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 39--40
 \T1/cmtt/m/n/12 The fix makes three changes to [][]src/voice/server.ts[][]. Fir
 st, authentication
@@ -2171,7 +2135,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[25])
+[29])
 Overfull \hbox (34.738pt too wide) in paragraph at lines 85--39
 []\T1/cmtt/m/n/12 Starts the server with and without GITCLAW_PASSWORD, verifies
  HTTP status codes
@@ -2262,7 +2226,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[26]
+[30]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 32--33
 []\T1/cmtt/m/n/12 With rapid calls, the system can experience process table exh
 austion (max 32K
@@ -2299,7 +2263,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[27]
+[31]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 76--77
 []\T1/cmtt/m/n/12 A wrapToolWithRateLimit() function is provided to seamlessly 
 integrate the
@@ -2427,7 +2391,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[28]
+[32]
 ! Missing $ inserted.
 <inserted text> 
                 $
@@ -2596,7 +2560,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[29]
+[33]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 42--43
 []\T1/cmtt/m/n/12 Common exposure scenarios include: commands like env or print
 env that dump
@@ -2627,7 +2591,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[30]
+[34]
 Overfull \hbox (47.08499pt too wide) in paragraph at lines 99--100
 []\T1/cmtt/m/n/12 The same scrubOutput() is applied in sandbox-cli.ts for sandb
 oxed CLI operations. 
@@ -2755,7 +2719,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[31]
+[35]
 ! Missing $ inserted.
 <inserted text> 
                 $
@@ -2912,7 +2876,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[32]
+[36]
 Overfull \hbox (28.56451pt too wide) in paragraph at lines 37--38
 []\T1/cmtt/m/n/12 While randomUUID() uses a cryptographically secure PRNG, the 
 generated session
@@ -2955,7 +2919,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[33]
+[37]
 Overfull \hbox (20.89825pt too wide) in paragraph at lines 77--78
 [][][]\T1/cmtt/m/n/12 src/loader.ts[][] --- Changed randomUUID() to randomBytes
 (32).toString("hex")
@@ -3063,7 +3027,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[34]
+[38]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 19--20
 []\T1/cmtt/m/n/12 The fix adds a two-layer defense: (1) a pre-validation step t
 hat scans the
@@ -3158,7 +3122,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[35]
+[39]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 65--66
 []\T1/cmtt/m/n/12 This is called before yaml.load() in both loadPlugin() and li
 stAllPlugins(): 
@@ -3341,7 +3305,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[36])
+[40])
 Overfull \hbox (28.56451pt too wide) in paragraph at lines 96--47
 []\T1/cmtt/m/n/12 Contains 11 test cases covering JS-specific YAML tag rejectio
 n (!!js/function,
@@ -3443,7 +3407,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[37]
+[41]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 36--37
 []\T1/cmtt/m/n/12 The content is committed as a blob, tree, and commit object i
 n git. These
@@ -3474,7 +3438,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[38]
+[42]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 102--103
 []\T1/cmtt/m/n/12 Third, the integration point in execute() checks the commit c
 ount after each
@@ -3517,7 +3481,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[39]
+[43]
 ! Missing $ inserted.
 <inserted text> 
                 $
@@ -3760,7 +3724,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[40]
+[44]
 Overfull \hbox (34.738pt too wide) in paragraph at lines 22--23
 \T1/cmtt/m/n/12 The original installPlugin() function cloned repositories witho
 ut any integrity
@@ -3803,7 +3767,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[41]
+[45]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 80--81
 []\T1/cmtt/m/n/12 The installPlugin() function now accepts an optional expected
 Hash parameter: 
@@ -3816,7 +3780,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[42]
+[46]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 129--130
 []\T1/cmtt/m/n/12 The discoverAndLoadPlugins() function passes the hash to inst
 allPlugin(), and
@@ -4017,7 +3981,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[43])
+[47])
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 145--51
 []\T1/cmtt/m/n/12 Contains 7 test cases: computeDirHash consistency, hash chang
 es on content
@@ -4119,7 +4083,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[44]
+[48]
 Overfull \hbox (53.25848pt too wide) in paragraph at lines 38--39
 []\T1/cmtt/m/n/12 No sanitization was applied: no regex filtering of dangerous 
 instruction patterns
@@ -4168,7 +4132,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[45]
+[49]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 99--100
 []\T1/cmtt/m/n/12 Fourth, write protection for critical files is added in [][]s
 rc/tools/write.ts[][]: 
@@ -4181,7 +4145,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[46]
+[50]
 Overfull \hbox (14.72476pt too wide) in paragraph at lines 125--126
 [][][]\T1/cmtt/m/n/12 src/loader.ts[][] --- Added immutable safety preamble wit
 h 7 absolute rules,
@@ -4272,7 +4236,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[47]
+[51]
 Chapter 2.
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <24.88> not available
 (Font)              Font shape `T1/cmtt/m/n' tried instead on input line 1.
@@ -4283,229 +4247,96 @@ ository. Each
  []
 
 
-LaTeX Warning: Hyper reference `sec:bug-001' on page 48 undefined on input line
- 7.
-
-
 Overfull \hbox (8.55127pt too wide) in paragraph at lines 7--8
-[]\T1/cmtt/m/n/12 BUG-001: [][]fix/BUG-001-git-commit-failure-silent-data-loss[
-][] | [][][View Diff
+[][][]\T1/cmtt/m/n/12 BUG-001[][]: fix/BUG-001-git-commit-failure-silent-data-l
+oss | [][][View Diff
  []
 
 
-LaTeX Warning: Hyper reference `sec:bug-002' on page 48 undefined on input line
- 8.
-
-
 Overfull \hbox (2.37778pt too wide) in paragraph at lines 8--9
-[]\T1/cmtt/m/n/12 BUG-002: [][]fix/BUG-002-sigint-race-condition-streaming[][] 
+[][][]\T1/cmtt/m/n/12 BUG-002[][]: fix/BUG-002-sigint-race-condition-streaming 
 | [][][View Diff on
  []
 
 
-LaTeX Warning: Hyper reference `sec:bug-003' on page 48 undefined on input line
- 9.
-
-
 Overfull \hbox (14.72476pt too wide) in paragraph at lines 9--10
-[]\T1/cmtt/m/n/12 BUG-003: [][]fix/BUG-003-channel-push-after-finish[][] | [][]
+[][][]\T1/cmtt/m/n/12 BUG-003[][]: fix/BUG-003-channel-push-after-finish | [][]
 [View Diff on GitHub][][] 
  []
-
-
-LaTeX Warning: Hyper reference `sec:bug-004' on page 48 undefined on input line
- 10.
 
 
 Overfull \hbox (14.72476pt too wide) in paragraph at lines 10--11
-[]\T1/cmtt/m/n/12 BUG-004: [][]fix/BUG-004-hook-block-silent-failure[][] | [][]
+[][][]\T1/cmtt/m/n/12 BUG-004[][]: fix/BUG-004-hook-block-silent-failure | [][]
 [View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:bug-005' on page 48 undefined on input line
- 11.
-
-
 Overfull \hbox (33.24524pt too wide) in paragraph at lines 11--12
-[]\T1/cmtt/m/n/12 BUG-005: [][]fix/BUG-005-atomic-write-backup-recovery[][] | [
+[][][]\T1/cmtt/m/n/12 BUG-005[][]: fix/BUG-005-atomic-write-backup-recovery | [
 ][][View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:bug-006' on page 48 undefined on input line
- 12.
-
-
-LaTeX Warning: Hyper reference `sec:bug-007' on page 48 undefined on input line
- 13.
-
-
 Overfull \hbox (14.72476pt too wide) in paragraph at lines 13--14
-[]\T1/cmtt/m/n/12 BUG-007: [][]fix/BUG-007-hook-cleanup-block-action[][] | [][]
+[][][]\T1/cmtt/m/n/12 BUG-007[][]: fix/BUG-007-hook-cleanup-block-action | [][]
 [View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:bug-008' on page 48 undefined on input line
- 14.
-
-
-LaTeX Warning: Hyper reference `sec:bug-009' on page 48 undefined on input line
- 15.
-
-
 Overfull \hbox (8.55127pt too wide) in paragraph at lines 15--16
-[]\T1/cmtt/m/n/12 BUG-009: [][]fix/BUG-009-edit-regex-flag-symmetry[][] | [][][
+[][][]\T1/cmtt/m/n/12 BUG-009[][]: fix/BUG-009-edit-regex-flag-symmetry | [][][
 View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:bug-010' on page 48 undefined on input line
- 16.
-
-
 Overfull \hbox (8.55127pt too wide) in paragraph at lines 16--17
-[]\T1/cmtt/m/n/12 BUG-010: [][]fix/BUG-010-capture-photo-rollback-execfilesync[
-][] | [][][View Diff
+[][][]\T1/cmtt/m/n/12 BUG-010[][]: fix/BUG-010-capture-photo-rollback-execfiles
+ync | [][][View Diff
  []
 
 
-LaTeX Warning: Hyper reference `sec:bug-011' on page 48 undefined on input line
- 17.
-
-
 Overfull \hbox (39.41873pt too wide) in paragraph at lines 17--18
-[]\T1/cmtt/m/n/12 BUG-011: [][]fix/BUG-011-composio-name-collision-dedup[][] | 
+[][][]\T1/cmtt/m/n/12 BUG-011[][]: fix/BUG-011-composio-name-collision-dedup | 
 [][][View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:bug-012' on page 48 undefined on input line
- 18.
-
-
 Overfull \hbox (20.89825pt too wide) in paragraph at lines 18--19
-[]\T1/cmtt/m/n/12 BUG-012: [][]fix/BUG-012-abortsignal-timeout-compat[][] | [][
+[][][]\T1/cmtt/m/n/12 BUG-012[][]: fix/BUG-012-abortsignal-timeout-compat | [][
 ][View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:bug-013' on page 48 undefined on input line
- 19.
-
-
 Overfull \hbox (39.41873pt too wide) in paragraph at lines 19--20
-[]\T1/cmtt/m/n/12 BUG-013: [][]fix/BUG-013-summarization-recursion-guard[][] | 
+[][][]\T1/cmtt/m/n/12 BUG-013[][]: fix/BUG-013-summarization-recursion-guard | 
 [][][View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:bug-014' on page 48 undefined on input line
- 20.
-
-
-LaTeX Warning: Hyper reference `sec:bug-015' on page 48 undefined on input line
- 21.
-
-
-LaTeX Warning: Hyper reference `sec:bug-016' on page 48 undefined on input line
- 22.
-
-
-LaTeX Warning: Hyper reference `sec:bug-017' on page 48 undefined on input line
- 23.
-
-
-LaTeX Warning: Hyper reference `sec:bug-018' on page 48 undefined on input line
- 24.
-
-
-LaTeX Warning: Hyper reference `sec:bug-019' on page 48 undefined on input line
- 25.
-
-
-LaTeX Warning: Hyper reference `sec:bug-020' on page 48 undefined on input line
- 26.
-
-
-LaTeX Warning: Hyper reference `sec:bug-021' on page 48 undefined on input line
- 27.
-
-
-LaTeX Warning: Hyper reference `sec:bug-022' on page 48 undefined on input line
- 28.
-
-
 Overfull \hbox (14.72476pt too wide) in paragraph at lines 28--29
-[]\T1/cmtt/m/n/12 BUG-022: [][]fix/BUG-022-schedule-yaml-forcequotes[][] | [][]
+[][][]\T1/cmtt/m/n/12 BUG-022[][]: fix/BUG-022-schedule-yaml-forcequotes | [][]
 [View Diff on GitHub][][] 
  []
 
-[48
+[52
 
 ]
-
-LaTeX Warning: Hyper reference `sec:bug-023' on page 49 undefined on input line
- 29.
-
-
-LaTeX Warning: Hyper reference `sec:bug-024' on page 49 undefined on input line
- 30.
-
-
-LaTeX Warning: Hyper reference `sec:bug-025' on page 49 undefined on input line
- 31.
-
-
 Overfull \hbox (2.37778pt too wide) in paragraph at lines 31--32
-[]\T1/cmtt/m/n/12 BUG-025: [][]fix/BUG-025-console-intercept-scope[][] | [][][V
+[][][]\T1/cmtt/m/n/12 BUG-025[][]: fix/BUG-025-console-intercept-scope | [][][V
 iew Diff on GitHub][][] 
  []
-
-
-LaTeX Warning: Hyper reference `sec:bug-026' on page 49 undefined on input line
- 32.
-
-
-LaTeX Warning: Hyper reference `sec:bug-027' on page 49 undefined on input line
- 33.
-
-
-LaTeX Warning: Hyper reference `sec:bug-028' on page 49 undefined on input line
- 34.
-
-
-LaTeX Warning: Hyper reference `sec:bug-029' on page 49 undefined on input line
- 35.
-
-
-LaTeX Warning: Hyper reference `sec:bug-030' on page 49 undefined on input line
- 36.
 
 
 Overfull \hbox (2.37778pt too wide) in paragraph at lines 36--37
-[]\T1/cmtt/m/n/12 BUG-030: [][]fix/BUG-030-telemetry-metric-status[][] | [][][V
+[][][]\T1/cmtt/m/n/12 BUG-030[][]: fix/BUG-030-telemetry-metric-status | [][][V
 iew Diff on GitHub][][] 
  []
-
-
-LaTeX Warning: Hyper reference `sec:bug-033' on page 49 undefined on input line
- 37.
-
-
-LaTeX Warning: Hyper reference `sec:bug-034' on page 49 undefined on input line
- 38.
 
 
 Overfull \hbox (2.37778pt too wide) in paragraph at lines 38--39
-[]\T1/cmtt/m/n/12 BUG-034: [][]fix/BUG-034-task-tracker-pagination[][] | [][][V
+[][][]\T1/cmtt/m/n/12 BUG-034[][]: fix/BUG-034-task-tracker-pagination | [][][V
 iew Diff on GitHub][][] 
  []
-
-
-LaTeX Warning: Hyper reference `sec:bug-035' on page 49 undefined on input line
- 39.
 
 (./chapters/BUG/BUG-001.tex
 Overfull \hbox (35.88116pt too wide) in paragraph at lines 1--1
@@ -4591,7 +4422,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[49]
+[53]
 Overfull \hbox (34.738pt too wide) in paragraph at lines 23--24
 []\T1/cmtt/m/n/12 The bug is in src/tools/memory.ts:161-171, where the git oper
 ations are wrapped
@@ -4672,7 +4503,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[50]
+[54]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 70--71
 []\T1/cmtt/m/n/12 Scenario A: git add fails (dirty index, merge conflict, pre-e
 xisting unstaged
@@ -4757,7 +4588,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[51]
+[55]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -4837,7 +4668,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[52]
+[56]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -4945,7 +4776,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[53]
+[57]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 258--259
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -4988,7 +4819,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[54]
+[58]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -5030,7 +4861,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[55]) (./chapters/BUG/BUG-002.tex
+[59]) (./chapters/BUG/BUG-002.tex
 Overfull \hbox (1.20123pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-002: SIGINT Race Condition During Streaming| 
  []
@@ -5174,7 +5005,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[56]
+[60]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 51--52
 []\T1/cmtt/m/n/12 The agent transitions isStreaming from true to false when the
  LLM streaming
@@ -6714,7 +6545,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[57]
+[61]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -6776,7 +6607,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[58]
+[62]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -6862,7 +6693,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[59]
+[63]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -6873,7 +6704,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[60]
+[64]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -6884,7 +6715,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[61]) (./chapters/BUG/BUG-003.tex
+[65]) (./chapters/BUG/BUG-003.tex
 Overfull \hbox (65.60547pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 The event channel implementation in src/sdk.ts:41-72 uses a han
 d-rolled asynchronous
@@ -6969,7 +6800,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[62]
+[66]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -7231,7 +7062,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[63]
+[67]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -9731,7 +9562,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[64]
+[68]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -9933,7 +9764,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[65]
+[69]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 204--208
 []\T1/cmtt/m/n/12 What this fixes: 1. Makes the contract explicit ^^V push afte
 r finish is an
@@ -10024,7 +9855,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[66]
+[70]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -10032,7 +9863,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[67]
+[71]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -10074,7 +9905,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[68]) (./chapters/BUG/BUG-004.tex
+[72]) (./chapters/BUG/BUG-004.tex
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -10085,7 +9916,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[69]
+[73]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 The hook execution system in src/hooks.ts is designed as a plug
 gable security
@@ -10170,7 +10001,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[70]
+[74]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -10270,7 +10101,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[71]
+[75]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -10638,7 +10469,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[72]
+[76]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -10810,7 +10641,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[73]
+[77]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 225--229
 []\T1/cmtt/m/n/12 What this fixes: 1. Any hook error results in block ^^V fail-
 closed behavior
@@ -10895,7 +10726,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[74]
+[78]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 277--278
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -10908,7 +10739,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[75]
+[79]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -10919,7 +10750,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[76]
+[80]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -10930,7 +10761,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[77]
+[81]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -11048,7 +10879,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[78]
+[82]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -12109,7 +11940,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[79]
+[83]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -12259,7 +12090,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[80]
+[84]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 145--149
 []\T1/cmtt/m/n/12 What this fixes: 1. Atomic write via temp file + rename preve
 nts partial
@@ -12308,7 +12139,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[81]
+[85]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 216--217
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -12321,7 +12152,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[82]
+[86]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -12332,7 +12163,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[83]) (./chapters/BUG/BUG-006.tex
+[87]) (./chapters/BUG/BUG-006.tex
 Overfull \hbox (9.87122pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-006: Cron Schedules Not Validated Before Use| 
  []
@@ -12348,7 +12179,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[84]
+[88]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 The startScheduler function in src/schedule-runner.ts:22-68 loa
 ds schedule
@@ -12589,7 +12420,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[85]
+[89]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -12788,7 +12619,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[86]
+[90]
 Overfull \hbox (65.60547pt too wide) in paragraph at lines 98--102
 []\T1/cmtt/m/n/12 1. Schedules silently disabled: A critical scheduled job (e.g
 ., daily maintenance,
@@ -12861,7 +12692,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[87]
+[91]
 Overfull \hbox (28.56451pt too wide) in paragraph at lines 151--155
 []\T1/cmtt/m/n/12 What this fixes: 1. Validates ALL schedule fields, not just c
 ron 2. Catches
@@ -12916,7 +12747,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[88]
+[92]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -12927,7 +12758,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[89]
+[93]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -12969,7 +12800,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[90]) (./chapters/BUG/BUG-007.tex
+[94]) (./chapters/BUG/BUG-007.tex
 Overfull \hbox (1.20123pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-007: File Descriptor Leak in Hook Execution| 
  []
@@ -13053,7 +12884,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[91]
+[95]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -13189,7 +13020,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[92]
+[96]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 86--87
 []\T1/cmtt/m/n/12 When spawn is called with stdio: ["pipe", "pipe", "pipe"], No
 de.js creates: 
@@ -13712,7 +13543,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[93]
+[97]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -13822,7 +13653,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[94]
+[98]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 207--208
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -13835,7 +13666,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[95]
+[99]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -13846,7 +13677,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[96]) (./chapters/BUG/BUG-008.tex
+[100]) (./chapters/BUG/BUG-008.tex
 Overfull \hbox (44.55115pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-008: Memory Archive Append Without Newline Check| 
  []
@@ -13862,7 +13693,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[97]
+[101]
 ! Undefined control sequence.
 <recently read> \n 
                    
@@ -14009,7 +13840,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[98]
+[102]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -14154,7 +13985,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[99]
+[103]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -14422,7 +14253,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[100]
+[104]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -14550,7 +14381,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[101]
+[105]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 243--244
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -14563,7 +14394,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[102]
+[106]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -14574,7 +14405,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[103]) (./chapters/BUG/BUG-009.tex
+[107]) (./chapters/BUG/BUG-009.tex
 Underfull \vbox (badness 8019) has occurred while \output is active []
 
 
@@ -14585,7 +14416,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[104]
+[108]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 The createEditTool function in src/tools/edit.ts:56-58 conditio
 nally appends
@@ -14688,7 +14519,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[105]
+[109]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 66--69
 []\T1/cmtt/m/n/12 This builds rxFlags with the g flag added only if: - replace_
 all is true -
@@ -14803,7 +14634,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[106]
+[110]
 Overfull \hbox (102.64642pt too wide) in paragraph at lines 112--113
 []\T1/cmtt/m/n/12 So the check on line 70 would throw an error before the repla
 cement. If replace_all=false
@@ -14900,7 +14731,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[107]
+[111]
 Overfull \hbox (40.9115pt too wide) in paragraph at lines 176--180
 []\T1/cmtt/m/n/12 What this fixes: 1. Centralizes flag building into two clearl
 y named variables
@@ -14955,7 +14786,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[108]
+[112]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -14963,7 +14794,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[109]
+[113]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -14974,7 +14805,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[110]) (./chapters/BUG/BUG-010.tex
+[114]) (./chapters/BUG/BUG-010.tex
 Overfull \hbox (1.20123pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-010: capture_photo Tool Has No Cleanup for
  []
@@ -15032,7 +14863,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[111]
+[115]
 Overfull \hbox (47.08499pt too wide) in paragraph at lines 17--22
 []\T1/cmtt/m/n/12 The sequence is: 1. Write photo JPG to memory/photos/YYYY-MM-
 DD_HHMMSS_slug.jpg
@@ -15105,7 +14936,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[112]
+[116]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -15243,7 +15074,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[113]
+[117]
 Overfull \hbox (28.56451pt too wide) in paragraph at lines 136--137
 []\T1/cmtt/m/n/12 The capture_photo tool has the same rollback gap as the memor
 y tool. However,
@@ -15304,7 +15135,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[114]
+[118]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -15350,7 +15181,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[115]
+[119]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -15392,7 +15223,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[116]) (./chapters/BUG/BUG-011.tex
+[120]) (./chapters/BUG/BUG-011.tex
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -15403,7 +15234,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[117]
+[121]
 Overfull \hbox (59.43198pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 The ComposioAdapter.toGCTool() method in src/composio/adapter.t
 s:101-118 constructs
@@ -15506,7 +15337,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[118]
+[122]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -15648,7 +15479,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[119]
+[123]
 Overfull \hbox (34.738pt too wide) in paragraph at lines 102--106
 []\T1/cmtt/m/n/12 The fix requires either: 1. Using a separator character that 
 is NOT preserved
@@ -15715,7 +15546,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[120]
+[124]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 180--181
 []\T1/cmtt/m/n/12 With [^a-zA-Z0-9_] keeping _, using __ as a separator helps b
 ut doesn't fully
@@ -15734,7 +15565,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[121]
+[125]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -15745,7 +15576,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[122]) (./chapters/BUG/BUG-012.tex
+[126]) (./chapters/BUG/BUG-012.tex
 Overfull \hbox (44.55115pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-012: AbortSignal.timeout Not Available in Older
  []
@@ -15761,7 +15592,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[123]
+[127]
 Overfull \hbox (121.1669pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 The searchSkillsMP() function in src/tools/task-tracker.ts:134 
 uses AbortSignal.timeout(5000)
@@ -16002,7 +15833,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[124]
+[128]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 54--54
 []\T1/cmtt/m/n/12 However, the more fundamental issue is that  with no diagnost
 ic message. The
@@ -16118,7 +15949,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[125]
+[129]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -16444,7 +16275,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[126]
+[130]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -16482,7 +16313,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[127]
+[131]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -16490,7 +16321,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[128]
+[132]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 291--292
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -16503,7 +16334,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[129]
+[133]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -16514,7 +16345,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[130]) (./chapters/BUG/BUG-013.tex
+[134]) (./chapters/BUG/BUG-013.tex
 Overfull \hbox (34.738pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 The summarizeHistory() function in src/voice/chat-history.ts:71
 -130 is designed
@@ -16651,7 +16482,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[131]
+[135]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 34--34
 []\T1/cmtt/m/n/12 1. Stack overflow: With default Node.js call stack limits (~1
 0,000), deep
@@ -16785,7 +16616,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[132]
+[136]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC”).
 
@@ -23218,7 +23049,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[133]
+[137]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC”).
 
@@ -24487,7 +24318,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[134]
+[138]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -24498,7 +24329,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[135]
+[139]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -24566,7 +24397,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[136]
+[140]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 298--299
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -24579,7 +24410,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[137]
+[141]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -24590,7 +24421,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[138]
+[142]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -24601,7 +24432,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[139]) (./chapters/BUG/BUG-014.tex
+[143]) (./chapters/BUG/BUG-014.tex
 Overfull \hbox (70.5611pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-014: Cron Parser Fails on Non-Standard Expressions| 
  []
@@ -24691,7 +24522,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[140]
+[144]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -24907,7 +24738,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[141]
+[145]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 73--74
 []\T1/cmtt/m/n/12 The node-cron library's cron.schedule() function also does no
 t support these
@@ -25046,7 +24877,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[142]
+[146]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -25156,7 +24987,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[143]
+[147]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -25200,7 +25031,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[144]
+[148]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -25211,7 +25042,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[145]
+[149]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -25222,7 +25053,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[146]
+[150]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -25233,7 +25064,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[147]) (./chapters/BUG/BUG-015.tex
+[151]) (./chapters/BUG/BUG-015.tex
 Overfull \hbox (18.5412pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-015: Session State Written Before Agent Yaml
  []
@@ -25285,7 +25116,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[148]
+[152]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 19--20
 []\T1/cmtt/m/n/12 1. Orphaned session state: A new state.json is written on eve
 ry loadAgent()
@@ -25420,7 +25251,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[149]
+[153]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -25892,7 +25723,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[150]
+[154]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -26180,7 +26011,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[151]
+[155]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -26300,7 +26131,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[152]
+[156]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 234--235
 []\T1/cmtt/m/n/12 Option A is the clear winner: it moves one line of code (cons
 t sessionId =
@@ -26331,7 +26162,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[153]
+[157]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -26403,7 +26234,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[154]
+[158]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -26482,7 +26313,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[155]
+[159]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 The createMemoryTool() function in src/tools/memory.ts accepts 
 an optional
@@ -26615,7 +26446,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[156]
+[160]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -26969,7 +26800,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[157]
+[161]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -27563,7 +27394,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[158]
+[162]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -27861,7 +27692,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[159]
+[163]
 Overfull \hbox (28.56451pt too wide) in paragraph at lines 225--230
 []\T1/cmtt/m/n/12 What this fixes: 1. Plugin layers are never accidentally used
  as the default
@@ -27922,7 +27753,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[160]
+[164]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 286--287
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -27935,7 +27766,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[161]
+[165]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -27946,7 +27777,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[162]
+[166]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -27988,7 +27819,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[163]
+[167]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -28082,7 +27913,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[164]
+[168]
 Overfull \hbox (53.25848pt too wide) in paragraph at lines 19--20
 []\T1/cmtt/m/n/12 The bug is at src/loader.ts:180-183 (for inheritance) and at 
 src/loader.ts:226-229
@@ -28327,7 +28158,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[165]
+[169]
 Overfull \hbox (28.56451pt too wide) in paragraph at lines 76--77
 []\T1/cmtt/m/n/12 The || true is the critical piece: it ensures that execSync i
 tself never sees
@@ -28496,7 +28327,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[166]
+[170]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -28588,7 +28419,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[167]
+[171]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 188--192
 []\T1/cmtt/m/n/12 Advantages: 1. No shell injection risk (URL strings with spec
 ial characters
@@ -28619,7 +28450,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[168]
+[172]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -28630,7 +28461,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[169]
+[173]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -28641,7 +28472,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[170]) (./chapters/BUG/BUG-018.tex
+[174]) (./chapters/BUG/BUG-018.tex
 Overfull \hbox (79.23108pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-018: Dependency Resolution Order ^^V Silent Overwrite
 
@@ -28726,7 +28557,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
 
-[171]
+[175]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 19--20
 []\T1/cmtt/m/n/12 The bug is at src/loader.ts:223-234, where the loop writes to
  join(depsDir,
@@ -28933,7 +28764,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[172]
+[176]
 Overfull \hbox (59.43198pt too wide) in paragraph at lines 74--75
 []\T1/cmtt/m/n/12 The name field is a plain string. There is no uniqueItems con
 straint, no Set-based
@@ -29212,7 +29043,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
 
-[173]
+[177]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -29340,7 +29171,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[174]
+[178]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -29408,7 +29239,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
 
-[175]
+[179]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -29482,7 +29313,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[176]
+[180]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -29493,7 +29324,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
 
-[177]
+[181]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -29504,7 +29335,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[178]) (./chapters/BUG/BUG-019.tex
+[182]) (./chapters/BUG/BUG-019.tex
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -29515,7 +29346,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
 
-[179]
+[183]
 Overfull \hbox (53.25848pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 The AgentManifest type in src/loader.ts defines a model.fallbac
 k field as string[]
@@ -29696,7 +29527,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[180]
+[184]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 52--55
 []\T1/cmtt/m/n/12 The fallback: string[] field clearly signals intent: users ca
 n specify a
@@ -29831,7 +29662,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[181]
+[185]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 103--104
 []\T1/cmtt/m/n/12 This function returns a Model object with a specific provider
  and model ID.
@@ -29934,7 +29765,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[182]
+[186]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -29945,7 +29776,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[183]
+[187]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 214--219
 []\T1/cmtt/m/n/12 What this fixes: 1. Fallback models are tried in order when t
 he preferred
@@ -29974,7 +29805,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[184]
+[188]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 269--270
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -29987,7 +29818,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[185]
+[189]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -30031,7 +29862,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[186]
+[190]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -30042,7 +29873,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[187]) (./chapters/BUG/BUG-020.tex
+[191]) (./chapters/BUG/BUG-020.tex
 Overfull \hbox (27.21118pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-020: Env Var Case Sensitivity Breaks Provider
  []
@@ -30058,7 +29889,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[188]
+[192]
 Overfull \hbox (28.56451pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 When a custom model provider is configured with a mixed-case or
  uppercase name
@@ -30167,7 +29998,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[189]
+[193]
 Overfull \hbox (71.77896pt too wide) in paragraph at lines 53--54
 []\T1/cmtt/m/n/12 If a provider is github-copilot, the uppercase is GITHUB-COPI
 LOT_API_KEY. Environment
@@ -30294,7 +30125,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[190]
+[194]
 Overfull \hbox (53.25848pt too wide) in paragraph at lines 88--92
 []\T1/cmtt/m/n/12 1. Silent misauthentication: The agent uses the wrong API key
  with no diagnostic
@@ -30415,7 +30246,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[191]
+[195]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -30483,7 +30314,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[192]
+[196]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 206--207
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -30496,7 +30327,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[193]) (./chapters/BUG/BUG-021.tex
+[197]) (./chapters/BUG/BUG-021.tex
 Overfull \hbox (70.5611pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-021: Plugin Discovery Directory Race on Concurrent
  []
@@ -30512,7 +30343,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[194]
+[198]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 When two or more GitClaw agent instances run concurrently with 
 the same agent
@@ -30627,7 +30458,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[195]
+[199]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -30785,7 +30616,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[196]
+[200]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -31884,7 +31715,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[197]
+[201]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -32138,7 +31969,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[198]
+[202]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -32210,7 +32041,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[199]
+[203]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 238--242
 []\T1/cmtt/m/n/12 What this fixes: 1. File-based locking prevents concurrent in
 stallPlugin()
@@ -32331,7 +32162,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[200]
+[204]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 312--313
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -32344,7 +32175,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[201]
+[205]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -32355,7 +32186,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[202]) (./chapters/BUG/BUG-022.tex
+[206]) (./chapters/BUG/BUG-022.tex
 Overfull \hbox (1.20123pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-022: Schedule YAML Write Unescapes Special
  []
@@ -32409,7 +32240,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[203]
+[207]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 17--18
 []\T1/cmtt/m/n/12 The root cause is that yaml.dump() is called without an expli
 cit schema or
@@ -32530,7 +32361,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[204]
+[208]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -33532,7 +33363,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[205]
+[209]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -33738,7 +33569,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[206]
+[210]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -33818,7 +33649,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[207]
+[211]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -33862,7 +33693,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[208]
+[212]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -33873,7 +33704,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[209]
+[213]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -33945,7 +33776,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[210]) (./chapters/BUG/BUG-023.tex
+[214]) (./chapters/BUG/BUG-023.tex
 Overfull \hbox (35.88116pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-023: Audit Log File Grows Indefinitely Without
  []
@@ -34065,7 +33896,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[211]
+[215]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -34109,7 +33940,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[212]
+[216]
 Overfull \hbox (47.08499pt too wide) in paragraph at lines 92--101
 []\T1/cmtt/m/n/12 | Metric | Per Turn | Per 100 Turns | Per 1000 Turns | |---|-
 --|---|---| | logToolUse
@@ -34254,7 +34085,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[213]
+[217]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -34265,7 +34096,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[214]
+[218]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -34276,7 +34107,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[215]
+[219]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 247--252
 []\T1/cmtt/m/n/12 What this fixes: 1. Automatic rotation at configurable size (
 default 10 MB)
@@ -34331,7 +34162,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[216]
+[220]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -34375,7 +34206,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[217]
+[221]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -34386,7 +34217,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[218]) (./chapters/BUG/BUG-024.tex
+[222]) (./chapters/BUG/BUG-024.tex
 Overfull \hbox (27.21118pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-024: File Watcher Not Cleaning Up Old/Deleted
  []
@@ -34402,7 +34233,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[219]
+[223]
 Overfull \hbox (84.12595pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 The voice server in src/voice/server.ts uses a file snapshot me
 chanism (snapshotFiles()
@@ -34539,7 +34370,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[220]
+[224]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -34669,7 +34500,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[221]
+[225]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -34937,7 +34768,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[222]
+[226]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -35047,7 +34878,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[223]
+[227]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 188--189
 []\T1/cmtt/m/n/12 This ensures that re-created files with the same mtime are st
 ill detected.
@@ -35100,7 +34931,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[224]
+[228]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 243--244
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -35113,7 +34944,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[225]
+[229]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -35124,7 +34955,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[226]) (./chapters/BUG/BUG-025.tex
+[230]) (./chapters/BUG/BUG-025.tex
 Overfull \hbox (35.88116pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-025: Console Intercept Affects Other Libraries
  []
@@ -35170,7 +35001,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[227]
+[231]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 17--18
 []\T1/cmtt/m/n/12 1. The intercept applies to ALL code in the process ^^V inclu
 ding third-party
@@ -35375,7 +35206,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[228]
+[232]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -35649,7 +35480,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[229]
+[233]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 88--93
 []\T1/cmtt/m/n/12 Once installConsoleIntercept() runs, there is no mechanism to
 : - Pause the
@@ -35764,7 +35595,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[230]
+[234]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -35808,7 +35639,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[231]
+[235]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 184--188
 []\T1/cmtt/m/n/12 What this fixes: 1. Voice server code uses explicit Logger in
 stances with
@@ -35857,7 +35688,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[232]
+[236]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -35901,7 +35732,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[233]
+[237]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -35943,7 +35774,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[234]
+[238]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -35985,7 +35816,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[235]) (./chapters/BUG/BUG-026.tex
+[239]) (./chapters/BUG/BUG-026.tex
 Overfull \hbox (35.88116pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-026: Uninitialized Variable Access ^^V `steer()`
  []
@@ -36075,7 +35906,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[236]
+[240]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -36173,7 +36004,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[237]
+[241]
 Overfull \hbox (47.08499pt too wide) in paragraph at lines 84--87
 []\T1/cmtt/m/n/12 1. Callers get no feedback: steer("Please focus on security")
  returns undefined
@@ -36362,7 +36193,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[238]
+[242]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 139--143
 []\T1/cmtt/m/n/12 What this fixes: 1. steer() now pushes a GCMessage into the c
 hannel that
@@ -36459,7 +36290,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[239]
+[243]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 201--202
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -36472,7 +36303,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[240]) (./chapters/BUG/BUG-027.tex
+[244]) (./chapters/BUG/BUG-027.tex
 Overfull \hbox (70.5611pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-027: `isGitRepo` Command Injection via Unsanitized
  []
@@ -36488,7 +36319,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[241]
+[245]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 The isGitRepo function in src/index.ts:196-203 passes a user-co
 ntrolled dir
@@ -36555,7 +36386,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[242]
+[246]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -36723,7 +36554,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[243]
+[247]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 109--110
 []\T1/cmtt/m/n/12 While Node.js's execSync does properly escape the cwd path wh
 en spawning the
@@ -36850,7 +36681,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[244]
+[248]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -36924,7 +36755,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[245]
+[249]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -36932,7 +36763,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[246]) (./chapters/BUG/BUG-028.tex
+[250]) (./chapters/BUG/BUG-028.tex
 Overfull \hbox (18.5412pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-028: Plugin Cache Stale Across Sessions ^^V No
  []
@@ -36948,7 +36779,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[247]
+[251]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 The discoverAndLoadPlugins function in src/plugins.ts:311-367 p
 erforms a full
@@ -37039,7 +36870,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[248]
+[252]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -37107,7 +36938,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[249]
+[253]
 Overfull \hbox (34.738pt too wide) in paragraph at lines 113--114
 []\T1/cmtt/m/n/12 Each call to discoverPluginDirs performs up to 3 fs.stat call
 s (one per scope).
@@ -37150,7 +36981,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[250]
+[254]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -37380,7 +37211,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[251]
+[255]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -37418,7 +37249,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[252]
+[256]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -37462,7 +37293,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[253]
+[257]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -37504,7 +37335,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[254]
+[258]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -37607,7 +37438,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[255]
+[259]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -37705,7 +37536,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[256]
+[260]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -37809,7 +37640,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[257]
+[261]
 Overfull \hbox (40.9115pt too wide) in paragraph at lines 152--157
 []\T1/cmtt/m/n/12 | Mode | Plugin memory layers loaded? | Result | |---|---|---
 | | Local (memory.ts)
@@ -37936,7 +37767,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[258]
+[262]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -37974,7 +37805,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[259]
+[263]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 289--290
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -37987,7 +37818,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[260]) (./chapters/BUG/BUG-030.tex
+[264]) (./chapters/BUG/BUG-030.tex
 Overfull \hbox (1.20123pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-030: Telemetry Metric Attributes Missing ^^V
  []
@@ -38033,7 +37864,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
 
-[261]
+[265]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 17--21
 []\T1/cmtt/m/n/12 When a tool fails, its duration is still recorded ^^V but it'
 s aggregated into
@@ -38178,7 +38009,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[262]
+[266]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -38216,7 +38047,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
 
-[263]
+[267]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 121--122
 []\T1/cmtt/m/n/12 The span itself has a status attribute (set via span.setStatu
 s()), but the
@@ -38501,7 +38332,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[264]
+[268]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -38569,7 +38400,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
 
-[265]
+[269]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -38613,7 +38444,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[266]
+[270]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -38687,7 +38518,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-15.11469pt}.
 
-[267]) (./chapters/BUG/BUG-033.tex
+[271]) (./chapters/BUG/BUG-033.tex
 Overfull \hbox (1.20123pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-033: Missing MIME Type Validation for File
  []
@@ -38771,7 +38602,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[268]
+[272]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -38973,7 +38804,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[269]
+[273]
 Overfull \hbox (90.29944pt too wide) in paragraph at lines 95--96
 []\T1/cmtt/m/n/12 This replaces path separators and special characters with _, 
 preventing ../../etc/passwd
@@ -39058,7 +38889,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[270]
+[274]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -39096,7 +38927,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[271]
+[275]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -39140,7 +38971,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[272]
+[276]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -39151,7 +38982,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[273]) (./chapters/BUG/BUG-034.tex
+[277]) (./chapters/BUG/BUG-034.tex
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 15--16
 \T1/cmtt/m/n/12 The task_tracker tool's "list" action in src/tools/task-tracker
 .ts:321-336
@@ -39212,7 +39043,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[274]
+[278]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 99--100
 []\T1/cmtt/m/n/12 Consider an agent that has been running for weeks, creating t
 asks for each
@@ -39225,7 +39056,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[275]
+[279]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 129--130
 []\T1/cmtt/m/n/12 At roughly 80 characters per line + overhead, 150 tasks = ~12
 ,000 characters
@@ -39286,7 +39117,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[276]
+[280]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -39324,7 +39155,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[277]
+[281]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -39362,7 +39193,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[278]
+[282]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 299--300
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -39375,7 +39206,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[279]
+[283]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -39386,7 +39217,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[280]
+[284]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -39397,7 +39228,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[281]) (./chapters/BUG/BUG-035.tex
+[285]) (./chapters/BUG/BUG-035.tex
 Overfull \hbox (1.20123pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 BUG-035: Environment Config DeepMerge Modifies
  []
@@ -39451,7 +39282,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[282]
+[286]
 Overfull \hbox (28.56451pt too wide) in paragraph at lines 17--21
 []\T1/cmtt/m/n/12 Specifically: 1. const result = { ...base } creates new top-l
 evel properties
@@ -39610,7 +39441,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[283]
+[287]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC†).
 
@@ -39892,7 +39723,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[284]
+[288]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 134--135
 []\T1/cmtt/m/n/12 In loadEnvConfig, the base object comes from loadYamlFile whi
 ch reads from
@@ -40025,7 +39856,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[285]
+[289]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -40125,7 +39956,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[286]
+[290]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 258--259
 \T1/cmtt/m/n/12 The fix is verified through unit tests and integration tests th
 at confirm the
@@ -40138,7 +39969,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[287]
+[291]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -40149,7 +39980,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[288]
+[292]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -40160,7 +39991,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[289])) (./chapters/ERR/chapter.tex
+[293])) (./chapters/ERR/chapter.tex
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -40168,7 +39999,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[290]
+[294]
 Chapter 3.
 
 Overfull \hbox (53.25848pt too wide) in paragraph at lines 4--5
@@ -40183,72 +40014,28 @@ propagation
  []
 
 
-LaTeX Warning: Hyper reference `sec:err-001' on page 291 undefined on input lin
-e 7.
-
-
 Overfull \hbox (2.37778pt too wide) in paragraph at lines 7--8
-[]\T1/cmtt/m/n/12 ERR-001: [][]fix/ERR-001-silent-catch-main-error-handler[][] 
+[][][]\T1/cmtt/m/n/12 ERR-001[][]: fix/ERR-001-silent-catch-main-error-handler 
 | [][][View Diff on
  []
 
 
-LaTeX Warning: Hyper reference `sec:err-002' on page 291 undefined on input lin
-e 8.
-
-
 Overfull \hbox (2.37778pt too wide) in paragraph at lines 8--9
-[]\T1/cmtt/m/n/12 ERR-002: [][]fix/ERR-002-hooks-error-suppression[][] | [][][V
+[][][]\T1/cmtt/m/n/12 ERR-002[][]: fix/ERR-002-hooks-error-suppression | [][][V
 iew Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:err-004' on page 291 undefined on input lin
-e 9.
-
-
-LaTeX Warning: Hyper reference `sec:err-006' on page 291 undefined on input lin
-e 10.
-
-
 Overfull \hbox (33.24524pt too wide) in paragraph at lines 10--11
-[]\T1/cmtt/m/n/12 ERR-006: [][]fix/ERR-006-telemetry-errors-break-agent[][] | [
+[][][]\T1/cmtt/m/n/12 ERR-006[][]: fix/ERR-006-telemetry-errors-break-agent | [
 ][][View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:err-007' on page 291 undefined on input lin
-e 11.
-
-
-LaTeX Warning: Hyper reference `sec:err-008' on page 291 undefined on input lin
-e 12.
-
-
 Overfull \hbox (14.72476pt too wide) in paragraph at lines 12--13
-[]\T1/cmtt/m/n/12 ERR-008: [][]fix/ERR-008-git-machine-import-errors[][] | [][]
+[][][]\T1/cmtt/m/n/12 ERR-008[][]: fix/ERR-008-git-machine-import-errors | [][]
 [View Diff on GitHub][][] 
  []
-
-
-LaTeX Warning: Hyper reference `sec:err-009' on page 291 undefined on input lin
-e 13.
-
-
-LaTeX Warning: Hyper reference `sec:err-010' on page 291 undefined on input lin
-e 14.
-
-
-LaTeX Warning: Hyper reference `sec:err-011' on page 291 undefined on input lin
-e 15.
-
-
-LaTeX Warning: Hyper reference `sec:err-012' on page 291 undefined on input lin
-e 16.
-
-
-LaTeX Warning: Hyper reference `sec:err-013' on page 291 undefined on input lin
-e 17.
 
 (./chapters/ERR/ERR-001.tex
 ! Extra alignment tab has been changed to \cr.
@@ -40301,7 +40088,7 @@ Overfull \hbox (3.87054pt too wide) in paragraph at lines 13--14
 ilures, yet
  []
 
-[291
+[295
 
 ]
 Overfull \hbox (152.03436pt too wide) in paragraph at lines 15--16
@@ -40424,7 +40211,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[292]
+[296]
 Overfull \hbox (8.55127pt too wide) in paragraph at lines 61--62
 [][][]\T1/cmtt/m/n/12 src/index.ts[][] ^^V Lines 822-831, SIGTERM handler and m
 ain() finally block 
@@ -40493,7 +40280,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[293]
+[297]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 15--16
 []\T1/cmtt/m/n/12 The same pattern appears in [][]src/sdk.ts[][] for SDK-based 
 post_response hooks and
@@ -40584,7 +40371,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[294]
+[298]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -40664,7 +40451,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[295]) (./chapters/ERR/ERR-004.tex
+[299]) (./chapters/ERR/ERR-004.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -40753,7 +40540,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[296]
+[300]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 41--42
 []\T1/cmtt/m/n/12 The err.message field is often generic (e.g., ``Unexpected to
 ken'' from a YAML
@@ -40848,7 +40635,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[297]) (./chapters/ERR/ERR-006.tex
+[301]) (./chapters/ERR/ERR-006.tex
 Overfull \hbox (70.5611pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 ERR-006: Telemetry Errors Break Agent ^^V Logs Suppressed
 | 
@@ -40936,7 +40723,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[298]
+[302]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -41004,7 +40791,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[299]) (./chapters/ERR/ERR-007.tex
+[303]) (./chapters/ERR/ERR-007.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -41051,7 +40838,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[300]
+[304]
 Overfull \hbox (47.08499pt too wide) in paragraph at lines 15--16
 []\T1/cmtt/m/n/12 The same pattern appears at line 445 (load agent failure), li
 ne 479 (hook-blocked
@@ -41136,7 +40923,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[301]
+[305]
 Overfull \hbox (71.77896pt too wide) in paragraph at lines 72--73
 \T1/cmtt/m/n/12 Tests verify that the shutdown helper is defined in [][]index.t
 s[][] and that process.exit(1)
@@ -41193,7 +40980,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[302]
+[306]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -41273,7 +41060,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[303]) (./chapters/ERR/ERR-009.tex
+[307]) (./chapters/ERR/ERR-009.tex
 Overfull \hbox (35.88116pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 ERR-009: Error in Error Handler ^^V Console Intercept| 
  []
@@ -41372,7 +41159,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[304]
+[308]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -41424,7 +41211,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[305]
+[309]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 13--14
 \T1/cmtt/m/n/12 In [][]src/tool-loader.ts[][], after a declarative tool script 
 exits successfully,
@@ -41527,7 +41314,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[306]) (./chapters/ERR/ERR-011.tex
+[310]) (./chapters/ERR/ERR-011.tex
 Overfull \hbox (44.55115pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 ERR-011: Channel Pull After Finish Returns Undefined| 
  []
@@ -41552,7 +41339,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[307]
+[311]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 13--14
 \T1/cmtt/m/n/12 In [][]src/sdk.ts[][], the Channel implementation's pull() meth
 od returns { value:
@@ -41629,7 +41416,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[308]
+[312]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -41687,7 +41474,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[309]
+[313]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 13--14
 \T1/cmtt/m/n/12 In [][]src/tool-loader.ts[][], a declarative tool script's exit
  code is checked only
@@ -41818,7 +41605,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[310]
+[314]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -41870,7 +41657,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[311]
+[315]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 13--14
 \T1/cmtt/m/n/12 In [][]src/tools/task-tracker.ts[][], when the end action is ca
 lled on a task, the
@@ -42003,7 +41790,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[312]
+[316]
 Overfull \hbox (65.60547pt too wide) in paragraph at lines 44--45
 \T1/cmtt/m/n/12 The fix builds an updated task object without mutating the orig
 inal, then atomically
@@ -42046,7 +41833,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[313])) (./chapters/RACE/chapter.tex
+[317])) (./chapters/RACE/chapter.tex
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -42054,7 +41841,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[314]
+[318]
 Chapter 4.
 
 Overfull \hbox (53.25848pt too wide) in paragraph at lines 4--5
@@ -42069,72 +41856,28 @@ efect and its
  []
 
 
-LaTeX Warning: Hyper reference `sec:race-001' on page 315 undefined on input li
-ne 7.
-
-
-LaTeX Warning: Hyper reference `sec:race-002' on page 315 undefined on input li
-ne 8.
-
-
-LaTeX Warning: Hyper reference `sec:race-003' on page 315 undefined on input li
-ne 9.
-
-
 Overfull \hbox (2.37778pt too wide) in paragraph at lines 9--10
-[]\T1/cmtt/m/n/12 RACE-003: [][]fix/RACE-003-schedule-atomic-write[][] | [][][V
+[][][]\T1/cmtt/m/n/12 RACE-003[][]: fix/RACE-003-schedule-atomic-write | [][][V
 iew Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:race-004' on page 315 undefined on input li
-ne 10.
-
-
 Overfull \hbox (20.89825pt too wide) in paragraph at lines 10--11
-[]\T1/cmtt/m/n/12 RACE-004: [][]fix/RACE-004-channel-push-after-abort[][] | [][
+[][][]\T1/cmtt/m/n/12 RACE-004[][]: fix/RACE-004-channel-push-after-abort | [][
 ][View Diff on GitHub][][] 
  []
-
-
-LaTeX Warning: Hyper reference `sec:race-005' on page 315 undefined on input li
-ne 11.
-
-
-LaTeX Warning: Hyper reference `sec:race-006' on page 315 undefined on input li
-ne 12.
-
-
-LaTeX Warning: Hyper reference `sec:race-007' on page 315 undefined on input li
-ne 13.
 
 
 Overfull \hbox (20.89825pt too wide) in paragraph at lines 13--14
-[]\T1/cmtt/m/n/12 RACE-007: [][]fix/RACE-007-websocket-broadcast-race[][] | [][
+[][][]\T1/cmtt/m/n/12 RACE-007[][]: fix/RACE-007-websocket-broadcast-race | [][
 ][View Diff on GitHub][][] 
  []
-
-
-LaTeX Warning: Hyper reference `sec:race-008' on page 315 undefined on input li
-ne 14.
-
-
-LaTeX Warning: Hyper reference `sec:race-009' on page 315 undefined on input li
-ne 15.
 
 
 Overfull \hbox (20.89825pt too wide) in paragraph at lines 15--16
-[]\T1/cmtt/m/n/12 RACE-009: [][]fix/RACE-009-file-system-interleaving[][] | [][
+[][][]\T1/cmtt/m/n/12 RACE-009[][]: fix/RACE-009-file-system-interleaving | [][
 ][View Diff on GitHub][][] 
  []
-
-
-LaTeX Warning: Hyper reference `sec:race-010' on page 315 undefined on input li
-ne 16.
-
-
-LaTeX Warning: Hyper reference `sec:race-011' on page 315 undefined on input li
-ne 17.
 
 (./chapters/RACE/RACE-001.tex
 Overfull \hbox (35.88116pt too wide) in paragraph at lines 1--1
@@ -42192,7 +41935,7 @@ Overfull \hbox (3.87054pt too wide) in paragraph at lines 13--14
  operations
  []
 
-[315
+[319
 
 ]
 
@@ -42298,7 +42041,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[316]) (./chapters/RACE/RACE-002.tex
+[320]) (./chapters/RACE/RACE-002.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -42319,7 +42062,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[317]
+[321]
 Overfull \hbox (53.25848pt too wide) in paragraph at lines 13--14
 \T1/cmtt/m/n/12 The addPluginToManifest function in [][]src/plugin-cli.ts[][] p
 erforms a read-modify-write
@@ -42434,7 +42177,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[318]
+[322]
 Overfull \hbox (20.89825pt too wide) in paragraph at lines 69--70
 [][][]\T1/cmtt/m/n/12 src/plugin-cli.ts[][] ^^V addPluginToManifest() and remov
 ePluginFromManifest() 
@@ -42461,7 +42204,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[319]
+[323]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 13--14
 \T1/cmtt/m/n/12 The updateScheduleMeta function in [][]src/schedules.ts[][] rea
 ds a schedule file,
@@ -42558,7 +42301,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[320]) (./chapters/RACE/RACE-004.tex
+[324]) (./chapters/RACE/RACE-004.tex
 Overfull \hbox (35.88116pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 RACE-004: Channel Push After Abort / Agent End Race| 
  []
@@ -42615,7 +42358,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[321]
+[325]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -42689,7 +42432,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[322]) (./chapters/RACE/RACE-005.tex
+[326]) (./chapters/RACE/RACE-005.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -42736,7 +42479,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[323]
+[327]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -42822,7 +42565,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[324]) (./chapters/RACE/RACE-006.tex
+[328]) (./chapters/RACE/RACE-006.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -42899,7 +42642,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[325]
+[329]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -42937,7 +42680,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[326]) (./chapters/RACE/RACE-007.tex
+[330]) (./chapters/RACE/RACE-007.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -43014,7 +42757,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[327]
+[331]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -43062,7 +42805,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[328]
+[332]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 13--14
 \T1/cmtt/m/n/12 In [][]src/sdk.ts[][], the query() function starts an async IIF
 E immediately, but the
@@ -43165,7 +42908,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[329]
+[333]
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 78--79
 \T1/cmtt/m/n/12 Tests verify sessionId resolves to the correct value after init
 ialization: 
@@ -43178,7 +42921,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[330]) (./chapters/RACE/RACE-009.tex
+[334]) (./chapters/RACE/RACE-009.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -43315,7 +43058,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[331]
+[335]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -43383,7 +43126,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[332]) (./chapters/RACE/RACE-010.tex
+[336]) (./chapters/RACE/RACE-010.tex
 Overfull \hbox (1.20123pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 RACE-010: Process Exit During Async Operations| 
  []
@@ -43500,7 +43243,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[333]
+[337]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -43538,7 +43281,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[334]) (./chapters/RACE/RACE-011.tex
+[338]) (./chapters/RACE/RACE-011.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -43645,7 +43388,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[335]
+[339]
 Overfull \hbox (28.56451pt too wide) in paragraph at lines 37--38
 \T1/cmtt/m/n/12 A single process-level handler with reentrancy guard and consol
 idated cleanup: 
@@ -43694,7 +43437,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[336])) (./chapters/TYPE/chapter.tex
+[340])) (./chapters/TYPE/chapter.tex
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -43702,7 +43445,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[337]
+[341]
 Chapter 5.
 
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 4--5
@@ -43717,116 +43460,68 @@ akness and
  []
 
 
-LaTeX Warning: Hyper reference `sec:type-002' on page 338 undefined on input li
-ne 7.
-
-
 Overfull \hbox (14.72476pt too wide) in paragraph at lines 7--8
-[]\T1/cmtt/m/n/12 TYPE-002: [][]fix/TYPE-002-remove-as-any-in-model-handling[][
-] | [][][View Diff on
+[][][]\T1/cmtt/m/n/12 TYPE-002[][]: fix/TYPE-002-remove-as-any-in-model-handlin
+g | [][][View Diff on
  []
-
-
-LaTeX Warning: Hyper reference `sec:type-003' on page 338 undefined on input li
-ne 8.
 
 
 Overfull \hbox (2.37778pt too wide) in paragraph at lines 8--9
-[]\T1/cmtt/m/n/12 TYPE-003: [][]fix/TYPE-003-constrain-generic-in-toAgentTool[]
-[] | [][][View Diff
+[][][]\T1/cmtt/m/n/12 TYPE-003[][]: fix/TYPE-003-constrain-generic-in-toAgentTo
+ol | [][][View Diff
  []
-
-
-LaTeX Warning: Hyper reference `sec:type-004' on page 338 undefined on input li
-ne 9.
 
 
 Overfull \hbox (20.89825pt too wide) in paragraph at lines 9--10
-[]\T1/cmtt/m/n/12 TYPE-004: [][]fix/TYPE-004-validate-json-parse-in-task-tracke
-r[][] | [][][View Diff
+[][][]\T1/cmtt/m/n/12 TYPE-004[][]: fix/TYPE-004-validate-json-parse-in-task-tr
+acker | [][][View Diff
  []
 
 
-LaTeX Warning: Hyper reference `sec:type-006' on page 338 undefined on input li
-ne 10.
-
-
 Overfull \hbox (14.72476pt too wide) in paragraph at lines 10--11
-[]\T1/cmtt/m/n/12 TYPE-006: [][]fix/TYPE-006-type-constraint-options[][] | [][]
+[][][]\T1/cmtt/m/n/12 TYPE-006[][]: fix/TYPE-006-type-constraint-options | [][]
 [View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:type-007' on page 338 undefined on input li
-ne 11.
-
-
 Overfull \hbox (2.37778pt too wide) in paragraph at lines 11--12
-[]\T1/cmtt/m/n/12 TYPE-007: [][]fix/TYPE-007-remove-as-any-from-event-handler[]
-[] | [][][View Diff
+[][][]\T1/cmtt/m/n/12 TYPE-007[][]: fix/TYPE-007-remove-as-any-from-event-handl
+er | [][][View Diff
  []
 
 
-LaTeX Warning: Hyper reference `sec:type-008' on page 338 undefined on input li
-ne 12.
-
-
 Overfull \hbox (27.07175pt too wide) in paragraph at lines 12--13
-[]\T1/cmtt/m/n/12 TYPE-008: [][]fix/TYPE-008-type-hook-handler-context[][] | []
+[][][]\T1/cmtt/m/n/12 TYPE-008[][]: fix/TYPE-008-type-hook-handler-context | []
 [][View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:type-009' on page 338 undefined on input li
-ne 13.
-
-
-LaTeX Warning: Hyper reference `sec:type-011' on page 338 undefined on input li
-ne 14.
-
-
 Overfull \hbox (8.55127pt too wide) in paragraph at lines 14--15
-[]\T1/cmtt/m/n/12 TYPE-011: [][]fix/TYPE-011-clear-tool-result-type[][] | [][][
+[][][]\T1/cmtt/m/n/12 TYPE-011[][]: fix/TYPE-011-clear-tool-result-type | [][][
 View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:type-012' on page 338 undefined on input li
-ne 15.
-
-
 Overfull \hbox (39.41873pt too wide) in paragraph at lines 15--16
-[]\T1/cmtt/m/n/12 TYPE-012: [][]fix/TYPE-012-validate-nan-in-coerceValue[][] | 
+[][][]\T1/cmtt/m/n/12 TYPE-012[][]: fix/TYPE-012-validate-nan-in-coerceValue | 
 [][][View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:type-013' on page 338 undefined on input li
-ne 16.
-
-
 Overfull \hbox (45.59222pt too wide) in paragraph at lines 16--17
-[]\T1/cmtt/m/n/12 TYPE-013: [][]fix/TYPE-013-channel-iterator-result-type[][] |
+[][][]\T1/cmtt/m/n/12 TYPE-013[][]: fix/TYPE-013-channel-iterator-result-type |
  [][][View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:type-014' on page 338 undefined on input li
-ne 17.
-
-
 Overfull \hbox (33.24524pt too wide) in paragraph at lines 17--18
-[]\T1/cmtt/m/n/12 TYPE-014: [][]fix/TYPE-014-typebox-runtime-validation[][] | [
+[][][]\T1/cmtt/m/n/12 TYPE-014[][]: fix/TYPE-014-typebox-runtime-validation | [
 ][][View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:type-015' on page 338 undefined on input li
-ne 18.
-
-
 Overfull \hbox (20.89825pt too wide) in paragraph at lines 18--19
-[]\T1/cmtt/m/n/12 TYPE-015: [][]fix/TYPE-015-add-missing-type-exports[][] | [][
+[][][]\T1/cmtt/m/n/12 TYPE-015[][]: fix/TYPE-015-add-missing-type-exports | [][
 ][View Diff on GitHub][][] 
  []
 
@@ -43875,7 +43570,7 @@ Overfull \hbox (28.56451pt too wide) in paragraph at lines 13--14
  mutation could
  []
 
-[338
+[342
 
 ]
 
@@ -43983,7 +43678,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[339]
+[343]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -44051,7 +43746,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[340]) (./chapters/TYPE/TYPE-004.tex
+[344]) (./chapters/TYPE/TYPE-004.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -44163,7 +43858,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[341])
+[345])
 Overfull \hbox (34.738pt too wide) in paragraph at lines 64--26
 \T1/cmtt/m/n/12 Invalid JSON now returns an empty store instead of silently pro
 ducing incorrect
@@ -44190,7 +43885,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[342]
+[346]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 13--14
 \T1/cmtt/m/n/12 At [][]src/sdk.ts:284[][], the constraints option is cast as an
 y before accessing its
@@ -44323,7 +44018,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[343]) (./chapters/TYPE/TYPE-007.tex
+[347]) (./chapters/TYPE/TYPE-007.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -44369,7 +44064,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[344]
+[348]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -44477,7 +44172,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[345]
+[349]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 13--14
 \T1/cmtt/m/n/12 At [][]src/plugin-sdk.ts:8[][], hook handlers receive context a
 s Record<string, any>.
@@ -44598,7 +44293,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[346]) (./chapters/TYPE/TYPE-009.tex
+[350]) (./chapters/TYPE/TYPE-009.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -44687,7 +44382,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[347]) (./chapters/TYPE/TYPE-011.tex
+[351]) (./chapters/TYPE/TYPE-011.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -44722,7 +44417,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[348]
+[352]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -44832,7 +44527,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[349]
+[353]
 Overfull \hbox (61.89111pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 TYPE-012: Config Property Type Not Enforced at Runtime| 
  []
@@ -44937,7 +44632,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[350])
+[354])
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 58--38
 \T1/cmtt/m/n/12 Invalid number values now return undefined instead of NaN, with
  a warning.
@@ -44993,7 +44688,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[351]
+[355]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -45067,7 +44762,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[352])
+[356])
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 75--40
 \T1/cmtt/m/n/12 No more as any casts needed ^^V the type correctly allows undef
 ined when done
@@ -45178,7 +44873,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[353]
+[357]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -45256,7 +44951,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[354]
+[358]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -45361,7 +45056,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[355]
+[359]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -45369,7 +45064,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[356]
+[360]
 Chapter 6.
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
@@ -45403,22 +45098,6 @@ Overfull \hbox (40.9115pt too wide) in paragraph at lines 4--5
 \T1/cmtt/m/n/12 repository. Each section corresponds to a single networking or 
 transport defect
  []
-
-
-LaTeX Warning: Hyper reference `sec:net-002' on page 357 undefined on input lin
-e 7.
-
-
-LaTeX Warning: Hyper reference `sec:net-005' on page 357 undefined on input lin
-e 8.
-
-
-LaTeX Warning: Hyper reference `sec:net-009' on page 357 undefined on input lin
-e 9.
-
-
-LaTeX Warning: Hyper reference `sec:net-010' on page 357 undefined on input lin
-e 10.
 
 (./chapters/NET/NET-002.tex
 ! Extra alignment tab has been changed to \cr.
@@ -45490,7 +45169,7 @@ or specify an encoding such as \usepackage [latin1]{inputenc}
 in the document preamble.
 Alternatively, save the file in UTF-8 using your editor or another tool
 
-[357
+[361
 
 ]
 
@@ -45552,7 +45231,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[358]
+[362]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 13--14
 \T1/cmtt/m/n/12 The fetch() calls throughout the codebase have no timeout confi
 guration. If
@@ -45679,7 +45358,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[359]
+[363]
 ! Misplaced alignment tab character &.
 <inserted text> Network &
                           Connectivity Fixes
@@ -45699,7 +45378,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[360]) (./chapters/NET/NET-009.tex
+[364]) (./chapters/NET/NET-009.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -45800,7 +45479,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[361]) (./chapters/NET/NET-010.tex
+[365]) (./chapters/NET/NET-010.tex
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
@@ -45865,7 +45544,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[362]
+[366]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -45964,7 +45643,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[363]
+[367]
 Chapter 7.
 
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 4--5
@@ -45979,22 +45658,14 @@ ttleneck and
  []
 
 
-LaTeX Warning: Hyper reference `sec:perf-001' on page 364 undefined on input li
-ne 7.
-
-
 Overfull \hbox (39.41873pt too wide) in paragraph at lines 7--8
-[]\T1/cmtt/m/n/12 PERF-001: [][]fix/PERF-001-sync-io-event-loop-blocking[][] | 
+[][][]\T1/cmtt/m/n/12 PERF-001[][]: fix/PERF-001-sync-io-event-loop-blocking | 
 [][][View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:perf-002' on page 364 undefined on input li
-ne 8.
-
-
 Overfull \hbox (33.24524pt too wide) in paragraph at lines 8--9
-[]\T1/cmtt/m/n/12 PERF-002: [][]fix/PERF-002-voice-server-memory-growth[][] | [
+[][][]\T1/cmtt/m/n/12 PERF-002[][]: fix/PERF-002-voice-server-memory-growth | [
 ][][View Diff on GitHub][][] 
  []
 
@@ -46078,7 +45749,7 @@ or specify an encoding such as \usepackage [latin1]{inputenc}
 in the document preamble.
 Alternatively, save the file in UTF-8 using your editor or another tool
 
-[364
+[368
 
 ]
 Overfull \hbox (53.25848pt too wide) in paragraph at lines 33--34
@@ -46159,7 +45830,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[365]) (./chapters/PERF/PERF-002.tex
+[369]) (./chapters/PERF/PERF-002.tex
 Overfull \hbox (18.5412pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 PERF-002: Unbounded Memory Growth in Voice Server
  []
@@ -46222,7 +45893,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[366]
+[370]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -46296,7 +45967,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[367]
+[371]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -46304,7 +45975,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[368])) (./chapters/CONC/chapter.tex
+[372])) (./chapters/CONC/chapter.tex
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -46312,7 +45983,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[369]
+[373]
 Chapter 8.
 
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 4--5
@@ -46327,22 +45998,14 @@ o a single
  []
 
 
-LaTeX Warning: Hyper reference `sec:conc-001' on page 370 undefined on input li
-ne 7.
-
-
 Overfull \hbox (33.24524pt too wide) in paragraph at lines 7--8
-[]\T1/cmtt/m/n/12 CONC-001: [][]fix/CONC-001-shared-state-without-locks[][] | [
+[][][]\T1/cmtt/m/n/12 CONC-001[][]: fix/CONC-001-shared-state-without-locks | [
 ][][View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:conc-002' on page 370 undefined on input li
-ne 8.
-
-
 Overfull \hbox (2.37778pt too wide) in paragraph at lines 8--9
-[]\T1/cmtt/m/n/12 CONC-002: [][]fix/CONC-002-async-hook-execution-ordering[][] 
+[][][]\T1/cmtt/m/n/12 CONC-002[][]: fix/CONC-002-async-hook-execution-ordering 
 | [][][View Diff on
  []
 
@@ -46424,7 +46087,7 @@ Overfull \hbox (10.04404pt too wide) in paragraph at lines 20--21
 ared mutable
  []
 
-[370
+[374
 
 ]
 
@@ -46481,7 +46144,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[371]
+[375]
 Overfull \hbox (53.25848pt too wide) in paragraph at lines 69--70
 \T1/cmtt/m/n/12 The fix replaces the lazy-initialization pattern with eagerly-c
 reated module-level
@@ -46572,7 +46235,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[372]) (./chapters/CONC/CONC-002.tex
+[376]) (./chapters/CONC/CONC-002.tex
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -46583,7 +46246,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[373]
+[377]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 14--15
 \T1/cmtt/m/n/12 The executeHook function in src/hooks.ts spawns a child process
  and races a
@@ -46668,7 +46331,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[374]
+[378]
 Overfull \hbox (28.56451pt too wide) in paragraph at lines 49--50
 []\T1/cmtt/m/n/12 If the close event and setTimeout fire in the same microtask 
 tick, both reject
@@ -46723,7 +46386,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[375]
+[379]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 104--105
 []\T1/cmtt/m/n/12 The key change is that all exit paths---timeout, error, close
 ---route through
@@ -46742,7 +46405,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[376])) (./chapters/CONFIG/chapter.tex
+[380])) (./chapters/CONFIG/chapter.tex
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -46750,7 +46413,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[377]
+[381]
 Chapter 9.
 
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 4--5
@@ -46765,42 +46428,26 @@ ds to a single
  []
 
 
-LaTeX Warning: Hyper reference `sec:config-002' on page 378 undefined on input 
-line 7.
-
-
 Overfull \hbox (27.07175pt too wide) in paragraph at lines 7--8
-[]\T1/cmtt/m/n/12 CONFIG-002: [][]fix/CONFIG-002-incomplete-agent-yaml[][] | []
+[][][]\T1/cmtt/m/n/12 CONFIG-002[][]: fix/CONFIG-002-incomplete-agent-yaml | []
 [][View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:config-004' on page 378 undefined on input 
-line 8.
-
-
 Overfull \hbox (39.41873pt too wide) in paragraph at lines 8--9
-[]\T1/cmtt/m/n/12 CONFIG-004: [][]fix/CONFIG-004-graceful-missing-config[][] | 
+[][][]\T1/cmtt/m/n/12 CONFIG-004[][]: fix/CONFIG-004-graceful-missing-config | 
 [][][View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:config-009' on page 378 undefined on input 
-line 9.
-
-
 Overfull \hbox (14.72476pt too wide) in paragraph at lines 9--10
-[]\T1/cmtt/m/n/12 CONFIG-009: [][]fix/CONFIG-009-gitclaw-env-support[][] | [][]
+[][][]\T1/cmtt/m/n/12 CONFIG-009[][]: fix/CONFIG-009-gitclaw-env-support | [][]
 [View Diff on GitHub][][] 
  []
 
 
-LaTeX Warning: Hyper reference `sec:config-010' on page 378 undefined on input 
-line 10.
-
-
 Overfull \hbox (45.59222pt too wide) in paragraph at lines 10--11
-[]\T1/cmtt/m/n/12 CONFIG-010: [][]fix/CONFIG-010-model-constraints-naming[][] |
+[][][]\T1/cmtt/m/n/12 CONFIG-010[][]: fix/CONFIG-010-model-constraints-naming |
  [][][View Diff on GitHub][][] 
  []
 
@@ -46885,7 +46532,7 @@ l.22 \begin{lstlisting}[language=yaml]
 The language is not loadable. Try typing  <return>  to proceed.
 If that doesn't work, type  X <return>  to quit.
 
-[378
+[382
 
 ]
 
@@ -47079,7 +46726,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[379]
+[383]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -47118,7 +46765,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[380]
+[384]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 14--15
 \T1/cmtt/m/n/12 The loadAgent() function in src/loader.ts throws a generic YAML
  parse error
@@ -47257,7 +46904,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[381]
+[385]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -47295,7 +46942,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[382]
+[386]
 Overfull \hbox (20.89825pt too wide) in paragraph at lines 99--100
 []\T1/cmtt/m/n/12 File not found: Could not read agent.yaml at <path>. Run 'git
 claw --dir
@@ -47320,7 +46967,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[383]) (./chapters/CONFIG/CONFIG-009.tex
+[387]) (./chapters/CONFIG/CONFIG-009.tex
 Overfull \hbox (9.87122pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 CONFIG-009: GITCLAW_ENV Only Partially Supported| 
  []
@@ -47404,7 +47051,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[384]
+[388]
 Overfull \hbox (47.08499pt too wide) in paragraph at lines 39--40
 []\T1/cmtt/m/n/12 There was no validation of the environment name---any string 
 passed as GITCLAW_ENV
@@ -47495,7 +47142,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[385]) (./chapters/CONFIG/CONFIG-010.tex
+[389]) (./chapters/CONFIG/CONFIG-010.tex
 Overfull \hbox (18.5412pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 CONFIG-010: Model Constraints Inconsistent Naming| 
  []
@@ -47537,7 +47184,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[386]
+[390]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 16--17
 []\T1/cmtt/m/n/12 The fix introduces a normalization function that maps both na
 ming conventions
@@ -47622,7 +47269,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[387]
+[391]
 Overfull \hbox (51.76572pt too wide) in paragraph at lines 57--58
 []\T1/cmtt/m/n/12 Silent precedence: If both maxTokens and max_tokens are provi
 ded, max_tokens
@@ -47701,7 +47348,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[388])) (./chapters/CQ/chapter.tex
+[392])) (./chapters/CQ/chapter.tex
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -47709,7 +47356,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[389]
+[393]
 Chapter 10.
 
 Overfull \hbox (34.738pt too wide) in paragraph at lines 4--5
@@ -47722,14 +47369,6 @@ Overfull \hbox (10.04404pt too wide) in paragraph at lines 4--5
 \T1/cmtt/m/n/12 in the GitAgent repository. Each section corresponds to a singl
 e issue and
  []
-
-
-LaTeX Warning: Hyper reference `sec:cq-012' on page 390 undefined on input line
- 7.
-
-
-LaTeX Warning: Hyper reference `sec:cq-025' on page 390 undefined on input line
- 8.
 
 (./chapters/CQ/CQ-012.tex
 Overfull \hbox (34.738pt too wide) in paragraph at lines 14--15
@@ -47803,7 +47442,7 @@ or specify an encoding such as \usepackage [latin1]{inputenc}
 in the document preamble.
 Alternatively, save the file in UTF-8 using your editor or another tool
 
-[390
+[394
 
 ]
 
@@ -47915,7 +47554,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[391]
+[395]
 Overfull \hbox (125.84763pt too wide) in paragraph at lines 92--93
 [][][]\T1/cmtt/m/n/12 src/hooks.ts[][] --- added timeout?: number to HookDefini
 tion, extracted HOOK_DEFAULT_TIMEOUT 
@@ -47940,7 +47579,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[392]) (./chapters/CQ/CQ-025.tex
+[396]) (./chapters/CQ/CQ-025.tex
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 14--15
 \T1/cmtt/m/n/12 Several TypeScript files import modules that are never used in 
 the file's own
@@ -48007,7 +47646,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[393]
+[397]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -48105,7 +47744,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[394])) (./chapters/DEP/chapter.tex
+[398])) (./chapters/DEP/chapter.tex
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 84--1
 []\T1/cmtt/m/n/12 If no errors are reported, all unused imports have been succe
 ssfully removed.
@@ -48123,7 +47762,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[395]
+[399]
 Chapter 11.
 
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 4--5
@@ -48138,22 +47777,10 @@ o a single
  []
 
 
-LaTeX Warning: Hyper reference `sec:dep-001-003' on page 396 undefined on input
- line 7.
-
-
 Overfull \hbox (20.89825pt too wide) in paragraph at lines 7--8
-[]\T1/cmtt/m/n/12 DEP-001--003: [][]fix/DEP-001-003-migrate-to-yaml-v2[][] | []
+[][][]\T1/cmtt/m/n/12 DEP-001--003[][]: fix/DEP-001-003-migrate-to-yaml-v2 | []
 [][View Diff on GitHub][][] 
  []
-
-
-LaTeX Warning: Hyper reference `sec:dep-004' on page 396 undefined on input lin
-e 8.
-
-
-LaTeX Warning: Hyper reference `sec:dep-005' on page 396 undefined on input lin
-e 9.
 
 (./chapters/DEP/DEP-001-003.tex
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 14--15
@@ -48203,7 +47830,7 @@ Overfull \hbox (3.87054pt too wide) in paragraph at lines 16--17
 re removed
  []
 
-[396
+[400
 
 ]
 
@@ -48301,7 +47928,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[397]
+[401]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -48309,7 +47936,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[398]) (./chapters/DEP/DEP-004.tex
+[402]) (./chapters/DEP/DEP-004.tex
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 14--15
 \T1/cmtt/m/n/12 The package.json files field only includes ["dist", "README.md"
 ], which means
@@ -48344,7 +47971,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[399]
+[403]
 Overfull \hbox (10.04404pt too wide) in paragraph at lines 16--17
 []\T1/cmtt/m/n/12 Transitive dependencies are especially vulnerable: a minor/pa
 tch update in
@@ -48560,7 +48187,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[400]) (./chapters/DEP/DEP-005.tex
+[404]) (./chapters/DEP/DEP-005.tex
 Overfull \hbox (27.21118pt too wide) in paragraph at lines 1--1
 |[]\T1/cmtt/m/n/17.28 DEP-005: Update OpenTelemetry Dependency Versions| 
  []
@@ -48608,7 +48235,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[401]
+[405]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 16--17
 []\T1/cmtt/m/n/12 The fix aligns all OpenTelemetry dependencies with standard, 
 stable versions
@@ -48773,7 +48400,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[402])) (./chapters/FILE/chapter.tex
+[406])) (./chapters/FILE/chapter.tex
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -48781,7 +48408,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[403]
+[407]
 Chapter 12.
 
 Overfull \hbox (34.738pt too wide) in paragraph at lines 4--5
@@ -48796,12 +48423,8 @@ e issue and
  []
 
 
-LaTeX Warning: Hyper reference `sec:file-007' on page 404 undefined on input li
-ne 7.
-
-
 Overfull \hbox (39.41873pt too wide) in paragraph at lines 7--8
-[]\T1/cmtt/m/n/12 FILE-007: [][]fix/FILE-007-race-condition-dir-creation[][] | 
+[][][]\T1/cmtt/m/n/12 FILE-007[][]: fix/FILE-007-race-condition-dir-creation | 
 [][][View Diff on GitHub][][] 
  []
 
@@ -48894,7 +48517,7 @@ or specify an encoding such as \usepackage [latin1]{inputenc}
 in the document preamble.
 Alternatively, save the file in UTF-8 using your editor or another tool
 
-[404
+[408
 
 ]
 
@@ -49006,7 +48629,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[405]
+[409]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -49110,7 +48733,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[406])) (./chapters/LOG/chapter.tex
+[410])) (./chapters/LOG/chapter.tex
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 14.49998pt, for example:
@@ -49118,7 +48741,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[407]
+[411]
 Chapter 13.
 
 Overfull \hbox (53.25848pt too wide) in paragraph at lines 4--5
@@ -49131,14 +48754,6 @@ Overfull \hbox (10.04404pt too wide) in paragraph at lines 4--5
 \T1/cmtt/m/n/12 in the GitAgent repository. Each section corresponds to a singl
 e issue and
  []
-
-
-LaTeX Warning: Hyper reference `sec:log-003' on page 408 undefined on input lin
-e 7.
-
-
-LaTeX Warning: Hyper reference `sec:log-006' on page 408 undefined on input lin
-e 8.
 
 (./chapters/LOG/LOG-003.tex
 Overfull \hbox (3.87054pt too wide) in paragraph at lines 14--15
@@ -49212,7 +48827,7 @@ or specify an encoding such as \usepackage [latin1]{inputenc}
 in the document preamble.
 Alternatively, save the file in UTF-8 using your editor or another tool
 
-[408
+[412
 
 ]
 Overfull \hbox (22.39102pt too wide) in paragraph at lines 29--31
@@ -49531,7 +49146,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[409]) (./chapters/LOG/LOG-006.tex
+[413]) (./chapters/LOG/LOG-006.tex
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -49542,7 +49157,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[410]
+[414]
 Overfull \hbox (16.21753pt too wide) in paragraph at lines 14--15
 \T1/cmtt/m/n/12 The voice HTTP server's /health endpoint in src/voice/server.ts
 :1990-1991 is
@@ -49639,7 +49254,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[411]
+[415]
 
 ! LaTeX Error: Invalid UTF-8 byte sequence (â\lst@FillFixed@\lst@EC€).
 
@@ -49701,7 +49316,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[412]))
+[416]))
 
 ! LaTeX Error: \begin{lstlisting} on input line 68 ended by \end{document}.
 
@@ -49709,7 +49324,7 @@ See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.128 \end{document}
+l.154 \end{document}
                     
 Your command was ignored.
 Type  I <command> <return>  to replace it with another command,
@@ -49722,67 +49337,54 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-2.49998pt}.
 
-[413] (./main.aux)
+[417] (./main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
 
 
-LaTeX Warning: There were undefined references.
-
-
 LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
 
-
-Package rerunfilecheck Warning: File `main.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `main.out':
-(rerunfilecheck)             Before: EAC6BF4A35E4504DC55936B27533946E;4096
-(rerunfilecheck)             After:  905D10A20C45E9181B2B472F64AB4E56;33774.
+Package rerunfilecheck Info: File `main.out' has not changed.
+(rerunfilecheck)             Checksum: 905D10A20C45E9181B2B472F64AB4E56;33774.
  )
 (\end occurred inside a group at level 3)
 
 ### simple group (level 3) entered at line 32 ({)
 ### semi simple group (level 2) entered at line 68 (\begingroup)
 ### simple group (level 1) entered at line 66 ({)
-### bottom level
-(\end occurred when \ifx on line 98 was incomplete) 
+### bottom level 
 Here is how much of TeX's memory you used:
- 28803 strings out of 469515
- 458580 string characters out of 5470807
- 1265863 words of memory out of 5000000
- 45385 multiletter control sequences out of 15000+600000
- 642367 words of font info for 71 fonts, out of 8000000 for 9000
+ 28903 strings out of 469515
+ 459870 string characters out of 5470807
+ 1273877 words of memory out of 5000000
+ 45482 multiletter control sequences out of 15000+600000
+ 641454 words of font info for 68 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  75i,12n,79p,973b,3511s stack positions out of 10000i,1000n,20000p,200000b,200000s
-
-pdfTeX warning (dest): name{\\@expl@@@filehook@file@pop@assign@@nnnn\040} has b
-een referenced but does not exist, replaced by a fixed one
-
-</usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/share/te
-xmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texmf-dist/fonts/
-type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texmf-dist/fonts/type1/public/am
-sfonts/cm/cmr12.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.
-pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/share
-/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/share/texmf-dist/fon
-ts/type1/public/cm-super/sfbx1440.pfb></usr/share/texmf-dist/fonts/type1/public
-/cm-super/sfbx1728.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfbx2
-488.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfit1095.pfb></usr/s
-hare/texmf-dist/fonts/type1/public/cm-super/sfrm0600.pfb></usr/share/texmf-dist
-/fonts/type1/public/cm-super/sfrm1200.pfb></usr/share/texmf-dist/fonts/type1/pu
-blic/cm-super/sfrm1440.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/s
-frm2074.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb></u
-sr/share/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb></usr/share/texmf-
-dist/fonts/type1/public/cm-super/sftt1440.pfb></usr/share/texmf-dist/fonts/type
-1/public/cm-super/sftt1728.pfb></usr/share/texmf-dist/fonts/type1/public/cm-sup
-er/sftt2488.pfb>
-Output written on main.pdf (414 pages, 2329710 bytes).
+</usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pf
+b></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/t
+exmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texmf-dist/fonts
+/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texmf-dist/fonts/type1/public/a
+msfonts/cm/cmr6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6
+.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/shar
+e/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb></usr/share/texmf-dist/fo
+nts/type1/public/cm-super/sfbx1728.pfb></usr/share/texmf-dist/fonts/type1/publi
+c/cm-super/sfbx2488.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfit
+1095.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfrm0600.pfb></usr/
+share/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></usr/share/texmf-dis
+t/fonts/type1/public/cm-super/sfrm1440.pfb></usr/share/texmf-dist/fonts/type1/p
+ublic/cm-super/sfrm1728.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/
+sfrm2074.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb></
+usr/share/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb></usr/share/texmf
+-dist/fonts/type1/public/cm-super/sftt1440.pfb></usr/share/texmf-dist/fonts/typ
+e1/public/cm-super/sftt1728.pfb></usr/share/texmf-dist/fonts/type1/public/cm-su
+per/sftt2488.pfb>
+Output written on main.pdf (417 pages, 2360831 bytes).
 PDF statistics:
- 16302 PDF objects out of 18468 (max. 8388607)
- 15687 compressed objects within 157 object streams
- 11508 named destinations out of 12825 (max. 500000)
- 113 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 16638 PDF objects out of 18468 (max. 8388607)
+ 16014 compressed objects within 161 object streams
+ 11511 named destinations out of 12825 (max. 500000)
+ 921 words of extra memory for PDF output out of 10000 (max. 10000000)
 
