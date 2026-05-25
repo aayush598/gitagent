@@ -51,6 +51,9 @@ export const taskTrackerSchema = Type.Object({
 	outcome: Type.Optional(Type.Union([Type.Literal("success"), Type.Literal("failure"), Type.Literal("partial")], { description: "Task outcome (for end)" })),
 	failure_reason: Type.Optional(Type.String({ description: "Why the task failed (for end+failure)" })),
 	skill_used: Type.Optional(Type.String({ description: "Name of skill used, if any (for end)" })),
+	limit: Type.Optional(Type.Integer({ default: 20, description: "Max tasks to return (list only)" })),
+	offset: Type.Optional(Type.Integer({ default: 0, description: "Number of tasks to skip (list only)" })),
+	status: Type.Optional(Type.Union([Type.Literal("active"), Type.Literal("succeeded"), Type.Literal("failed")], { description: "Filter by status (list only)" })),
 });
 
 export const capturePhotoSchema = Type.Object({

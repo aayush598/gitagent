@@ -319,20 +319,32 @@ export function createTaskTrackerTool(agentDir: string, gitagentDir: string): Ag
 				}
 
 				case "list": {
-					const active = store.tasks.filter((t) => t.status === "active");
-					if (active.length === 0) {
+					const limit = params.limit ?? 20;
+					const offset = params.offset ?? 0;
+					const filterStatus = params.status;
+
+					let filtered = store.tasks;
+					if (filterStatus) {
+						filtered = filtered.filter((t) => t.status === filterStatus);
+					}
+					const total = filtered.length;
+					const page = filtered.slice(offset, offset + limit);
+					const hasMore = offset + limit < total;
+
+					if (page.length === 0) {
 						return {
-							content: [{ type: "text", text: "No active tasks." }],
-							details: undefined,
+							content: [{ type: "text", text: total === 0 ? "No tasks found." : `No tasks at offset ${offset}.` }],
+							details: { total, count: 0 },
 						};
 					}
 
-					const lines = active.map((t) =>
-						`- ${t.id}: "${t.objective}" (${t.steps.length} steps, attempt #${t.attempts})`,
+					const lines = page.map((t) =>
+						`- ${t.id}: "${t.objective}" (status: ${t.status}, ${t.steps.length} steps, attempt #${t.attempts})`,
 					);
+					const summary = `Tasks (${offset + 1}-${offset + page.length} of ${total}):\n${lines.join("\n")}${hasMore ? `\n\nUse offset=${offset + limit} to see more.` : ""}`;
 					return {
-						content: [{ type: "text", text: `Active tasks:\n${lines.join("\n")}` }],
-						details: { count: active.length },
+						content: [{ type: "text", text: summary }],
+						details: { total, count: page.length, hasMore },
 					};
 				}
 
