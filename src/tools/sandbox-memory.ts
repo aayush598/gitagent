@@ -67,6 +67,9 @@ async function archiveOverflow(
 	const archiveEntry = `\n---\n_Archived: ${now.toISOString()}_\n\n${overflow}\n`;
 	await ctx.machine.writeFile(archivePath, existing + archiveEntry);
 
+	// SEC-014: Archive files are NOT git-added — old content stays on disk
+	// but is never version-controlled inside the sandbox.
+
 	return kept;
 }
 
@@ -143,6 +146,13 @@ export function createSandboxMemoryTool(ctx: SandboxContext): AgentTool<typeof m
 					],
 					details: undefined,
 				};
+			}
+
+			// SEC-014: Lightweight gc to prune dangling objects
+			try {
+				await ctx.gitMachine.run(`git gc --auto --quiet`, { cwd: ctx.repoPath });
+			} catch {
+				// Non-fatal
 			}
 
 			return {

@@ -7,6 +7,76 @@ import { memorySchema, DEFAULT_MEMORY_PATH } from "./shared.js";
 import yaml from "js-yaml";
 import type { MemoryLayerDef } from "../plugin-types.js";
 
+// ── SEC-014: Git History Protections ────────────────────────────────────
+// These limit the blast radius of any secrets that reach git history.
+// After MAX_MEMORY_COMMITS saves, history is squashed into a single commit
+// so that old secrets cannot be recovered via git log.
+
+const MAX_MEMORY_COMMITS = 50;
+
+function countMemoryCommits(cwd: string, memoryPath: string): number {
+	try {
+		const out = execSync(`git log --oneline -- "${memoryPath}" 2>/dev/null | wc -l`, {
+			cwd,
+			encoding: "utf-8",
+			stdio: "pipe",
+		}).trim();
+		return parseInt(out, 10) || 0;
+	} catch {
+		return 0;
+	}
+}
+
+function getCurrentBranch(cwd: string): string {
+	return execSync(`git rev-parse --abbrev-ref HEAD`, { cwd, encoding: "utf-8" }).trim();
+}
+
+async function squashMemoryHistory(
+	cwd: string,
+	memoryPath: string,
+	memoryFile: string,
+	commitCount: number,
+): Promise<void> {
+	// Save the content before we strip history
+	const content = await readFile(memoryFile, "utf-8");
+	const branch = getCurrentBranch(cwd);
+
+	try {
+		// Remove memory file from every commit in the branch
+		execSync(
+			`git filter-branch --force --prune-empty --index-filter 'git rm --cached --ignore-unmatch "${memoryPath}"' HEAD`,
+			{ cwd, stdio: "pipe", timeout: 60000, maxBuffer: 10 * 1024 * 1024 },
+		);
+
+		// Clean up the refs/original backup that filter-branch creates
+		execSync(`git update-ref -d refs/original/refs/heads/${branch} 2>/dev/null; rm -rf .git/refs/original`, {
+			cwd,
+			stdio: "pipe",
+		});
+
+		// Re-write the file and commit it as fresh history
+		await writeFile(memoryFile, content, "utf-8");
+		execSync(`git add "${memoryPath}" && git commit -m "Memory history squashed (${commitCount} commits → 1)"`, {
+			cwd,
+			stdio: "pipe",
+		});
+
+		// Purge all unreachable objects from .git
+		execSync(`git gc --aggressive --prune=now`, { cwd, stdio: "pipe", timeout: 120000 });
+	} catch (err: any) {
+		// Squash is best-effort — never break the save
+		console.error(`SEC-014: Memory history squash failed: ${err.message || err}`);
+	}
+}
+
+async function runGitGC(cwd: string): Promise<void> {
+	try {
+		execSync(`git gc --auto --quiet`, { cwd, stdio: "pipe", timeout: 30000 });
+	} catch {
+		// Non-fatal
+	}
+}
+
 interface MemoryLayer {
 	name: string;
 	path: string;
@@ -86,12 +156,9 @@ async function archiveOverflow(
 	const archiveEntry = `\n---\n_Archived: ${now.toISOString()}_\n\n${overflow}\n`;
 	await writeFile(archivePath, existing + archiveEntry, "utf-8");
 
-	// Try to git add the archive
-	try {
-		execSync(`git add "${archiveFile}"`, { cwd, stdio: "pipe" });
-	} catch {
-		// Not in git, that's fine
-	}
+	// SEC-014: Do NOT git-add archive files — they contain old content that
+	// may include secrets. Archive stays on disk but is not version-controlled.
+	// Previously this was: execSync(`git add "${archiveFile}"`, ...)
 
 	return kept;
 }
@@ -170,6 +237,17 @@ export function createMemoryTool(cwd: string, pluginLayers?: MemoryLayerDef[]): 
 					details: undefined,
 				};
 			}
+
+			// ── SEC-014: Git history protections ────────────────────
+			// After each save, check if memory history has grown too large.
+			// If so, squash it so old secrets cannot be recovered.
+			// Always run lightweight gc to prune loose objects.
+			const commitCount = countMemoryCommits(cwd, memoryPath);
+			if (commitCount >= MAX_MEMORY_COMMITS) {
+				await squashMemoryHistory(cwd, memoryPath, memoryFile, commitCount);
+			}
+			await runGitGC(cwd);
+			// ────────────────────────────────────────────────────────
 
 			return {
 				content: [{ type: "text", text: `Memory saved and committed: "${commitMsg}"` }],
