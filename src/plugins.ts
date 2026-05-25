@@ -131,6 +131,7 @@ export async function installPlugin(
 	version?: string,
 	force?: boolean,
 ): Promise<string> {
+	pluginCache = null;
 	await mkdir(targetDir, { recursive: true });
 
 	// Derive plugin name from source
@@ -306,6 +307,21 @@ async function discoverPluginDirs(
 	return null;
 }
 
+// ── Cache ──────────────────────────────────────────────────────────────
+
+interface PluginCacheEntry {
+	plugins: LoadedPlugin[];
+	expiresAt: number;
+}
+
+let pluginCache: PluginCacheEntry | null = null;
+const PLUGIN_CACHE_TTL = 60_000; // 60 seconds
+
+function getPluginConfigHash(pluginsConfig: Record<string, PluginConfig> | undefined): string {
+	if (!pluginsConfig) return "";
+	return JSON.stringify(Object.entries(pluginsConfig).sort(([a], [b]) => a.localeCompare(b)));
+}
+
 // ── Main entry point ───────────────────────────────────────────────────
 
 export async function discoverAndLoadPlugins(
@@ -315,6 +331,12 @@ export async function discoverAndLoadPlugins(
 ): Promise<LoadedPlugin[]> {
 	if (!pluginsConfig || Object.keys(pluginsConfig).length === 0) {
 		return [];
+	}
+
+	const now = Date.now();
+	const configHash = getPluginConfigHash(pluginsConfig);
+	if (pluginCache && pluginCache.expiresAt > now) {
+		return pluginCache.plugins;
 	}
 
 	const loaded: LoadedPlugin[] = [];
@@ -363,6 +385,7 @@ export async function discoverAndLoadPlugins(
 		loaded.push(plugin);
 	}
 
+	pluginCache = { plugins: loaded, expiresAt: Date.now() + PLUGIN_CACHE_TTL };
 	return loaded;
 }
 
