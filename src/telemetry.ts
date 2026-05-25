@@ -356,6 +356,7 @@ export function wrapToolWithOtel<T extends AgentTool<any>>(tool: T): T {
 				},
 			},
 			async (span) => {
+				let toolStatus = "ok";
 				try {
 					const result = await original.apply(this, [args, ...rest]);
 					try {
@@ -366,6 +367,7 @@ export function wrapToolWithOtel<T extends AgentTool<any>>(tool: T): T {
 					}
 					return result;
 				} catch (err) {
+					toolStatus = "error";
 					try {
 						const message = (err as Error)?.message ?? String(err);
 						span.setAttribute("tool.status", "error");
@@ -386,9 +388,10 @@ export function wrapToolWithOtel<T extends AgentTool<any>>(tool: T): T {
 						/* ignore */
 					}
 					try {
-						getToolCallCounter().add(1, { "tool.name": tool.name });
+						getToolCallCounter().add(1, { "tool.name": tool.name, "tool.status": toolStatus });
 						getToolDurationHistogram().record(durationMs, {
 							"tool.name": tool.name,
+							"tool.status": toolStatus,
 						});
 					} catch {
 						/* ignore */
