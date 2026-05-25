@@ -1,6 +1,6 @@
 import type { AgentTool, AgentToolUpdateCallback } from "@mariozechner/pi-agent-core";
 import type { SandboxContext } from "../sandbox.js";
-import { cliSchema, MAX_OUTPUT, DEFAULT_TIMEOUT, truncateOutput } from "./shared.js";
+import { cliSchema, MAX_OUTPUT, DEFAULT_TIMEOUT, truncateOutput, checkSSRF } from "./shared.js";
 
 export function createSandboxCliTool(
 	ctx: SandboxContext,
@@ -20,6 +20,8 @@ export function createSandboxCliTool(
 			onUpdate?: AgentToolUpdateCallback,
 		) => {
 			if (signal?.aborted) throw new Error("Operation aborted");
+
+			checkSSRF(command);
 
 			const timeoutSecs = timeout ?? baseTimeout;
 			let output = "";

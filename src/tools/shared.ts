@@ -1,5 +1,6 @@
 import { Type } from "@sinclair/typebox";
 import { homedir } from "os";
+import { isIPv4, isIPv6 } from "net";
 
 // ── Constants ───────────────────────────────────────────────────────────
 
@@ -65,6 +66,93 @@ export const skillLearnerSchema = Type.Object({
 	instructions: Type.Optional(Type.String({ description: "New instructions content (for update)" })),
 	override_heuristic: Type.Optional(Type.Boolean({ description: "Override skill-worthiness heuristic (for evaluate)" })),
 });
+
+// ── SSRF prevention ─────────────────────────────────────────────────────
+
+const PRIVATE_IPV4_RANGES = [
+	/^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
+	/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
+	/^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/,
+	/^192\.168\.\d{1,3}\.\d{1,3}$/,
+	/^169\.254\.\d{1,3}\.\d{1,3}$/,
+	/^0\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
+	/^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}$/,
+];
+
+const BLOCKED_HOSTNAMES = [
+	/metadata\.google\.internal/i,
+	/metadata\.google\.compute/i,
+	/kubernetes\.default\.svc/i,
+	/kubernetes\.default/i,
+	/\.internal$/i,
+	/^internal\./i,
+	/^localhost$/i,
+];
+
+const DOCKER_SOCKET_PATTERN = /--unix-socket\s+\S*\/docker\.sock/i;
+
+const NETWORK_TOOLS_PATTERN = /(?:^|\s+)(curl|wget|fetch)(?:\s+|$)/i;
+const URL_PATTERN = /https?:\/\/[^\s"'`<>]+/gi;
+
+/** Extract hostname from a URL, handling IPv6 bracket notation and user:pass@host. */
+function extractHostname(url: string): string | null {
+	const match = url.match(/https?:\/\/(?:\[([^\]]+)\]|(?:[^@\s]+@)?([^\/:\s]+))/i);
+	if (!match) return null;
+	return (match[1] || match[2]).toLowerCase();
+}
+
+export function checkSSRF(command: string): void {
+	const trimmed = command.trim();
+
+	// Block Docker socket access via --unix-socket flag
+	if (DOCKER_SOCKET_PATTERN.test(trimmed)) {
+		throw new Error("Command blocked (SSRF prevention): Docker socket access via --unix-socket is not allowed");
+	}
+
+	// Only check commands that make network requests
+	if (!NETWORK_TOOLS_PATTERN.test(trimmed)) return;
+
+	const urls = trimmed.match(URL_PATTERN);
+	if (!urls) return;
+
+	for (const url of urls) {
+		const hostname = extractHostname(url);
+		if (!hostname) continue;
+
+		// Check blocked hostnames
+		for (const pattern of BLOCKED_HOSTNAMES) {
+			if (pattern.test(hostname)) {
+				throw new Error(`Command blocked (SSRF prevention): hostname "${hostname}" is not allowed`);
+			}
+		}
+
+		// Strip brackets from IPv6 for isIPv6 check
+		const cleanHostname = hostname.replace(/^\[|\]$/g, "");
+
+		if (isIPv4(cleanHostname)) {
+			for (const range of PRIVATE_IPV4_RANGES) {
+				if (range.test(cleanHostname)) {
+					throw new Error(`Command blocked (SSRF prevention): private IP "${cleanHostname}" is not allowed`);
+				}
+			}
+		}
+
+		if (isIPv6(cleanHostname)) {
+			const h = cleanHostname.toLowerCase();
+			const isPrivate =
+				h === "::1" ||
+				h === "0:0:0:0:0:0:0:1" ||
+				h.startsWith("fc") ||
+				h.startsWith("fd") ||
+				h.startsWith("fe80") ||
+				h === "::" ||
+				h === "0:0:0:0:0:0:0:0";
+			if (isPrivate) {
+				throw new Error(`Command blocked (SSRF prevention): private IPv6 address "${cleanHostname}" is not allowed`);
+			}
+		}
+	}
+}
 
 // ── Shared helpers ──────────────────────────────────────────────────────
 

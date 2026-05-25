@@ -1,6 +1,6 @@
 import { spawn } from "child_process";
 import type { AgentTool, AgentToolUpdateCallback } from "@mariozechner/pi-agent-core";
-import { cliSchema, MAX_OUTPUT, DEFAULT_TIMEOUT } from "./shared.js";
+import { cliSchema, MAX_OUTPUT, DEFAULT_TIMEOUT, checkSSRF } from "./shared.js";
 
 export function createCliTool(cwd: string, defaultTimeout?: number): AgentTool<typeof cliSchema> {
 	const baseTimeout = defaultTimeout ?? DEFAULT_TIMEOUT;
@@ -21,6 +21,13 @@ export function createCliTool(cwd: string, defaultTimeout?: number): AgentTool<t
 			return new Promise((resolve, reject) => {
 				if (signal?.aborted) {
 					reject(new Error("Operation aborted"));
+					return;
+				}
+
+				try {
+					checkSSRF(command);
+				} catch (err) {
+					reject(err);
 					return;
 				}
 
