@@ -7,6 +7,36 @@ import { memorySchema, DEFAULT_MEMORY_PATH } from "./shared.js";
 import yaml from "js-yaml";
 import type { MemoryLayerDef } from "../plugin-types.js";
 
+// ── Git mutex for RACE-005 ─────────────────────────────────────────────
+
+class GitMutex {
+	private queue: (() => void)[] = [];
+	private locked = false;
+
+	async acquire<T>(fn: () => T): Promise<T> {
+		await new Promise<void>((resolve) => {
+			if (!this.locked) {
+				this.locked = true;
+				resolve();
+			} else {
+				this.queue.push(resolve);
+			}
+		});
+		try {
+			return fn();
+		} finally {
+			if (this.queue.length > 0) {
+				const next = this.queue.shift()!;
+				next();
+			} else {
+				this.locked = false;
+			}
+		}
+	}
+}
+
+const gitMutex = new GitMutex();
+
 interface MemoryLayer {
 	name: string;
 	path: string;
@@ -154,9 +184,11 @@ export function createMemoryTool(cwd: string, pluginLayers?: MemoryLayerDef[]): 
 			await writeFile(memoryFile, finalContent, "utf-8");
 
 			try {
-				execSync(`git add "${memoryPath}" && git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, {
-					cwd,
-					stdio: "pipe",
+				await gitMutex.acquire(() => {
+					execSync(`git add "${memoryPath}" && git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, {
+						cwd,
+						stdio: "pipe",
+					});
 				});
 			} catch (err: any) {
 				const stderr = err.stderr?.toString() || "";
