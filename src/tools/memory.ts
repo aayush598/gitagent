@@ -108,6 +108,13 @@ export function createMemoryTool(cwd: string, pluginLayers?: MemoryLayerDef[]): 
 			rawParams: unknown,
 			signal?: AbortSignal,
 		) => {
+			if (typeof rawParams !== "object" || rawParams === null) {
+				throw new Error("Invalid memory parameters: expected object");
+			}
+			const p = rawParams as Record<string, unknown>;
+			if (p.action !== "load" && p.action !== "save") {
+				throw new Error(`Invalid memory action: ${String(p.action)}`);
+			}
 			const { action, content, message } = rawParams as Static<typeof memorySchema>;
 			if (signal?.aborted) throw new Error("Operation aborted");
 
