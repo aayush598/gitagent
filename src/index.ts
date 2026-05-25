@@ -301,6 +301,12 @@ async function ensureRepo(dir: string, model?: string): Promise<string> {
 }
 
 async function main(): Promise<void> {
+	// Cleanup helper — ensures telemetry and resources are shut down before exit
+	async function shutdown(code: number): Promise<never> {
+		try { await shutdownTelemetry(); } catch { /* best-effort */ }
+		process.exit(code);
+	}
+
 	// Handle plugin subcommand: gitclaw plugin <install|list|remove|...>
 	if (process.argv[2] === "plugin") {
 		const allArgs = process.argv.slice(3);
@@ -327,13 +333,13 @@ async function main(): Promise<void> {
 		// Validate mutually exclusive flags
 		if (useSandbox) {
 			console.error(red("Error: --repo and --sandbox are mutually exclusive"));
-			process.exit(1);
+			await shutdown(1);
 		}
 
 		const token = pat || process.env.GITHUB_TOKEN || process.env.GIT_TOKEN;
 		if (!token) {
 			console.error(red("Error: --pat, GITHUB_TOKEN, or GIT_TOKEN is required with --repo"));
-			process.exit(1);
+			await shutdown(1);
 		}
 
 		// Default dir: /tmp/gitclaw/<repo-name> if no --dir given
@@ -441,8 +447,8 @@ async function main(): Promise<void> {
 	try {
 		loaded = await loadAgent(dir, model, env);
 	} catch (err: any) {
-		console.error(red(`Error: ${err.message}`));
-		process.exit(1);
+		console.error(red(`Error: ${err.stack || err.message}`));
+		await shutdown(1);
 	}
 
 	const { systemPrompt, manifest, skills, sessionId, agentDir, gitagentDir, complianceWarnings } = loaded;
@@ -476,7 +482,7 @@ async function main(): Promise<void> {
 			});
 			if (result.action === "block") {
 				console.error(red(`Session blocked by hook: ${result.reason || "no reason given"}`));
-				process.exit(1);
+				await shutdown(1);
 			}
 		} catch (err: any) {
 			console.error(red(`Hook error: ${err.message}`));
@@ -498,7 +504,7 @@ async function main(): Promise<void> {
 	if (envVar && !process.env[envVar]) {
 		console.error(red(`Error: ${envVar} environment variable is not set.`));
 		console.error(dim(`Set it with: export ${envVar}=your-key-here`));
-		process.exit(1);
+		await shutdown(1);
 	}
 
 	// Collect plugin memory layers
