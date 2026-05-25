@@ -240,11 +240,42 @@ async function handleInit(agentDir: string, args: string[]): Promise<void> {
 
 // ── agent.yaml helpers ─────────────────────────────────────────────────
 
+// ── Manifest mutex for TOCTOU prevention ───────────────────────────────
+
+class ManifestMutex {
+	private queue: (() => void)[] = [];
+	private locked = false;
+
+	async acquire<T>(fn: () => Promise<T>): Promise<T> {
+		await new Promise<void>((resolve) => {
+			if (!this.locked) {
+				this.locked = true;
+				resolve();
+			} else {
+				this.queue.push(resolve);
+			}
+		});
+		try {
+			return await fn();
+		} finally {
+			if (this.queue.length > 0) {
+				const next = this.queue.shift()!;
+				next();
+			} else {
+				this.locked = false;
+			}
+		}
+	}
+}
+
+const manifestMutex = new ManifestMutex();
+
 async function addPluginToManifest(
 	agentDir: string,
 	name: string,
 	pluginConf: Record<string, any>,
 ): Promise<void> {
+	return manifestMutex.acquire(async () => {
 	const manifestPath = join(agentDir, "agent.yaml");
 	try {
 		const raw = await readFile(manifestPath, "utf-8");
@@ -267,9 +298,11 @@ async function addPluginToManifest(
 	} catch (err: any) {
 		console.error(`Failed to update agent.yaml: ${err.message}`);
 	}
+	});
 }
 
 async function removePluginFromManifest(agentDir: string, name: string): Promise<void> {
+	return manifestMutex.acquire(async () => {
 	const manifestPath = join(agentDir, "agent.yaml");
 	try {
 		const raw = await readFile(manifestPath, "utf-8");
@@ -287,6 +320,7 @@ async function removePluginFromManifest(agentDir: string, name: string): Promise
 	} catch (err: any) {
 		console.error(`Failed to update agent.yaml: ${err.message}`);
 	}
+	});
 }
 
 // ── Main CLI handler ───────────────────────────────────────────────────
