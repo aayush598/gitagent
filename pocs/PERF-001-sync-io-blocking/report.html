@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Async vs Sync Performance Report</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; padding: 40px; }
+  h1 { color: #58a6ff; margin-bottom: 8px; }
+  .subtitle { color: #8b949e; margin-bottom: 32px; }
+  h2 { color: #79c0ff; margin: 32px 0 16px; border-bottom: 1px solid #21262d; padding-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  th, td { text-align: right; padding: 8px 16px; border-bottom: 1px solid #21262d; }
+  th { color: #8b949e; font-weight: 600; text-align: right; }
+  td:first-child, th:first-child { text-align: left; }
+  .sync { color: #f85149; }
+  .async { color: #3fb950; }
+  .delta-pos { color: #d29922; }
+  .delta-neg { color: #3fb950; }
+  .bar-container { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .bar-label { width: 60px; font-size: 12px; color: #8b949e; }
+  .bar { height: 20px; border-radius: 4px; transition: width 0.3s; }
+  .bar.sync { background: #f85149; }
+  .bar.async { background: #3fb950; }
+  .speedup { color: #58a6ff; font-weight: 700; }
+  .blocked { color: #f85149; font-weight: 700; }
+  .free { color: #3fb950; font-weight: 700; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+  .flex { display: flex; gap: 32px; flex-wrap: wrap; }
+  .stat { flex: 1; min-width: 200px; }
+  .stat-value { font-size: 28px; font-weight: 700; }
+  .stat-label { font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; }
+  .conclusion { background: #0d1117; border: 2px solid #30363d; border-radius: 12px; padding: 24px; margin-top: 32px; }
+  .conclusion h3 { color: #58a6ff; margin-bottom: 12px; }
+  .conclusion li { margin: 8px 0; line-height: 1.5; }
+  code { background: #21262d; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>Async vs Sync Performance Report</h1>
+<p class="subtitle">Node v25.9.0 · linux x64 · 3 iterations each</p>
+
+<h2>Single Operation Overhead</h2>
+<table>
+<tr><th>Operation</th><th>Sync</th><th>Async</th><th>Delta</th></tr>
+<tr><td>readFile (1KB)</td><td class="sync">0.02ms</td><td class="async">0.32ms</td><td class="delta-pos">+0.30ms</td></tr>
+<tr><td>exists</td><td class="sync">0.01ms</td><td class="async">0.03ms</td><td class="delta-pos">+0.02ms</td></tr>
+<tr><td>git status</td><td class="sync">3.32ms</td><td class="async">2.36ms</td><td class="delta-neg">-0.97ms</td></tr>
+<tr><td>git add+commit</td><td class="sync">8.08ms</td><td class="async">7.69ms</td><td class="delta-neg">-0.39ms</td></tr>
+</table>
+
+<h2>End-to-End Agent Turn</h2>
+<div class="card">
+  <div class="flex">
+    <div class="stat">
+      <div class="stat-value sync">11.77ms</div>
+      <div class="stat-label">Sync (blocked)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value async">11.54ms</div>
+      <div class="stat-label">Async (free)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value async">-0.24ms</div>
+      <div class="stat-label">Delta</div>
+    </div>
+  </div>
+</div>
+
+<h2>Concurrent Sessions (3 simultaneous)</h2>
+<div class="card">
+  <div class="bar-container">
+    <span class="bar-label">Sync</span>
+    <div class="bar sync" style="width:100%"></div>
+    <span class="sync">11.16ms</span>
+  </div>
+  <div class="bar-container">
+    <span class="bar-label">Async</span>
+    <div class="bar async" style="width:46.08408611676342%"></div>
+    <span class="async">5.14ms</span>
+  </div>
+  <p style="margin-top:16px">Speedup: <span class="speedup">2.17× faster</span> with async</p>
+</div>
+
+<h2>Timer Responsiveness</h2>
+<div class="card">
+  <p>During a git operation, a 5ms setTimeout did:</p>
+  <ul style="margin:12px 0;list-style:none">
+    <li>Sync: <span class="blocked">✗ BLOCKED (13ms)</span></li>
+    <li>Async: <span class="free">✓ Fire on time (5ms)</span></li>
+  </ul>
+</div>
+
+<div class="conclusion">
+<h3>Interpretation</h3>
+<ul>
+  <li><strong>Async is faster</strong> for a single agent turn (0.24ms difference).</li>
+  <li><strong>Concurrent throughput is 2.17× better</strong> with async — operations overlap instead of serializing.</li>
+  <li><strong>Timer responsiveness: SYNC BLOCKS the event loop</strong>. With sync, setTimeout callbacks are delayed until the git operation completes.</li>
+  <li>In a real deployment (voice, HTTP, WebSocket), the event loop must stay free. Async eliminates dropped connections and stalled streams.</li>
+  <li>Run again: <code>node pocs/PERF-001-sync-io-blocking/validate.mjs</code></li>
+</ul>
+</div>
+
+<p style="color:#484f58;margin-top:32px;font-size:12px">Generated by pocs/PERF-001-sync-io-blocking/validate.mjs · 2026-05-25T09:00:14.953Z</p>
+</body>
+</html>

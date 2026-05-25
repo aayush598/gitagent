@@ -1,11 +1,19 @@
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { join, dirname } from "path";
-import { execSync } from "child_process";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import { type Static } from "@sinclair/typebox";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { memorySchema, DEFAULT_MEMORY_PATH } from "./shared.js";
 import yaml from "js-yaml";
 import type { MemoryLayerDef } from "../plugin-types.js";
+
+const execFileAsync = promisify(execFile);
+
+async function execGit(args: string[], cwd: string): Promise<string> {
+  const { stdout } = await execFileAsync("git", args, { cwd, encoding: "utf-8" });
+  return stdout.trim();
+}
 
 interface MemoryLayer {
 	name: string;
@@ -88,7 +96,7 @@ async function archiveOverflow(
 
 	// Try to git add the archive
 	try {
-		execSync(`git add "${archiveFile}"`, { cwd, stdio: "pipe" });
+		await execGit(["add", archiveFile], cwd);
 	} catch {
 		// Not in git, that's fine
 	}
@@ -153,13 +161,11 @@ export function createMemoryTool(cwd: string, pluginLayers?: MemoryLayerDef[]): 
 			await mkdir(dirname(memoryFile), { recursive: true });
 			await writeFile(memoryFile, finalContent, "utf-8");
 
-			try {
-				execSync(`git add "${memoryPath}" && git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, {
-					cwd,
-					stdio: "pipe",
-				});
-			} catch (err: any) {
-				const stderr = err.stderr?.toString() || "";
+	try {
+		await execGit(["add", memoryPath], cwd);
+		await execGit(["commit", "-m", commitMsg], cwd);
+	} catch (err: any) {
+		const stderr = err.stderr?.toString() || "";
 				return {
 					content: [
 						{

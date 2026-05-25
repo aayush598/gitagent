@@ -1,7 +1,8 @@
 import { readFile, mkdir, writeFile } from "fs/promises";
 import { join } from "path";
 import { randomUUID } from "crypto";
-import { execSync } from "child_process";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import { getModel } from "@mariozechner/pi-ai";
 import type { Model } from "@mariozechner/pi-ai";
 import yaml from "js-yaml";
@@ -22,6 +23,13 @@ import type { ComplianceWarning } from "./compliance.js";
 import { discoverAndLoadPlugins } from "./plugins.js";
 import type { LoadedPlugin } from "./plugin-types.js";
 import type { PluginConfig } from "./plugin-types.js";
+
+const execFileAsync = promisify(execFile);
+
+async function execGit(args: string[], cwd: string): Promise<string> {
+  const { stdout } = await execFileAsync("git", args, { cwd, encoding: "utf-8" });
+  return stdout.trim();
+}
 
 export interface AgentManifest {
 	spec_version: string;
@@ -177,10 +185,7 @@ async function resolveInheritance(
 	const parentDir = join(depsDir, parentName);
 
 	try {
-		execSync(`git clone --depth 1 "${manifest.extends}" "${parentDir}" 2>/dev/null || true`, {
-			cwd: agentDir,
-			stdio: "pipe",
-		});
+		await execGit(["clone", "--depth", "1", manifest.extends, parentDir], agentDir);
 	} catch {
 		// Clone failed, continue without parent
 		return { manifest, parentRules: "" };
@@ -223,9 +228,9 @@ async function resolveDependencies(
 	for (const dep of manifest.dependencies) {
 		const depDir = join(depsDir, dep.name);
 		try {
-			execSync(
-				`git clone --depth 1 --branch "${dep.version}" "${dep.source}" "${depDir}" 2>/dev/null || true`,
-				{ cwd: agentDir, stdio: "pipe" },
+			await execGit(
+				["clone", "--depth", "1", "--branch", dep.version, dep.source, depDir],
+				agentDir,
 			);
 		} catch {
 			// Clone failed, skip this dependency

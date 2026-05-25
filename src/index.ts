@@ -15,14 +15,21 @@ import { toAgentTool } from "./tool-utils.js";
 import { AuditLogger, isAuditEnabled } from "./audit.js";
 import { formatComplianceWarnings } from "./compliance.js";
 import { readFile, mkdir, writeFile, stat, access } from "fs/promises";
-import { existsSync, readFileSync } from "fs";
 import { join, resolve } from "path";
-import { execSync } from "child_process";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import { initLocalSession } from "./session.js";
 import type { LocalSession } from "./session.js";
 import { startVoiceServer } from "./voice/server.js";
 import { handlePluginCommand } from "./plugin-cli.js";
 import { context as otelContext } from "@opentelemetry/api";
+
+const execFileAsync = promisify(execFile);
+
+async function execGit(args: string[], cwd: string): Promise<string> {
+  const { stdout } = await execFileAsync("git", args, { cwd, encoding: "utf-8" });
+  return stdout.trim();
+}
 import {
 	initTelemetry,
 	wrapToolWithOtel,
@@ -193,13 +200,13 @@ function summarizeArgs(args: any): string {
 		.join(", ");
 }
 
-function isGitRepo(dir: string): boolean {
-	try {
-		execSync("git rev-parse --is-inside-work-tree", { cwd: dir, stdio: "pipe" });
-		return true;
-	} catch {
-		return false;
-	}
+async function isGitRepo(dir: string): Promise<boolean> {
+  try {
+    await execGit(["rev-parse", "--is-inside-work-tree"], dir);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function fileExists(path: string): Promise<boolean> {
@@ -220,10 +227,9 @@ async function ensureRepo(dir: string, model?: string): Promise<string> {
 		await mkdir(absDir, { recursive: true });
 	}
 
-	// Git init if not a repo
-	if (!isGitRepo(absDir)) {
+	if (!(await isGitRepo(absDir))) {
 		console.log(dim("Initializing git repository..."));
-		execSync("git init", { cwd: absDir, stdio: "pipe" });
+		await execGit(["init"], absDir);
 
 		// Create .gitignore
 		const gitignorePath = join(absDir, ".gitignore");
@@ -232,10 +238,8 @@ async function ensureRepo(dir: string, model?: string): Promise<string> {
 		}
 
 		// Initial commit so memory saves work
-		execSync("git add -A && git commit -m 'Initial commit' --allow-empty", {
-			cwd: absDir,
-			stdio: "pipe",
-		});
+		await execGit(["add", "-A"], absDir);
+		await execGit(["commit", "-m", "Initial commit", "--allow-empty"], absDir);
 	}
 
 	// Scaffold agent.yaml if missing
@@ -289,10 +293,12 @@ async function ensureRepo(dir: string, model?: string): Promise<string> {
 
 	// Stage new scaffolded files
 	try {
-		execSync("git add -A && git diff --cached --quiet || git commit -m 'Scaffold gitclaw agent'", {
-			cwd: absDir,
-			stdio: "pipe",
-		});
+		await execGit(["add", "-A"], absDir);
+		try {
+			await execGit(["diff", "--cached", "--quiet"], absDir);
+		} catch {
+			await execGit(["commit", "-m", "Scaffold gitclaw agent"], absDir);
+		}
 	} catch {
 		// ok if nothing to commit
 	}
@@ -342,7 +348,7 @@ async function main(): Promise<void> {
 			dir = resolve(`/tmp/gitclaw/${repoName}`);
 		}
 
-		localSession = initLocalSession({
+		localSession = await initLocalSession({
 			url: repo,
 			token,
 			dir,
@@ -377,8 +383,8 @@ async function main(): Promise<void> {
 
 	// Load .env from agent directory so API keys are available before voice init
 	const envPath = resolve(dir, ".env");
-	if (existsSync(envPath)) {
-		const envContent = readFileSync(envPath, "utf-8");
+	if (await fileExists(envPath)) {
+		const envContent = await readFile(envPath, "utf-8");
 		for (const line of envContent.split("\n")) {
 			const eq = line.indexOf("=");
 			if (eq <= 0) continue;
@@ -628,7 +634,7 @@ async function main(): Promise<void> {
 		} finally {
 			if (localSession) {
 				console.log(dim("Finalizing session..."));
-				localSession.finalize();
+				await localSession.finalize();
 			}
 			if (sandboxCtx) {
 				console.log(dim("Stopping sandbox..."));
@@ -662,7 +668,7 @@ async function main(): Promise<void> {
 				rl.close();
 				if (localSession) {
 					console.log(dim("Finalizing session..."));
-					localSession.finalize();
+					await localSession.finalize();
 				}
 				await stopSandbox();
 				try {
