@@ -97,11 +97,16 @@ export interface GCHooks {
 
 // ── Tool definition ────────────────────────────────────────────────────
 
+export interface ToolResult {
+	text: string;
+	details?: Record<string, unknown>;
+}
+
 export interface GCToolDefinition {
 	name: string;
 	description: string;
 	inputSchema: Record<string, any>;
-	handler: (args: any, signal?: AbortSignal) => Promise<string | { text: string; details?: any }>;
+	handler: (args: any, signal?: AbortSignal) => Promise<ToolResult>;
 }
 
 // ── Local repo options ──────────────────────────────────────────────────

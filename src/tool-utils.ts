@@ -1,10 +1,10 @@
 import type { AgentTool } from "@mariozechner/pi-agent-core";
-import type { GCToolDefinition } from "./sdk-types.js";
+import type { GCToolDefinition, ToolResult } from "./sdk-types.js";
 import { buildTypeboxSchema } from "./tool-loader.js";
 
 // ── Convert GCToolDefinition → AgentTool ───────────────────────────────
 
-export function toAgentTool(def: GCToolDefinition): AgentTool<any> {
+export function toAgentTool(def: GCToolDefinition): AgentTool<ReturnType<typeof buildTypeboxSchema>> {
 	const schema = buildTypeboxSchema(def.inputSchema);
 
 	return {
@@ -14,15 +14,11 @@ export function toAgentTool(def: GCToolDefinition): AgentTool<any> {
 		parameters: schema,
 		execute: async (
 			_toolCallId: string,
-			params: any,
+			params: Record<string, unknown>,
 			signal?: AbortSignal,
 		) => {
-			const result = await def.handler(params, signal);
-			const text = typeof result === "string" ? result : result.text;
-			const details = typeof result === "object" && "details" in result
-				? result.details
-				: undefined;
-			return { content: [{ type: "text" as const, text }], details };
+			const result: ToolResult = await def.handler(params, signal);
+			return { content: [{ type: "text" as const, text: result.text }], details: result.details };
 		},
 	};
 }
