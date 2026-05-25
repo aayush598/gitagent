@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import { setDefaultResultOrder } from "dns";
+setDefaultResultOrder("ipv4first");
+
 import { createInterface } from "readline";
 import { Agent } from "@mariozechner/pi-agent-core";
 import type { AgentEvent, AgentTool } from "@mariozechner/pi-agent-core";

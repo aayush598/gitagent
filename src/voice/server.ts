@@ -1939,7 +1939,7 @@ return false;
 			return res.end();
 		}
 
-		const url = new URL(req.url || "/", `http://localhost:${port}`);
+		const url = new URL(req.url || "/", `http://127.0.0.1:${port}`);
 
 		// Log every HTTP request (skip UI + static paths to reduce noise; always log API/errors)
 		const isApi = url.pathname.startsWith("/api/");
