@@ -8,7 +8,8 @@ export interface HookDefinition {
 	script: string;
 	description?: string;
 	baseDir?: string; // plugin hooks run from their own directory
-	_handler?: (ctx: Record<string, any>) => Promise<HookResult> | HookResult;
+	_handler?: (ctx: Record<string, unknown>) => Promise<HookResult> | HookResult;
+	timeout?: number;
 }
 
 export interface HooksConfig {
@@ -26,7 +27,7 @@ export interface HooksConfig {
 export interface HookResult {
 	action: "allow" | "block" | "modify";
 	reason?: string;
-	args?: Record<string, any>;
+	args?: Record<string, unknown>;
 }
 
 export async function loadHooksConfig(agentDir: string): Promise<HooksConfig | null> {
@@ -44,7 +45,7 @@ export async function loadHooksConfig(agentDir: string): Promise<HooksConfig | n
 async function executeHook(
 	hook: HookDefinition,
 	agentDir: string,
-	input: Record<string, any>,
+	input: Record<string, unknown>,
 ): Promise<HookResult> {
 	// Programmatic hooks: call handler directly instead of spawning shell
 	if (typeof hook._handler === "function") {
@@ -120,7 +121,7 @@ async function executeHook(
 export async function runHooks(
 	hooks: HookDefinition[] | undefined,
 	agentDir: string,
-	input: Record<string, any>,
+	input: Record<string, unknown>,
 ): Promise<HookResult> {
 	if (!hooks || hooks.length === 0) {
 		return { action: "allow" };

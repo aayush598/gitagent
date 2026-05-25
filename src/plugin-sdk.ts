@@ -5,7 +5,14 @@ import type { MemoryLayerDef } from "./plugin-types.js";
 // ── Plugin API (passed to register() functions) ────────────────────────
 
 type HookEvent = "on_session_start" | "pre_tool_use" | "post_response" | "on_error";
-type HookHandler = (ctx: Record<string, any>) => Promise<HookResult> | HookResult;
+
+type HookContext =
+	| { event: "on_session_start"; sessionId: string; agentName: string }
+	| { event: "pre_tool_use"; sessionId: string; agentName: string; toolName: string; args: Record<string, unknown> }
+	| { event: "post_response"; sessionId: string; agentName: string }
+	| { event: "on_error"; sessionId: string; agentName: string; error: string };
+
+type HookHandler = (ctx: HookContext) => Promise<HookResult> | HookResult;
 
 export interface GitclawPluginApi {
 	/** Plugin identifier */
