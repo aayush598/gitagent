@@ -1002,12 +1002,53 @@ ${runningContext}`;
 		return changed;
 	}
 
-	const SENDABLE_EXTS = new Set([
-		"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "csv", "txt", "rtf",
-		"png", "jpg", "jpeg", "gif", "webp", "svg", "bmp",
-		"zip", "tar", "gz", "json", "xml", "html", "css", "js", "ts", "py", "md",
-		"mp3", "mp4", "wav", "ogg", "webm",
-	]);
+const SENDABLE_EXTS = new Set([
+	"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "csv", "txt", "rtf",
+	"png", "jpg", "jpeg", "gif", "webp", "svg", "bmp",
+	"zip", "tar", "gz", "json", "xml", "html", "css", "js", "ts", "py", "md",
+	"mp3", "mp4", "wav", "ogg", "webm",
+]);
+
+const MAGIC_BYTES: Record<string, Uint8Array[]> = {
+	"png": [new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])],
+	"jpg": [new Uint8Array([0xFF, 0xD8, 0xFF])],
+	"jpeg": [new Uint8Array([0xFF, 0xD8, 0xFF])],
+	"gif": [new Uint8Array([0x47, 0x49, 0x46, 0x38])],
+	"pdf": [new Uint8Array([0x25, 0x50, 0x44, 0x46])],
+	"zip": [new Uint8Array([0x50, 0x4B, 0x03, 0x04])],
+	"gz": [new Uint8Array([0x1F, 0x8B])],
+	"bmp": [new Uint8Array([0x42, 0x4D])],
+	"webp": [new Uint8Array([0x52, 0x49, 0x46, 0x46])],
+};
+
+function validateFileUpload(filename: string, data: Buffer): string | null {
+	const ext = filename.split(".").pop()?.toLowerCase() || "";
+	if (!SENDABLE_EXTS.has(ext)) {
+		return `File type ".${ext}" is not allowed for upload`;
+	}
+
+	const magic = MAGIC_BYTES[ext];
+	if (magic) {
+		const header = data.subarray(0, Math.max(...magic.map((m) => m.length)));
+		const matchesAny = magic.some((sig) => {
+			if (header.length < sig.length) return false;
+			return sig.every((b, i) => header[i] === b);
+		});
+		if (!matchesAny && data.length > 0) {
+			return `File content does not match expected format for ".${ext}"`;
+		}
+	}
+
+	const forbidden = /<script[\s>]|<\?php|#!\/(bin|usr)/i;
+	if (typeof data === "object") {
+		const textSample = data.toString("utf-8").slice(0, 4096);
+		if (forbidden.test(textSample)) {
+			return "File contains forbidden patterns (scripts or executables)";
+		}
+	}
+
+	return null;
+}
 
 	async function sendTelegramFile(chatId: number, filePath: string, agentDir: string, caption?: string) {
 		const abs = join(agentDir, filePath);
@@ -3173,12 +3214,24 @@ a{color:#58a6ff;}</style></head>
 						return;
 					}
 				} else if (msg.type === "file") {
-					// Save uploaded file to disk so the text agent can use it
 					const uploadsDir = join(agentRoot, "workspace");
 					mkdirSync(uploadsDir, { recursive: true });
-					const safeName = (msg as any).name.replace(/[^a-zA-Z0-9._-]/g, "_");
+					const rawName: string = (msg as any).name || "upload.bin";
+					const safeName = rawName.replace(/[^a-zA-Z0-9._-]/g, "_");
+					const data = Buffer.from((msg as any).data, "base64");
+
+					const validationError = validateFileUpload(safeName, data);
+					if (validationError) {
+						console.error(`[voice] File upload rejected: ${validationError}`);
+						safeSend(browserWs, JSON.stringify({
+							type: "error",
+							message: `File upload rejected: ${validationError}`,
+						}));
+						return;
+					}
+
 					const filePath = join(uploadsDir, safeName);
-					writeFileSync(filePath, Buffer.from((msg as any).data, "base64"));
+					writeFileSync(filePath, data);
 					const relPath = relative(agentRoot, filePath);
 					console.log(dim(`[voice] Saved uploaded file: ${relPath}`));
 
