@@ -19,6 +19,31 @@ const activeTasks = new Map<string, ScheduledTask>();
 const activeTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const runningJobs = new Set<string>();
 
+const CRON_ALIASES: Record<string, string> = {
+	"@hourly": "0 * * * *",
+	"@daily": "0 0 * * *",
+	"@weekly": "0 0 * * 0",
+	"@monthly": "0 0 1 * *",
+	"@yearly": "0 0 1 1 *",
+	"@annually": "0 0 1 1 *",
+};
+
+function expandCronAliases(expr: string): string {
+	const lower = expr.trim().toLowerCase();
+	if (CRON_ALIASES[lower]) return CRON_ALIASES[lower];
+
+	const everyMatch = lower.match(/^@every\s+(\d+)\s*(s|sec|seconds?|m|min|minutes?|h|hr|hours?)$/);
+	if (everyMatch) {
+		const value = parseInt(everyMatch[1], 10);
+		const unit = everyMatch[2][0];
+		if (unit === "s") return `*/${value} * * * * *`;
+		if (unit === "m") return `*/${value} * * * *`;
+		if (unit === "h") return `0 */${value} * * *`;
+	}
+
+	return expr;
+}
+
 export async function startScheduler(opts: SchedulerOptions): Promise<void> {
 	const schedules = await discoverSchedules(opts.agentDir);
 	let activeCount = 0;
@@ -26,11 +51,12 @@ export async function startScheduler(opts: SchedulerOptions): Promise<void> {
 	for (const schedule of schedules) {
 		if (!schedule.enabled) continue;
 
+		let cronExpr = schedule.cron ? expandCronAliases(schedule.cron) : undefined;
+
 		if (schedule.mode === "once" && schedule.runAt) {
-			// One-time schedule via runAt datetime
 			const delay = new Date(schedule.runAt).getTime() - Date.now();
 			if (delay <= 0) {
-				console.log(dim(`[scheduler] "${schedule.id}" runAt is in the past — skipping`));
+				console.log(dim(`[scheduler] "${schedule.id}" runAt is in the past - skipping`));
 				continue;
 			}
 			const timer = setTimeout(() => {
@@ -40,24 +66,22 @@ export async function startScheduler(opts: SchedulerOptions): Promise<void> {
 			const when = new Date(schedule.runAt).toLocaleString();
 			console.log(dim(`[scheduler] "${schedule.id}" scheduled once at ${when} (in ${Math.round(delay / 1000)}s)`));
 			activeCount++;
-		} else if (schedule.mode === "once" && schedule.cron) {
-			// One-time schedule via cron — fires once then auto-disables
-			if (!cron.validate(schedule.cron)) {
-				console.log(dim(`[scheduler] Invalid cron for "${schedule.id}": ${schedule.cron} — skipping`));
+		} else if (schedule.mode === "once" && cronExpr) {
+			if (!cron.validate(cronExpr)) {
+				console.log(dim(`[scheduler] Invalid cron for "${schedule.id}": ${cronExpr} — skipping`));
 				continue;
 			}
-			const task = cron.schedule(schedule.cron, () => {
+			const task = cron.schedule(cronExpr, () => {
 				executeScheduledJob(schedule, opts, true);
 			});
 			activeTasks.set(schedule.id, task);
 			activeCount++;
-		} else {
-			// Repeating cron schedule
-			if (!cron.validate(schedule.cron)) {
-				console.log(dim(`[scheduler] Invalid cron for "${schedule.id}": ${schedule.cron} — skipping`));
+		} else if (cronExpr) {
+			if (!cron.validate(cronExpr)) {
+				console.log(dim(`[scheduler] Invalid cron for "${schedule.id}": ${cronExpr} — skipping`));
 				continue;
 			}
-			const task = cron.schedule(schedule.cron, () => {
+			const task = cron.schedule(cronExpr, () => {
 				executeScheduledJob(schedule, opts, false);
 			});
 			activeTasks.set(schedule.id, task);
