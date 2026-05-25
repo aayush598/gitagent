@@ -21,6 +21,10 @@ const { version: GITCLAW_VERSION } = require("../package.json");
 
 const KEBAB_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
+// ── Install dedup for RACE-006 ─────────────────────────────────────────
+
+const installInFlight = new Map<string, Promise<string>>();
+
 // ── Engine version check ────────────────────────────────────────────────
 
 function satisfiesEngine(range: string, current: string): boolean {
@@ -126,6 +130,26 @@ async function fileExists(path: string): Promise<boolean> {
 // ── Plugin installation ────────────────────────────────────────────────
 
 export async function installPlugin(
+	source: string,
+	targetDir: string,
+	version?: string,
+	force?: boolean,
+): Promise<string> {
+	// Dedup concurrent installations for the same source+version
+	const key = `${source}::${version || "latest"}`;
+	const existing = installInFlight.get(key);
+	if (existing && !force) return existing;
+
+	const promise = installPluginInner(source, targetDir, version, force);
+	installInFlight.set(key, promise);
+	try {
+		return await promise;
+	} finally {
+		installInFlight.delete(key);
+	}
+}
+
+async function installPluginInner(
 	source: string,
 	targetDir: string,
 	version?: string,
