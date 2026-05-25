@@ -158,7 +158,7 @@ export interface QueryOptions {
 export interface Query extends AsyncGenerator<GCMessage, void, undefined> {
 	abort(): void;
 	steer(message: string): void;
-	sessionId(): string;
+	sessionId(): string | Promise<string>;
 	manifest(): AgentManifest;
 	messages(): GCMessage[];
 	costs(): SessionCosts;

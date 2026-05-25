@@ -93,6 +93,9 @@ export function query(options: QueryOptions): Query {
 
 	// These are set once the agent is loaded (async init below)
 	let _sessionId = options.sessionId ?? "";
+	let _sessionIdResolve: (() => void) | null = null;
+	const _sessionIdPromise = new Promise<void>((r) => { _sessionIdResolve = r; });
+	if (_sessionId) _sessionIdResolve?.();
 	let _manifest: AgentManifest | null = null;
 
 	// Accumulate streaming deltas for the current message
@@ -148,6 +151,7 @@ export function query(options: QueryOptions): Query {
 		const loaded = await loadAgent(dir, options.model, options.env);
 		_manifest = loaded.manifest;
 		_sessionId = _sessionId || loaded.sessionId;
+		_sessionIdResolve?.();
 
 		// 2. Apply system prompt overrides
 		let systemPrompt = loaded.systemPrompt;
@@ -535,8 +539,8 @@ export function query(options: QueryOptions): Query {
 		steer(_message: string) {
 		},
 
-		sessionId() {
-			return _sessionId;
+		sessionId(): string | Promise<string> {
+			return _sessionIdPromise.then(() => _sessionId);
 		},
 
 		manifest() {
