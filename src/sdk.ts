@@ -29,6 +29,7 @@ import {
 	startSessionSpan,
 	recordGenAiCall,
 } from "./telemetry.js";
+import { configureHttpClient } from "./http-client.js";
 
 // ── Event channel ──────────────────────────────────────────────────────
 
@@ -86,6 +87,8 @@ function extractContent(msg: AssistantMessage): { text: string; thinking: string
 // ── query() ────────────────────────────────────────────────────────────
 
 export function query(options: QueryOptions): Query {
+	configureHttpClient();
+
 	const channel = createChannel<GCMessage>();
 	const collectedMessages: GCMessage[] = [];
 	const ac = options.abortController ?? new AbortController();
