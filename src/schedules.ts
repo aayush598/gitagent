@@ -95,11 +95,17 @@ export async function saveSchedule(agentDir: string, schedule: ScheduleDefinitio
 		cron: schedule.cron || "",
 		mode: schedule.mode || "repeat",
 		...(schedule.runAt ? { runAt: schedule.runAt } : {}),
-		enabled: schedule.enabled,
+		enabled: schedule.enabled === true,
 		createdAt: schedule.createdAt || new Date().toISOString(),
 		...(schedule.lastRunAt ? { lastRunAt: schedule.lastRunAt } : {}),
 		...(schedule.lastResult ? { lastResult: schedule.lastResult } : {}),
-	}, { lineWidth: 120 });
+	}, {
+		lineWidth: 120,
+		quotingType: '"',
+		forceQuotes: true,
+		noCompatMode: true,
+		styles: { "!!bool": "canonical" },
+	});
 	await writeFile(filePath, content, "utf-8");
 	return filePath;
 }
@@ -114,6 +120,15 @@ export async function updateScheduleMeta(agentDir: string, id: string, updates: 
 	const raw = await readFile(filePath, "utf-8");
 	const data = yaml.load(raw) as Record<string, any>;
 	Object.assign(data, updates);
-	const content = yaml.dump(data, { lineWidth: 120 });
+	if (updates.enabled !== undefined) {
+		data.enabled = updates.enabled === true;
+	}
+	const content = yaml.dump(data, {
+		lineWidth: 120,
+		quotingType: '"',
+		forceQuotes: true,
+		noCompatMode: true,
+		styles: { "!!bool": "canonical" },
+	});
 	await writeFile(filePath, content, "utf-8");
 }
