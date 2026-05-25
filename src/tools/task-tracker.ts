@@ -7,6 +7,36 @@ import { taskTrackerSchema } from "./shared.js";
 import { adjustConfidence, loadSkillStats, saveSkillStats } from "../learning/reinforcement.js";
 import yaml from "js-yaml";
 
+// ── Mutex for TOCTOU prevention ─────────────────────────────────────────
+
+class TaskMutex {
+	private queue: (() => void)[] = [];
+	private locked = false;
+
+	async acquire<T>(fn: () => Promise<T>): Promise<T> {
+		await new Promise<void>((resolve) => {
+			if (!this.locked) {
+				this.locked = true;
+				resolve();
+			} else {
+				this.queue.push(resolve);
+			}
+		});
+		try {
+			return await fn();
+		} finally {
+			if (this.queue.length > 0) {
+				const next = this.queue.shift()!;
+				next();
+			} else {
+				this.locked = false;
+			}
+		}
+	}
+}
+
+const taskMutex = new TaskMutex();
+
 // ── Types ───────────────────────────────────────────────────────────────
 
 interface TaskStep {
@@ -161,10 +191,11 @@ export function createTaskTrackerTool(agentDir: string, gitagentDir: string): Ag
 			rawParams: unknown,
 			signal?: AbortSignal,
 		) => {
-			const params = rawParams as Static<typeof taskTrackerSchema>;
-			if (signal?.aborted) throw new Error("Operation aborted");
+			return taskMutex.acquire(async () => {
+				const params = rawParams as Static<typeof taskTrackerSchema>;
+				if (signal?.aborted) throw new Error("Operation aborted");
 
-			const store = await loadTasks(gitagentDir);
+				const store = await loadTasks(gitagentDir);
 
 			switch (params.action) {
 				case "begin": {
@@ -339,6 +370,7 @@ export function createTaskTrackerTool(agentDir: string, gitagentDir: string): Ag
 				default:
 					throw new Error(`Unknown action: ${params.action}`);
 			}
+			});
 		},
 	};
 }
