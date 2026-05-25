@@ -3,6 +3,7 @@ import { readFile } from "fs/promises";
 import { join, resolve } from "path";
 import yaml from "js-yaml";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
+import { createSafeEnv } from "./tools/shared.js";
 
 export interface HookDefinition {
 	script: string;
@@ -74,7 +75,7 @@ async function executeHook(
 		const child = spawn("sh", [resolvedScript], {
 			cwd: baseDir,
 			stdio: ["pipe", "pipe", "pipe"],
-			env: { ...process.env },
+			env: createSafeEnv(),
 		});
 
 		let stdout = "";

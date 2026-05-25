@@ -4,6 +4,7 @@ import { spawn } from "child_process";
 import yaml from "js-yaml";
 import { Type } from "@sinclair/typebox";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
+import { createSafeEnv } from "./tools/shared.js";
 
 interface ToolDefinition {
 	name: string;
@@ -71,7 +72,7 @@ function createDeclarativeTool(
 				const child = spawn(runtime, [scriptPath], {
 					cwd: agentDir,
 					stdio: ["pipe", "pipe", "pipe"],
-					env: { ...process.env },
+					env: createSafeEnv(),
 				});
 
 				let stdout = "";

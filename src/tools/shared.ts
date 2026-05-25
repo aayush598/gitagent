@@ -68,6 +68,23 @@ export const skillLearnerSchema = Type.Object({
 
 // ── Shared helpers ──────────────────────────────────────────────────────
 
+/**
+ * Create a safe environment object containing only essential system variables.
+ * This prevents API keys and other secrets in process.env from leaking to child processes.
+ */
+const SAFE_ENV_KEYS = [
+	"PATH", "HOME", "USER", "SHELL", "TERM",
+	"LANG", "LC_ALL", "PWD", "TMPDIR", "TEMP", "TMP",
+];
+
+export function createSafeEnv(): Record<string, string | undefined> {
+	const env: Record<string, string | undefined> = {};
+	for (const key of SAFE_ENV_KEYS) {
+		if (process.env[key] !== undefined) env[key] = process.env[key];
+	}
+	return env;
+}
+
 /** Truncate output to MAX_OUTPUT, keeping the tail. */
 export function truncateOutput(text: string): string {
 	if (text.length > MAX_OUTPUT) {
