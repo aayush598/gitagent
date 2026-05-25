@@ -35,6 +35,25 @@ function satisfiesEngine(range: string, current: string): boolean {
 	return true; // Equal
 }
 
+// ── Pre-validation (defense-in-depth against unsafe deserialization) ──
+
+const DANGEROUS_YAML_PATTERNS = [
+	"!!js/",
+	"!!python/",
+	"!!ruby/",
+	"!!php/",
+];
+
+function prevalidateManifest(raw: string): boolean {
+	for (const pattern of DANGEROUS_YAML_PATTERNS) {
+		if (raw.includes(pattern)) {
+			console.warn(`[SECURITY] Plugin manifest contains unsafe YAML tag: "${pattern}"`);
+			return false;
+		}
+	}
+	return true;
+}
+
 // ── Validation ─────────────────────────────────────────────────────────
 
 function validatePluginManifest(manifest: any, pluginDir: string): manifest is PluginManifest {
@@ -182,7 +201,15 @@ async function loadPlugin(
 		return null;
 	}
 
-	const manifest = yaml.load(raw) as any;
+	if (!prevalidateManifest(raw)) return null;
+
+	let manifest: any;
+	try {
+		manifest = yaml.load(raw) as any;
+	} catch {
+		console.warn(`Plugin at "${pluginDir}": invalid YAML in plugin.yaml`);
+		return null;
+	}
 	if (!validatePluginManifest(manifest, pluginDir)) return null;
 
 	// Check engine compatibility
@@ -428,6 +455,7 @@ export async function listAllPlugins(
 			const manifestPath = join(pluginDir, "plugin.yaml");
 			try {
 				const raw = await readFile(manifestPath, "utf-8");
+				if (!prevalidateManifest(raw)) continue;
 				const manifest = yaml.load(raw) as any;
 				if (manifest?.id && manifest?.version && manifest?.description) {
 					plugins.push({
