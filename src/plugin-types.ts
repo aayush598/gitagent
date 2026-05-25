@@ -44,6 +44,7 @@ export interface PluginConfig {
 	enabled?: boolean;
 	source?: string; // git URL for remote plugins
 	version?: string; // git branch/tag for remote plugins
+	hash?: string; // SHA-256 hash of plugin directory contents for integrity verification
 	config?: Record<string, any>;
 }
 

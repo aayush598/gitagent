@@ -62,7 +62,7 @@ async function handleInstall(agentDir: string, args: string[]): Promise<void> {
 		const gitagentDir = await ensureGitagentDir(agentDir);
 		const installDir = join(gitagentDir, "plugins");
 		try {
-			const pluginDir = await installPlugin(source, installDir, undefined, force);
+			const pluginDir = await installPlugin(source, installDir, undefined, force, undefined);
 			const pluginName = name || pluginDir.split("/").pop()!;
 			console.log(green(`Installed plugin "${pluginName}" from ${source}`));
 			console.log(dim(`Location: ${pluginDir}`));

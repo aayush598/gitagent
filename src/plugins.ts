@@ -1,8 +1,9 @@
 import { readFile, readdir, stat, mkdir, rm } from "fs/promises";
-import { join } from "path";
+import { join, relative } from "path";
 import { execFileSync } from "child_process";
 import { createRequire } from "module";
 import { homedir } from "os";
+import { createHash } from "crypto";
 import yaml from "js-yaml";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import type {
@@ -125,11 +126,41 @@ async function fileExists(path: string): Promise<boolean> {
 
 // ── Plugin installation ────────────────────────────────────────────────
 
+export async function computeDirHash(dir: string): Promise<string> {
+	const hash = createHash("sha256");
+	const entries: string[] = [];
+
+	async function walk(current: string) {
+		const entries_ = await readdir(current, { withFileTypes: true });
+		for (const entry of entries_) {
+			const full = join(current, entry.name);
+			if (entry.isDirectory()) {
+				if (entry.name === ".git") continue; // skip .git metadata
+				await walk(full);
+			} else if (entry.isFile()) {
+				entries.push(relative(dir, full));
+			}
+		}
+	}
+
+	await walk(dir);
+	entries.sort(); // deterministic ordering
+
+	for (const relPath of entries) {
+		const content = await readFile(join(dir, relPath));
+		hash.update(`${relPath}\0`);
+		hash.update(content);
+	}
+
+	return hash.digest("hex");
+}
+
 export async function installPlugin(
 	source: string,
 	targetDir: string,
 	version?: string,
 	force?: boolean,
+	expectedHash?: string,
 ): Promise<string> {
 	await mkdir(targetDir, { recursive: true });
 
@@ -161,6 +192,29 @@ export async function installPlugin(
 		execFileSync("git", args, { stdio: "pipe" });
 	} catch (err: any) {
 		throw new Error(`Failed to install plugin from "${source}": ${err.message}`);
+	}
+
+	// Integrity check: verify SHA-256 hash of plugin directory contents
+	if (expectedHash) {
+		let actualHash: string;
+		try {
+			actualHash = await computeDirHash(pluginDir);
+		} catch (err: any) {
+			await rm(pluginDir, { recursive: true, force: true });
+			throw new Error(
+				`Failed to compute integrity hash for plugin "${name}": ${err.message}`,
+			);
+		}
+
+		if (actualHash !== expectedHash) {
+			await rm(pluginDir, { recursive: true, force: true });
+			throw new Error(
+				`Plugin "${name}" integrity check failed: expected hash ${expectedHash}, got ${actualHash}. ` +
+				`The plugin source may have been tampered with.`,
+			);
+		}
+
+		console.log(`Plugin "${name}" integrity verified (SHA-256: ${actualHash.slice(0, 12)}…)`);
 	}
 
 	return pluginDir;
@@ -328,7 +382,7 @@ export async function discoverAndLoadPlugins(
 		if (pluginConf.source) {
 			const installDir = join(gitagentDir, "plugins");
 			try {
-				await installPlugin(pluginConf.source, installDir, pluginConf.version);
+				await installPlugin(pluginConf.source, installDir, pluginConf.version, undefined, pluginConf.hash);
 			} catch (err: any) {
 				console.warn(`Plugin "${pluginName}": install failed: ${err.message}`);
 				continue;
