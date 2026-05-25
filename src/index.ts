@@ -430,7 +430,7 @@ async function main(): Promise<void> {
 			}
 			stopping = true;
 			console.log("\nDisconnecting...");
-			cleanup().finally(() => process.exit(0));
+			cleanup().finally(() => drainShutdown().finally(() => process.exit(0)));
 		});
 
 		// Keep process alive
@@ -798,8 +798,14 @@ async function main(): Promise<void> {
 		}
 	};
 
-	// Handle Ctrl+C during streaming
-	rl.on("SIGINT", () => {
+	// Handle Ctrl+C — single process-level handler
+	let replStopping = false;
+	process.on("SIGINT", () => {
+		if (replStopping) {
+			process.exit(1);
+		}
+		replStopping = true;
+
 		if (agent.state.isStreaming) {
 			agent.abort();
 		} else {
@@ -811,7 +817,7 @@ async function main(): Promise<void> {
 			try {
 				_session.end({ "gitclaw.cost_usd": _totalCostUsd });
 			} catch { /* ignore */ }
-			stopSandbox().finally(() => process.exit(0));
+			stopSandbox().finally(() => drainShutdown().finally(() => process.exit(0)));
 		}
 	});
 
