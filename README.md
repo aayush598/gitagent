@@ -22,7 +22,7 @@ All fix branches follow the naming convention:
 | Resource | Link |
 |----------|------|
 | All Fix Branches | [GitHub Branches](https://github.com/aayush598/gitagent/branches/all) |
-| Complete PDF Report (400+ pages) | [Google Drive Link](https://drive.google.com/drive/folders/1JrE9t-6iP1zpxDNmP9lx0LTRBPidZGsD?usp=drive_link) |
+| Complete PDF Report (400+ pages) | [Google Drive Link](https://drive.google.com/file/d/1_2jPO80qFoVUCp-vIn4dCv6pkroDHfAL/view?usp=sharing) |
 | Original Repository | [github.com/aayush598/gitagent](https://github.com/aayush598/gitagent) |
 
 ---
@@ -466,7 +466,7 @@ https://github.com/aayush598/gitagent/compare/main...fix/SEC-001-cli-command-inj
 ```
 
 For the complete 400+ page PDF report with detailed root cause analysis, before/after code examples, and verification steps:
-- [Download PDF from Google Drive](https://drive.google.com/drive/folders/1JrE9t-6iP1zpxDNmP9lx0LTRBPidZGsD?usp=drive_link)
+- [Download PDF from Google Drive](https://drive.google.com/file/d/1_2jPO80qFoVUCp-vIn4dCv6pkroDHfAL/view?usp=sharing)
 
 ---
 
