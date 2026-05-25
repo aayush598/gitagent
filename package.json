@@ -20,7 +20,8 @@
   "type": "module",
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "package-lock.json"
   ],
   "main": "./dist/exports.js",
   "types": "./dist/exports.d.ts",
