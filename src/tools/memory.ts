@@ -24,8 +24,11 @@ async function loadMemoryConfig(cwd: string, pluginLayers?: MemoryLayerDef[]): P
 	try {
 		const raw = await readFile(join(cwd, "memory", "memory.yaml"), "utf-8");
 		const parsed = yaml.load(raw) as MemoryConfig;
-		if (parsed?.layers && Array.isArray(parsed.layers)) {
-			config = parsed;
+		if (parsed) {
+			config = {
+				layers: Array.isArray(parsed.layers) ? parsed.layers : [],
+				archive_policy: parsed.archive_policy,
+			};
 		}
 	} catch {
 		// No config file
@@ -50,7 +53,7 @@ function getWorkingLayer(config: MemoryConfig | null): { path: string; maxLines?
 	if (!config) {
 		return { path: DEFAULT_MEMORY_PATH };
 	}
-	const working = config.layers.find((l) => l.name === "working") || config.layers[0];
+	const working = config.layers.find((l) => l.name === "working");
 	if (!working) {
 		return { path: DEFAULT_MEMORY_PATH };
 	}
