@@ -277,11 +277,16 @@ export function createTaskTrackerTool(agentDir: string, gitagentDir: string): Ag
 					if (task.status !== "active") throw new Error(`Task ${params.task_id} is not active (status: ${task.status})`);
 
 					const outcome = params.outcome as "success" | "failure" | "partial";
-					task.outcome = outcome;
-					task.status = outcome === "success" ? "succeeded" : "failed";
-					task.ended_at = new Date().toISOString();
-					task.failure_reason = params.failure_reason;
-					task.skill_used = params.skill_used;
+
+					// Build updated task first without mutating in-memory state
+					const updatedTask = {
+						...task,
+						outcome,
+						status: outcome === "success" ? "succeeded" : "failed",
+						ended_at: new Date().toISOString(),
+						failure_reason: params.failure_reason,
+						skill_used: params.skill_used,
+					};
 
 					// Trigger reinforcement if a skill was used
 					let reinforcementMsg = "";
@@ -297,24 +302,27 @@ export function createTaskTrackerTool(agentDir: string, gitagentDir: string): Ag
 						}
 					}
 
+					// Update in-memory store and persist
+					const idx = store.tasks.findIndex((t) => t.id === params.task_id);
+					store.tasks[idx] = updatedTask;
 					await saveTasks(gitagentDir, store);
 
 					if (outcome === "success") {
 						return {
 							content: [{
 								type: "text",
-								text: `Task ${task.id} completed successfully (${task.steps.length} steps).${reinforcementMsg}\n\nConsider calling skill_learner action "evaluate" with this task_id to check if this approach is worth saving as a reusable skill.`,
+								text: `Task ${updatedTask.id} completed successfully (${updatedTask.steps.length} steps).${reinforcementMsg}\n\nConsider calling skill_learner action "evaluate" with this task_id to check if this approach is worth saving as a reusable skill.`,
 							}],
-							details: { task_id: task.id },
+							details: { task_id: updatedTask.id },
 						};
 					}
 
 					return {
 						content: [{
 							type: "text",
-							text: `Task ${task.id} ${outcome}. Reason: ${params.failure_reason || "not specified"}.${reinforcementMsg}\n\nConsider a different approach. Call task_tracker action "begin" with the same objective to retry.`,
+							text: `Task ${updatedTask.id} ${outcome}. Reason: ${params.failure_reason || "not specified"}.${reinforcementMsg}\n\nConsider a different approach. Call task_tracker action "begin" with the same objective to retry.`,
 						}],
-						details: { task_id: task.id },
+						details: { task_id: updatedTask.id },
 					};
 				}
 
