@@ -1,115 +1,115 @@
-\contentsline {chapter}{\numberline {1}Security Fixes}{8}{chapter.1}%
-\contentsline {section}{\numberline {1.1}SEC-001: Command Injection via the \texttt {cli} Tool}{9}{section.1.1}%
-\contentsline {section}{\numberline {1.2}SEC-002: API Key Exposure in Memory (Git-Backed Persistence)}{12}{section.1.2}%
-\contentsline {section}{\numberline {1.3}SEC-003: API Key Leakage via \texttt {.env} Loading into \texttt {process.env}}{15}{section.1.3}%
-\contentsline {section}{\numberline {1.4}SEC-004: Template Injection in Shell Commands (Git Remote URL with Token)}{17}{section.1.4}%
-\contentsline {section}{\numberline {1.5}SEC-005: Arbitrary File Read via Path Traversal}{20}{section.1.5}%
-\contentsline {section}{\numberline {1.6}SEC-006: Symlink Attack on File Write}{22}{section.1.6}%
-\contentsline {section}{\numberline {1.7}SEC-007: SSRF via \texttt {curl}/\texttt {wget} in CLI Tool}{25}{section.1.7}%
-\contentsline {section}{\numberline {1.8}SEC-008 / SEC-009: No Authentication on WebSocket \& HTTP Server}{28}{section.1.8}%
-\contentsline {section}{\numberline {1.9}SEC-010: No Rate Limiting on Tool Execution}{30}{section.1.9}%
-\contentsline {section}{\numberline {1.10}SEC-011: Environment Variable Leak in Tool Output}{33}{section.1.10}%
-\contentsline {section}{\numberline {1.11}SEC-012: Insecure Randomness in Session IDs}{36}{section.1.11}%
-\contentsline {section}{\numberline {1.12}SEC-013: Insecure Deserialization via YAML Plugin Loading}{38}{section.1.12}%
-\contentsline {section}{\numberline {1.13}SEC-014: Secrets in Git History via Memory Tool}{41}{section.1.13}%
-\contentsline {section}{\numberline {1.14}SEC-015: Missing Integrity Check on Plugin Downloads}{44}{section.1.14}%
-\contentsline {section}{\numberline {1.15}SEC-023: AI Prompt Injection Surface via User-Controlled Files}{48}{section.1.15}%
-\contentsline {chapter}{\numberline {2}Bug Fixes}{52}{chapter.2}%
-\contentsline {section}{\numberline {2.1}BUG-001: Git Commit Failure Causes Silent Data Loss}{53}{section.2.1}%
-\contentsline {section}{\numberline {2.2}BUG-002: SIGINT Race Condition During Streaming}{60}{section.2.2}%
-\contentsline {section}{\numberline {2.3}BUG-003: Channel Push After Finish}{66}{section.2.3}%
-\contentsline {section}{\numberline {2.4}BUG-004: Hook Block Silent Failure}{74}{section.2.4}%
-\contentsline {section}{\numberline {2.5}BUG-005: JSON.parse on Empty Task File}{82}{section.2.5}%
-\contentsline {section}{\numberline {2.6}BUG-006: Cron Schedules Not Validated Before Use}{89}{section.2.6}%
-\contentsline {section}{\numberline {2.7}BUG-007: File Descriptor Leak in Hook Execution}{95}{section.2.7}%
-\contentsline {section}{\numberline {2.8}BUG-008: Memory Archive Append Without Newline Check}{102}{section.2.8}%
-\contentsline {section}{\numberline {2.9}BUG-009: Regex Flag 'g' Double-Adding}{109}{section.2.9}%
-\contentsline {section}{\numberline {2.10}BUG-010: capture\_photo Tool Has No Cleanup for Failed Git Operations}{115}{section.2.10}%
-\contentsline {section}{\numberline {2.11}BUG-011: Composio Tool Name Collisions}{122}{section.2.11}%
-\contentsline {section}{\numberline {2.12}BUG-012: AbortSignal.timeout Not Available in Older Node.js}{128}{section.2.12}%
-\contentsline {section}{\numberline {2.13}BUG-013: Summarization Recursion}{135}{section.2.13}%
-\contentsline {section}{\numberline {2.14}BUG-014: Cron Parser Fails on Non-Standard Expressions}{144}{section.2.14}%
-\contentsline {section}{\numberline {2.15}BUG-015: Session State Written Before Agent Yaml Verified}{152}{section.2.15}%
-\contentsline {section}{\numberline {2.16}BUG-016: Plugin Memory Layers Without Root Memory Config}{160}{section.2.16}%
-\contentsline {section}{\numberline {2.17}BUG-017: Git Clone Silence on Failure}{168}{section.2.17}%
-\contentsline {section}{\numberline {2.18}BUG-018: Dependency Resolution Order — Silent Overwrite of Duplicate Dependency Names}{175}{section.2.18}%
-\contentsline {section}{\numberline {2.19}BUG-019: Model Fallback Not Implemented}{184}{section.2.19}%
-\contentsline {section}{\numberline {2.20}BUG-020: Env Var Case Sensitivity Breaks Provider API Key Lookup}{193}{section.2.20}%
-\contentsline {section}{\numberline {2.21}BUG-021: Plugin Discovery Directory Race on Concurrent Instances}{199}{section.2.21}%
-\contentsline {section}{\numberline {2.22}BUG-022: Schedule YAML Write Unescapes Special Characters in Schedule Data}{207}{section.2.22}%
-\contentsline {section}{\numberline {2.23}BUG-023: Audit Log File Grows Indefinitely Without Rotation}{215}{section.2.23}%
-\contentsline {section}{\numberline {2.24}BUG-024: File Watcher Not Cleaning Up Old/Deleted File States}{224}{section.2.24}%
-\contentsline {section}{\numberline {2.25}BUG-025: Console Intercept Affects Other Libraries and Third-Party Code}{231}{section.2.25}%
-\contentsline {section}{\numberline {2.26}BUG-026: Uninitialized Variable Access — `steer()` Is a Silent No-Op}{240}{section.2.26}%
-\contentsline {section}{\numberline {2.27}BUG-027: `isGitRepo` Command Injection via Unsanitized `dir` Parameter}{246}{section.2.27}%
-\contentsline {section}{\numberline {2.28}BUG-028: Plugin Cache Stale Across Sessions — No Caching of Plugin Discovery}{252}{section.2.28}%
-\contentsline {section}{\numberline {2.29}BUG-029: Sandbox Memory Ignores Plugin Memory Layers}{259}{section.2.29}%
-\contentsline {section}{\numberline {2.30}BUG-030: Telemetry Metric Attributes Missing — Tool Duration Histogram Lacks `tool.status`}{265}{section.2.30}%
-\contentsline {section}{\numberline {2.31}BUG-033: Missing MIME Type Validation for File Uploads}{272}{section.2.31}%
-\contentsline {section}{\numberline {2.32}BUG-034: Task Tracker List Doesn't Paginate}{278}{section.2.32}%
-\contentsline {section}{\numberline {2.33}BUG-035: Environment Config DeepMerge Modifies in Place}{286}{section.2.33}%
-\contentsline {chapter}{\numberline {3}Error Handling Fixes}{295}{chapter.3}%
-\contentsline {section}{\numberline {3.1}ERR-001: Silent Catch in Main Error Handler}{295}{section.3.1}%
-\contentsline {section}{\numberline {3.2}ERR-002: Hooks Error Suppression}{297}{section.3.2}%
-\contentsline {section}{\numberline {3.3}ERR-004: No Stack Trace in Error Messages}{300}{section.3.3}%
-\contentsline {section}{\numberline {3.4}ERR-006: Telemetry Errors Break Agent — Logs Suppressed}{302}{section.3.4}%
-\contentsline {section}{\numberline {3.5}ERR-007: Exit Without Cleanup on Early Errors}{304}{section.3.5}%
-\contentsline {section}{\numberline {3.6}ERR-008: Git Machine Import Errors Not Translated}{306}{section.3.6}%
-\contentsline {section}{\numberline {3.7}ERR-009: Error in Error Handler — Console Intercept}{308}{section.3.7}%
-\contentsline {section}{\numberline {3.8}ERR-010: JSON Parse Errors in Tool Output}{310}{section.3.8}%
-\contentsline {section}{\numberline {3.9}ERR-011: Channel Pull After Finish Returns Undefined}{312}{section.3.9}%
-\contentsline {section}{\numberline {3.10}ERR-012: No Validation of Script Exit Codes}{314}{section.3.10}%
-\contentsline {section}{\numberline {3.11}ERR-013: Task Tracker Invalid State Transitions}{316}{section.3.11}%
-\contentsline {chapter}{\numberline {4}Race Condition Fixes}{319}{chapter.4}%
-\contentsline {section}{\numberline {4.1}RACE-001: Task File Read-Modify-Write Race (TOCTOU)}{319}{section.4.1}%
-\contentsline {section}{\numberline {4.2}RACE-002: Plugin Config Write Race}{322}{section.4.2}%
-\contentsline {section}{\numberline {4.3}RACE-003: Schedule Metadata Write Race}{324}{section.4.3}%
-\contentsline {section}{\numberline {4.4}RACE-004: Channel Push After Abort / Agent End Race}{325}{section.4.4}%
-\contentsline {section}{\numberline {4.5}RACE-005: Git Add/Commit Race in Memory Save}{327}{section.4.5}%
-\contentsline {section}{\numberline {4.6}RACE-006: Plugin Install Not Locked}{329}{section.4.6}%
-\contentsline {section}{\numberline {4.7}RACE-007: WebSocket Server Broadcast Race}{331}{section.4.7}%
-\contentsline {section}{\numberline {4.8}RACE-008: Async Initialization Race in query()}{333}{section.4.8}%
-\contentsline {section}{\numberline {4.9}RACE-009: File System Operation Interleaving}{335}{section.4.9}%
-\contentsline {section}{\numberline {4.10}RACE-010: Process Exit During Async Operations}{337}{section.4.10}%
-\contentsline {section}{\numberline {4.11}RACE-011: SIGINT Handler Reentrancy}{339}{section.4.11}%
-\contentsline {chapter}{\numberline {5}Type Safety Improvements}{342}{chapter.5}%
-\contentsline {section}{\numberline {5.1}TYPE-002: as any Assertions in Model Handling}{342}{section.5.1}%
-\contentsline {section}{\numberline {5.2}TYPE-003: Unconstrained Generic Parameters in toAgentTool}{343}{section.5.2}%
-\contentsline {section}{\numberline {5.3}TYPE-004: Unvalidated JSON Parsed Results}{345}{section.5.3}%
-\contentsline {section}{\numberline {5.4}TYPE-006: Loose Type for Constraint Options}{347}{section.5.4}%
-\contentsline {section}{\numberline {5.5}TYPE-007: Unsafe Access to Event Properties}{348}{section.5.5}%
-\contentsline {section}{\numberline {5.6}TYPE-008: Plugin Hook Handler Untyped Context}{350}{section.5.6}%
-\contentsline {section}{\numberline {5.7}TYPE-009: Weakly Typed Telemetry Options}{351}{section.5.7}%
-\contentsline {section}{\numberline {5.8}TYPE-011: Ambiguous Return Types in SDK}{352}{section.5.8}%
-\contentsline {section}{\numberline {5.9}TYPE-012: Config Property Type Not Enforced at Runtime}{354}{section.5.9}%
-\contentsline {section}{\numberline {5.10}TYPE-013: Missing Generic on Channel — IteratorResult}{355}{section.5.10}%
-\contentsline {section}{\numberline {5.11}TYPE-014: Static Type From Typebox Not Properly Used}{357}{section.5.11}%
-\contentsline {section}{\numberline {5.12}TYPE-015: Incomplete Type Export}{358}{section.5.12}%
-\contentsline {chapter}{\numberline {6}Network & Connectivity Fixes}{361}{chapter.6}%
-\contentsline {section}{\numberline {6.1}NET-002: No Connection Pooling}{361}{section.6.1}%
-\contentsline {section}{\numberline {6.2}NET-005: No Request Timeout for API Calls}{363}{section.6.2}%
-\contentsline {section}{\numberline {6.3}NET-009: No Keep-Alive for LLM API}{365}{section.6.3}%
-\contentsline {section}{\numberline {6.4}NET-010: No IPv6 Support}{366}{section.6.4}%
-\contentsline {chapter}{\numberline {7}Performance Improvements}{368}{chapter.7}%
-\contentsline {section}{\numberline {7.1}PERF-001: Synchronous File Operations Block the Event Loop}{368}{section.7.1}%
-\contentsline {section}{\numberline {7.2}PERF-002: Unbounded Memory Growth in Voice Server Log Ring Buffer}{370}{section.7.2}%
-\contentsline {chapter}{\numberline {8}Concurrency Issues}{374}{chapter.8}%
-\contentsline {section}{\numberline {8.1}CONC-001: Shared State Without Locks}{374}{section.8.1}%
-\contentsline {section}{\numberline {8.2}CONC-002: Async Hook Execution Ordering}{378}{section.8.2}%
-\contentsline {chapter}{\numberline {9}Configuration Issues}{382}{chapter.9}%
-\contentsline {section}{\numberline {9.1}CONFIG-002: Incomplete agent.yaml in Repository}{382}{section.9.1}%
-\contentsline {section}{\numberline {9.2}CONFIG-004: Graceful Missing Config Handling}{385}{section.9.2}%
-\contentsline {section}{\numberline {9.3}CONFIG-009: GITCLAW\_ENV Only Partially Supported}{388}{section.9.3}%
-\contentsline {section}{\numberline {9.4}CONFIG-010: Model Constraints Inconsistent Naming}{390}{section.9.4}%
-\contentsline {chapter}{\numberline {10}Code Quality}{394}{chapter.10}%
-\contentsline {section}{\numberline {10.1}CQ-012: Hardcoded Timeouts}{394}{section.10.1}%
-\contentsline {section}{\numberline {10.2}CQ-025: Unused Imports}{397}{section.10.2}%
-\contentsline {chapter}{\numberline {11}Dependency Issues}{400}{chapter.11}%
-\contentsline {section}{\numberline {11.1}DEP-001--003: Migrate from js-yaml to yaml v2}{400}{section.11.1}%
-\contentsline {section}{\numberline {11.2}DEP-004: Lockfile Not Published}{403}{section.11.2}%
-\contentsline {section}{\numberline {11.3}DEP-005: Update OpenTelemetry Dependency Versions}{405}{section.11.3}%
-\contentsline {chapter}{\numberline {12}File Operations}{408}{chapter.12}%
-\contentsline {section}{\numberline {12.1}FILE-007: Race Condition in Directory Creation}{408}{section.12.1}%
-\contentsline {chapter}{\numberline {13}Logging}{412}{chapter.13}%
-\contentsline {section}{\numberline {13.1}LOG-003: ANSI Escape Codes in File Logs}{412}{section.13.1}%
-\contentsline {section}{\numberline {13.2}LOG-006: Enhanced Health Check Endpoint}{415}{section.13.2}%
+\contentsline {chapter}{\numberline {1}Security Fixes}{6}{chapter.1}%
+\contentsline {section}{\numberline {1.1}SEC-001: Command Injection via the \texttt {cli} Tool}{7}{section.1.1}%
+\contentsline {section}{\numberline {1.2}SEC-002: API Key Exposure in Memory (Git-Backed Persistence)}{10}{section.1.2}%
+\contentsline {section}{\numberline {1.3}SEC-003: API Key Leakage via \texttt {.env} Loading into \texttt {process.env}}{13}{section.1.3}%
+\contentsline {section}{\numberline {1.4}SEC-004: Template Injection in Shell Commands (Git Remote URL with Token)}{15}{section.1.4}%
+\contentsline {section}{\numberline {1.5}SEC-005: Arbitrary File Read via Path Traversal}{18}{section.1.5}%
+\contentsline {section}{\numberline {1.6}SEC-006: Symlink Attack on File Write}{20}{section.1.6}%
+\contentsline {section}{\numberline {1.7}SEC-007: SSRF via \texttt {curl}/\texttt {wget} in CLI Tool}{23}{section.1.7}%
+\contentsline {section}{\numberline {1.8}SEC-008 / SEC-009: No Authentication on WebSocket \& HTTP Server}{26}{section.1.8}%
+\contentsline {section}{\numberline {1.9}SEC-010: No Rate Limiting on Tool Execution}{28}{section.1.9}%
+\contentsline {section}{\numberline {1.10}SEC-011: Environment Variable Leak in Tool Output}{31}{section.1.10}%
+\contentsline {section}{\numberline {1.11}SEC-012: Insecure Randomness in Session IDs}{34}{section.1.11}%
+\contentsline {section}{\numberline {1.12}SEC-013: Insecure Deserialization via YAML Plugin Loading}{36}{section.1.12}%
+\contentsline {section}{\numberline {1.13}SEC-014: Secrets in Git History via Memory Tool}{39}{section.1.13}%
+\contentsline {section}{\numberline {1.14}SEC-015: Missing Integrity Check on Plugin Downloads}{42}{section.1.14}%
+\contentsline {section}{\numberline {1.15}SEC-023: AI Prompt Injection Surface via User-Controlled Files}{46}{section.1.15}%
+\contentsline {chapter}{\numberline {2}Bug Fixes}{50}{chapter.2}%
+\contentsline {section}{\numberline {2.1}BUG-001: Git Commit Failure Causes Silent Data Loss}{51}{section.2.1}%
+\contentsline {section}{\numberline {2.2}BUG-002: SIGINT Race Condition During Streaming}{58}{section.2.2}%
+\contentsline {section}{\numberline {2.3}BUG-003: Channel Push After Finish}{64}{section.2.3}%
+\contentsline {section}{\numberline {2.4}BUG-004: Hook Block Silent Failure}{72}{section.2.4}%
+\contentsline {section}{\numberline {2.5}BUG-005: JSON.parse on Empty Task File}{80}{section.2.5}%
+\contentsline {section}{\numberline {2.6}BUG-006: Cron Schedules Not Validated Before Use}{87}{section.2.6}%
+\contentsline {section}{\numberline {2.7}BUG-007: File Descriptor Leak in Hook Execution}{93}{section.2.7}%
+\contentsline {section}{\numberline {2.8}BUG-008: Memory Archive Append Without Newline Check}{100}{section.2.8}%
+\contentsline {section}{\numberline {2.9}BUG-009: Regex Flag 'g' Double-Adding}{107}{section.2.9}%
+\contentsline {section}{\numberline {2.10}BUG-010: capture\_photo Tool Has No Cleanup for Failed Git Operations}{113}{section.2.10}%
+\contentsline {section}{\numberline {2.11}BUG-011: Composio Tool Name Collisions}{120}{section.2.11}%
+\contentsline {section}{\numberline {2.12}BUG-012: AbortSignal.timeout Not Available in Older Node.js}{126}{section.2.12}%
+\contentsline {section}{\numberline {2.13}BUG-013: Summarization Recursion}{133}{section.2.13}%
+\contentsline {section}{\numberline {2.14}BUG-014: Cron Parser Fails on Non-Standard Expressions}{142}{section.2.14}%
+\contentsline {section}{\numberline {2.15}BUG-015: Session State Written Before Agent Yaml Verified}{150}{section.2.15}%
+\contentsline {section}{\numberline {2.16}BUG-016: Plugin Memory Layers Without Root Memory Config}{158}{section.2.16}%
+\contentsline {section}{\numberline {2.17}BUG-017: Git Clone Silence on Failure}{166}{section.2.17}%
+\contentsline {section}{\numberline {2.18}BUG-018: Dependency Resolution Order — Silent Overwrite of Duplicate Dependency Names}{173}{section.2.18}%
+\contentsline {section}{\numberline {2.19}BUG-019: Model Fallback Not Implemented}{182}{section.2.19}%
+\contentsline {section}{\numberline {2.20}BUG-020: Env Var Case Sensitivity Breaks Provider API Key Lookup}{191}{section.2.20}%
+\contentsline {section}{\numberline {2.21}BUG-021: Plugin Discovery Directory Race on Concurrent Instances}{197}{section.2.21}%
+\contentsline {section}{\numberline {2.22}BUG-022: Schedule YAML Write Unescapes Special Characters in Schedule Data}{205}{section.2.22}%
+\contentsline {section}{\numberline {2.23}BUG-023: Audit Log File Grows Indefinitely Without Rotation}{213}{section.2.23}%
+\contentsline {section}{\numberline {2.24}BUG-024: File Watcher Not Cleaning Up Old/Deleted File States}{222}{section.2.24}%
+\contentsline {section}{\numberline {2.25}BUG-025: Console Intercept Affects Other Libraries and Third-Party Code}{229}{section.2.25}%
+\contentsline {section}{\numberline {2.26}BUG-026: Uninitialized Variable Access — `steer()` Is a Silent No-Op}{238}{section.2.26}%
+\contentsline {section}{\numberline {2.27}BUG-027: `isGitRepo` Command Injection via Unsanitized `dir` Parameter}{244}{section.2.27}%
+\contentsline {section}{\numberline {2.28}BUG-028: Plugin Cache Stale Across Sessions — No Caching of Plugin Discovery}{250}{section.2.28}%
+\contentsline {section}{\numberline {2.29}BUG-029: Sandbox Memory Ignores Plugin Memory Layers}{257}{section.2.29}%
+\contentsline {section}{\numberline {2.30}BUG-030: Telemetry Metric Attributes Missing — Tool Duration Histogram Lacks `tool.status`}{263}{section.2.30}%
+\contentsline {section}{\numberline {2.31}BUG-033: Missing MIME Type Validation for File Uploads}{270}{section.2.31}%
+\contentsline {section}{\numberline {2.32}BUG-034: Task Tracker List Doesn't Paginate}{276}{section.2.32}%
+\contentsline {section}{\numberline {2.33}BUG-035: Environment Config DeepMerge Modifies in Place}{284}{section.2.33}%
+\contentsline {chapter}{\numberline {3}Error Handling Fixes}{293}{chapter.3}%
+\contentsline {section}{\numberline {3.1}ERR-001: Silent Catch in Main Error Handler}{293}{section.3.1}%
+\contentsline {section}{\numberline {3.2}ERR-002: Hooks Error Suppression}{295}{section.3.2}%
+\contentsline {section}{\numberline {3.3}ERR-004: No Stack Trace in Error Messages}{298}{section.3.3}%
+\contentsline {section}{\numberline {3.4}ERR-006: Telemetry Errors Break Agent — Logs Suppressed}{300}{section.3.4}%
+\contentsline {section}{\numberline {3.5}ERR-007: Exit Without Cleanup on Early Errors}{302}{section.3.5}%
+\contentsline {section}{\numberline {3.6}ERR-008: Git Machine Import Errors Not Translated}{304}{section.3.6}%
+\contentsline {section}{\numberline {3.7}ERR-009: Error in Error Handler — Console Intercept}{306}{section.3.7}%
+\contentsline {section}{\numberline {3.8}ERR-010: JSON Parse Errors in Tool Output}{308}{section.3.8}%
+\contentsline {section}{\numberline {3.9}ERR-011: Channel Pull After Finish Returns Undefined}{310}{section.3.9}%
+\contentsline {section}{\numberline {3.10}ERR-012: No Validation of Script Exit Codes}{312}{section.3.10}%
+\contentsline {section}{\numberline {3.11}ERR-013: Task Tracker Invalid State Transitions}{314}{section.3.11}%
+\contentsline {chapter}{\numberline {4}Race Condition Fixes}{317}{chapter.4}%
+\contentsline {section}{\numberline {4.1}RACE-001: Task File Read-Modify-Write Race (TOCTOU)}{317}{section.4.1}%
+\contentsline {section}{\numberline {4.2}RACE-002: Plugin Config Write Race}{320}{section.4.2}%
+\contentsline {section}{\numberline {4.3}RACE-003: Schedule Metadata Write Race}{322}{section.4.3}%
+\contentsline {section}{\numberline {4.4}RACE-004: Channel Push After Abort / Agent End Race}{323}{section.4.4}%
+\contentsline {section}{\numberline {4.5}RACE-005: Git Add/Commit Race in Memory Save}{325}{section.4.5}%
+\contentsline {section}{\numberline {4.6}RACE-006: Plugin Install Not Locked}{327}{section.4.6}%
+\contentsline {section}{\numberline {4.7}RACE-007: WebSocket Server Broadcast Race}{329}{section.4.7}%
+\contentsline {section}{\numberline {4.8}RACE-008: Async Initialization Race in query()}{331}{section.4.8}%
+\contentsline {section}{\numberline {4.9}RACE-009: File System Operation Interleaving}{333}{section.4.9}%
+\contentsline {section}{\numberline {4.10}RACE-010: Process Exit During Async Operations}{335}{section.4.10}%
+\contentsline {section}{\numberline {4.11}RACE-011: SIGINT Handler Reentrancy}{337}{section.4.11}%
+\contentsline {chapter}{\numberline {5}Type Safety Improvements}{340}{chapter.5}%
+\contentsline {section}{\numberline {5.1}TYPE-002: as any Assertions in Model Handling}{340}{section.5.1}%
+\contentsline {section}{\numberline {5.2}TYPE-003: Unconstrained Generic Parameters in toAgentTool}{341}{section.5.2}%
+\contentsline {section}{\numberline {5.3}TYPE-004: Unvalidated JSON Parsed Results}{343}{section.5.3}%
+\contentsline {section}{\numberline {5.4}TYPE-006: Loose Type for Constraint Options}{345}{section.5.4}%
+\contentsline {section}{\numberline {5.5}TYPE-007: Unsafe Access to Event Properties}{346}{section.5.5}%
+\contentsline {section}{\numberline {5.6}TYPE-008: Plugin Hook Handler Untyped Context}{348}{section.5.6}%
+\contentsline {section}{\numberline {5.7}TYPE-009: Weakly Typed Telemetry Options}{349}{section.5.7}%
+\contentsline {section}{\numberline {5.8}TYPE-011: Ambiguous Return Types in SDK}{350}{section.5.8}%
+\contentsline {section}{\numberline {5.9}TYPE-012: Config Property Type Not Enforced at Runtime}{352}{section.5.9}%
+\contentsline {section}{\numberline {5.10}TYPE-013: Missing Generic on Channel — IteratorResult}{353}{section.5.10}%
+\contentsline {section}{\numberline {5.11}TYPE-014: Static Type From Typebox Not Properly Used}{355}{section.5.11}%
+\contentsline {section}{\numberline {5.12}TYPE-015: Incomplete Type Export}{356}{section.5.12}%
+\contentsline {chapter}{\numberline {6}Network & Connectivity Fixes}{359}{chapter.6}%
+\contentsline {section}{\numberline {6.1}NET-002: No Connection Pooling}{359}{section.6.1}%
+\contentsline {section}{\numberline {6.2}NET-005: No Request Timeout for API Calls}{361}{section.6.2}%
+\contentsline {section}{\numberline {6.3}NET-009: No Keep-Alive for LLM API}{363}{section.6.3}%
+\contentsline {section}{\numberline {6.4}NET-010: No IPv6 Support}{364}{section.6.4}%
+\contentsline {chapter}{\numberline {7}Performance Improvements}{366}{chapter.7}%
+\contentsline {section}{\numberline {7.1}PERF-001: Synchronous File Operations Block the Event Loop}{366}{section.7.1}%
+\contentsline {section}{\numberline {7.2}PERF-002: Unbounded Memory Growth in Voice Server Log Ring Buffer}{368}{section.7.2}%
+\contentsline {chapter}{\numberline {8}Concurrency Issues}{372}{chapter.8}%
+\contentsline {section}{\numberline {8.1}CONC-001: Shared State Without Locks}{372}{section.8.1}%
+\contentsline {section}{\numberline {8.2}CONC-002: Async Hook Execution Ordering}{376}{section.8.2}%
+\contentsline {chapter}{\numberline {9}Configuration Issues}{380}{chapter.9}%
+\contentsline {section}{\numberline {9.1}CONFIG-002: Incomplete agent.yaml in Repository}{380}{section.9.1}%
+\contentsline {section}{\numberline {9.2}CONFIG-004: Graceful Missing Config Handling}{383}{section.9.2}%
+\contentsline {section}{\numberline {9.3}CONFIG-009: GITCLAW\_ENV Only Partially Supported}{386}{section.9.3}%
+\contentsline {section}{\numberline {9.4}CONFIG-010: Model Constraints Inconsistent Naming}{388}{section.9.4}%
+\contentsline {chapter}{\numberline {10}Code Quality}{392}{chapter.10}%
+\contentsline {section}{\numberline {10.1}CQ-012: Hardcoded Timeouts}{392}{section.10.1}%
+\contentsline {section}{\numberline {10.2}CQ-025: Unused Imports}{395}{section.10.2}%
+\contentsline {chapter}{\numberline {11}Dependency Issues}{398}{chapter.11}%
+\contentsline {section}{\numberline {11.1}DEP-001--003: Migrate from js-yaml to yaml v2}{398}{section.11.1}%
+\contentsline {section}{\numberline {11.2}DEP-004: Lockfile Not Published}{401}{section.11.2}%
+\contentsline {section}{\numberline {11.3}DEP-005: Update OpenTelemetry Dependency Versions}{403}{section.11.3}%
+\contentsline {chapter}{\numberline {12}File Operations}{406}{chapter.12}%
+\contentsline {section}{\numberline {12.1}FILE-007: Race Condition in Directory Creation}{406}{section.12.1}%
+\contentsline {chapter}{\numberline {13}Logging}{410}{chapter.13}%
+\contentsline {section}{\numberline {13.1}LOG-003: ANSI Escape Codes in File Logs}{410}{section.13.1}%
+\contentsline {section}{\numberline {13.2}LOG-006: Enhanced Health Check Endpoint}{413}{section.13.2}%
