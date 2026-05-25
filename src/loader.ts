@@ -1,6 +1,6 @@
 import { readFile, mkdir, writeFile } from "fs/promises";
 import { join } from "path";
-import { randomUUID } from "crypto";
+import { randomBytes } from "crypto";
 import { execSync } from "child_process";
 import { getModel } from "@mariozechner/pi-ai";
 import type { Model } from "@mariozechner/pi-ai";
@@ -116,12 +116,19 @@ async function ensureGitagentDir(agentDir: string): Promise<string> {
 }
 
 async function writeSessionState(gitagentDir: string): Promise<string> {
-	const sessionId = randomUUID();
+	const sessionId = randomBytes(32).toString("hex");
 	const state = {
 		session_id: sessionId,
 		started_at: new Date().toISOString(),
+		expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
 	};
-	await writeFile(join(gitagentDir, "state.json"), JSON.stringify(state, null, 2), "utf-8");
+	const statePath = join(gitagentDir, "state.json");
+	await writeFile(statePath, JSON.stringify(state, null, 2), "utf-8");
+	try {
+		execSync(`chmod 600 ${statePath}`);
+	} catch {
+		// best effort — fail silently if platform doesn't support chmod
+	}
 	return sessionId;
 }
 

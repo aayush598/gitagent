@@ -91,7 +91,7 @@ export function initLocalSession(opts: LocalRepoOptions): LocalSession {
 		try { git(`pull origin ${branch}`, dir); } catch { /* branch may not exist on remote yet */ }
 	} else {
 		// New session — branch off latest default branch
-		sessionId = randomBytes(4).toString("hex"); // 8-char hex
+		sessionId = randomBytes(16).toString("hex"); // 32-char hex (128 bits)
 		branch = `gitclaw/session-${sessionId}`;
 		git(`checkout -b ${branch}`, dir);
 	}
