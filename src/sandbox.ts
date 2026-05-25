@@ -51,10 +51,10 @@ export async function createSandboxContext(
 	try {
 		// @ts-ignore — gitmachine is an optional peer dependency
 		gitmachine = await import("gitmachine");
-	} catch {
+	} catch (err) {
 		throw new Error(
 			"Sandbox mode requires the 'gitmachine' package.\n" +
-			"Install it with: npm install gitmachine",
+			`Install it with: npm install gitmachine\nOriginal error: ${err instanceof Error ? err.message : String(err)}`,
 		);
 	}
 
