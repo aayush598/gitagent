@@ -31,13 +31,32 @@ interface TasksStore {
 	tasks: TaskRecord[];
 }
 
+// ── Type guard ──────────────────────────────────────────────────────────
+
+function isTasksStore(data: unknown): data is TasksStore {
+	if (typeof data !== "object" || data === null) return false;
+	const d = data as Record<string, unknown>;
+	return Array.isArray(d.tasks) && d.tasks.every(
+		(t: unknown) =>
+			typeof t === "object" && t !== null &&
+			typeof (t as Record<string, unknown>).id === "string" &&
+			typeof (t as Record<string, unknown>).objective === "string" &&
+			Array.isArray((t as Record<string, unknown>).steps),
+	);
+}
+
 // ── Persistence ─────────────────────────────────────────────────────────
 
 async function loadTasks(gitagentDir: string): Promise<TasksStore> {
 	const tasksFile = join(gitagentDir, "learning", "tasks.json");
 	try {
 		const raw = await readFile(tasksFile, "utf-8");
-		return JSON.parse(raw) as TasksStore;
+		const parsed = JSON.parse(raw);
+		if (!isTasksStore(parsed)) {
+			console.warn("Invalid tasks.json format, starting fresh");
+			return { tasks: [] };
+		}
+		return parsed;
 	} catch {
 		return { tasks: [] };
 	}
