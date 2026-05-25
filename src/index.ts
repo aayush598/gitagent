@@ -15,9 +15,9 @@ import { toAgentTool } from "./tool-utils.js";
 import { AuditLogger, isAuditEnabled } from "./audit.js";
 import { formatComplianceWarnings } from "./compliance.js";
 import { readFile, mkdir, writeFile, stat, access } from "fs/promises";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, statSync } from "fs";
 import { join, resolve } from "path";
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import { initLocalSession } from "./session.js";
 import type { LocalSession } from "./session.js";
 import { startVoiceServer } from "./voice/server.js";
@@ -195,7 +195,8 @@ function summarizeArgs(args: any): string {
 
 function isGitRepo(dir: string): boolean {
 	try {
-		execSync("git rev-parse --is-inside-work-tree", { cwd: dir, stdio: "pipe" });
+		if (!statSync(dir).isDirectory()) return false;
+		execFileSync("git", ["rev-parse", "--is-inside-work-tree"], { cwd: dir, stdio: "pipe" });
 		return true;
 	} catch {
 		return false;
