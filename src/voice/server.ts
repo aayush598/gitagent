@@ -993,11 +993,15 @@ ${runningContext}`;
 		return result;
 	}
 
-	/** Find new or modified files by comparing snapshots */
+	/** Find new, modified, or deleted files by comparing snapshots */
 	function diffSnapshots(before: Map<string, number>, after: Map<string, number>): string[] {
 		const changed: string[] = [];
 		for (const [path, mtime] of after) {
 			if (!before.has(path) || before.get(path)! < mtime) changed.push(path);
+		}
+		// Detect deletions: files in before that are absent from after
+		for (const [path] of before) {
+			if (!after.has(path)) changed.push(path);
 		}
 		return changed;
 	}
