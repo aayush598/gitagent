@@ -10,7 +10,7 @@
 \textbf{Affected File} & \srcfile{src/tools/memory.ts}, \srcfile{src/tools/sandbox-memory.ts} \\
 \textbf{Branch} & \branchref{fix/SEC-014-secrets-git-history} \\
 \textbf{Changes} & \branchdiff{fix/SEC-014-secrets-git-history} \\
-\textbf{Commit} & e6efc22389002497c3bd5a14889e54ae142c04cf \\
+\textbf{Commit} & 8667321 \\
 \end{tabular}
 
 \subsection*{Executive Summary}
@@ -115,13 +115,13 @@ The same archive-add removal and \texttt{git gc} call are applied in \texttt{san
 \begin{itemize}
     \item \srcfile{src/tools/memory.ts} --- Added \texttt{MAX\_MEMORY\_COMMITS} threshold (50), \texttt{countMemoryCommits()} counting function, \texttt{squashMemoryHistory()} filter-branch based squashing, \texttt{runGitGC()} for periodic pruning, removed git-add from \texttt{archiveOverflow()}, integrated squash check in \texttt{execute()} after each save.
     \item \srcfile{src/tools/sandbox-memory.ts} --- Removed git-add from \texttt{archiveOverflow()}, added \texttt{git gc --auto --quiet} after saves.
-    \item \srcfile{src/__tests__/memory-sec-014.test.ts} --- New comprehensive test suite for git history protections.
+    \item \srcfile{test/memory-sec-014.test.ts} --- New standalone test suite for git history protections.
 \end{itemize}
 
 \subsection*{Verification}
-Tests verify that after saving more than 50 times (exceeding MAX\_MEMORY\_COMMITS), the commit count for the memory file drops to 1 or 2 (squashed), that the latest content is preserved after a squash cycle, that \texttt{git gc --auto} runs without error after saves, and that archive files exist on disk but are not tracked in git.
+Standalone test suite validates all git history protection mechanisms: commit counting, history squashing, content preservation after squash, garbage collection execution, archive file exclusion from git tracking, and reflog cleanup.
 
 \subsection*{Test File}
-\srcfile{src/__tests__/memory-sec-014.test.ts}
+\srcfile{test/memory-sec-014.test.ts}
 
-Contains four test cases: (1) squash removes old commits after 51 saves, (2) current content preserved after squash, (3) git gc runs without error, (4) archive files are not git-tracked after path-level filtering.
+Contains 7 test cases: \texttt{countMemoryCommits}, squash reduces commits, content preserved, gc, archive files not git-added, reflog destroyed.

@@ -10,7 +10,7 @@
 \textbf{Affected File} & \srcfile{src/loader.ts}, \srcfile{src/sdk.ts}, \srcfile{src/tools/write.ts} \\
 \textbf{Branch} & \branchref{fix/SEC-023-input-sanitization} \\
 \textbf{Changes} & \branchdiff{fix/SEC-023-input-sanitization} \\
-\textbf{Commit} & 7a66a2426e5f60f4d6842afa548e44bd47acbf68 \\
+\textbf{Commit} & 2f330f9 \\
 \end{tabular}
 
 \subsection*{Executive Summary}
@@ -128,9 +128,9 @@ if (isProtectedFile(absolutePath, cwd)) {
 \end{itemize}
 
 \subsection*{Verification}
-Verification tests confirm that the injectable files (SOUL.md, RULES.md, etc.) are wrapped with boundary markers that distinguish them from the immutable core, that protected files cannot be overwritten via the write tool, and that the runtime safety assertion correctly detects if the safety rules are missing from the assembled system prompt.
+Standalone test suite validates all input sanitization mechanisms: system prompt integrity verification, protected file detection, boundary marker enforcement, and safety preamble correctness.
 
 \subsection*{Test File}
-\srcfile{verification/sec-023-verify.ts} (manual verification script)
+\srcfile{test/input-sanitization.test.ts}
 
-Validates three properties: (1) SOUL.md content appears within boundary markers (with the immutable safety preamble present and taking precedence), (2) protected file writes are rejected with an appropriate error message, and (3) the runtime safety assertion throws when the system prompt lacks the required safety phrases.
+Contains 22 test cases: \texttt{verifySystemPromptIntegrity} (6 tests), \texttt{isProtectedFile} (9 tests), boundary markers (4 tests), safety preamble (3 tests).

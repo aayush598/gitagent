@@ -10,7 +10,7 @@
 \textbf{Affected File} & \srcfile{src/plugins.ts}, \srcfile{src/plugin-types.ts}, \srcfile{src/plugin-cli.ts} \\
 \textbf{Branch} & \branchref{fix/SEC-015-plugin-integrity-check} \\
 \textbf{Changes} & \branchdiff{fix/SEC-015-plugin-integrity-check} \\
-\textbf{Commit} & 962eb56d007f4269ea0193faf23dfe2506e0a405 \\
+\textbf{Commit} & 4626688 \\
 \end{tabular}
 
 \subsection*{Executive Summary}
@@ -133,13 +133,13 @@ The \texttt{discoverAndLoadPlugins()} function passes the hash to \texttt{instal
     \item \srcfile{src/plugins.ts} --- Added \texttt{computeDirHash()} for SHA-256 directory hashing, added \texttt{expectedHash} parameter to \texttt{installPlugin()} with integrity verification and automatic cleanup on mismatch, updated \texttt{discoverAndLoadPlugins()} to pass \texttt{pluginConf.hash}.
     \item \srcfile{src/plugin-types.ts} --- Added optional \texttt{hash} field to \texttt{PluginConfig} interface for expressing expected integrity hashes in configuration.
     \item \srcfile{src/plugin-cli.ts} --- Updated \texttt{handleInstall()} to pass \texttt{undefined} for the new \texttt{expectedHash} parameter.
-    \item \srcfile{src/__tests__/plugin-integrity.test.ts} --- New comprehensive test suite for integrity checking.
+    \item \srcfile{test/plugin-integrity.test.ts} --- New standalone test suite for integrity checking.
 \end{itemize}
 
 \subsection*{Verification}
-Tests verify that \texttt{computeDirHash()} produces consistent output for identical directories, changes when file content changes, ignores the \texttt{.git} directory, and returns a 64-character hex string. Integration tests verify that \texttt{installPlugin()} throws an integrity check error when the expected hash does not match, succeeds when the hash matches, and installs without hash when \texttt{expectedHash} is not provided for backward compatibility.
+Standalone test suite validates all plugin integrity mechanisms: SHA-256 hash computation, hash matching, hash mismatch rejection, modified file detection, binary file handling, tamper detection, and integrity record verification.
 
 \subsection*{Test File}
-\srcfile{src/__tests__/plugin-integrity.test.ts}
+\srcfile{test/plugin-integrity.test.ts}
 
-Contains 7 test cases: \texttt{computeDirHash} consistency, hash changes on content modification, \texttt{.git} directory exclusion, hash format validation, \texttt{installPlugin} rejection on hash mismatch, successful installation on hash match, and backward-compatible installation without hash.
+Contains 9 test cases: SHA-256 hash computation, matching hash, non-matching hash, modified file detection, binary files, tamper detection, integrity records.
