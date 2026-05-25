@@ -2,6 +2,7 @@ import { type Static } from "@sinclair/typebox";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import type { SandboxContext } from "../sandbox.js";
 import { memorySchema, DEFAULT_MEMORY_PATH, resolveSandboxPath } from "./shared.js";
+import type { MemoryLayerDef } from "../plugin-types.js";
 import yaml from "js-yaml";
 
 interface MemoryLayer {
@@ -16,22 +17,40 @@ interface MemoryConfig {
 	archive_policy?: { max_entries?: number; compress_after?: string };
 }
 
-async function loadMemoryConfig(ctx: SandboxContext): Promise<MemoryConfig | null> {
+async function loadMemoryConfig(ctx: SandboxContext, pluginLayers?: MemoryLayerDef[]): Promise<MemoryConfig | null> {
+	let config: MemoryConfig | null = null;
 	try {
 		const raw: string = await ctx.machine.readFile(
 			resolveSandboxPath("memory/memory.yaml", ctx.repoPath),
 		);
-		const config = yaml.load(raw) as MemoryConfig;
-		if (!config?.layers || !Array.isArray(config.layers)) return null;
-		return config;
+		const parsed = yaml.load(raw) as MemoryConfig;
+		if (parsed) {
+			config = {
+				layers: Array.isArray(parsed.layers) ? parsed.layers : [],
+				archive_policy: parsed.archive_policy,
+			};
+		}
 	} catch {
-		return null;
+		// No config file
 	}
+
+	if (pluginLayers && pluginLayers.length > 0) {
+		if (!config) config = { layers: [] };
+		for (const layer of pluginLayers) {
+			config.layers.push({
+				name: layer.name,
+				path: layer.path,
+				format: "markdown",
+			});
+		}
+	}
+
+	return config;
 }
 
 function getWorkingLayer(config: MemoryConfig | null): { path: string; maxLines?: number } {
 	if (!config) return { path: DEFAULT_MEMORY_PATH };
-	const working = config.layers.find((l) => l.name === "working") || config.layers[0];
+	const working = config.layers.find((l) => l.name === "working");
 	if (!working) return { path: DEFAULT_MEMORY_PATH };
 	return { path: working.path, maxLines: working.max_lines };
 }
@@ -70,7 +89,7 @@ async function archiveOverflow(
 	return kept;
 }
 
-export function createSandboxMemoryTool(ctx: SandboxContext): AgentTool<typeof memorySchema> {
+export function createSandboxMemoryTool(ctx: SandboxContext, pluginLayers?: MemoryLayerDef[]): AgentTool<typeof memorySchema> {
 	return {
 		name: "memory",
 		label: "memory",
@@ -85,7 +104,7 @@ export function createSandboxMemoryTool(ctx: SandboxContext): AgentTool<typeof m
 			const { action, content, message } = rawParams as Static<typeof memorySchema>;
 			if (signal?.aborted) throw new Error("Operation aborted");
 
-			const config = await loadMemoryConfig(ctx);
+			const config = await loadMemoryConfig(ctx, pluginLayers);
 			const { path: memoryPath, maxLines } = getWorkingLayer(config);
 			const memoryFile = resolveSandboxPath(memoryPath, ctx.repoPath);
 
