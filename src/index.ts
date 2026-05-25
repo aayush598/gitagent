@@ -820,11 +820,11 @@ async function main(): Promise<void> {
 
 // Flush OpenTelemetry exporters on SIGTERM. No-op when telemetry is disabled.
 process.on("SIGTERM", () => {
-	shutdownTelemetry().catch(() => {}).finally(() => process.exit(0));
+	shutdownTelemetry().catch((err) => console.error(`[telemetry] shutdown error: ${err.message}`)).finally(() => process.exit(0));
 });
 
 main()
-  .finally(() => shutdownTelemetry().catch(() => {}))
+  .finally(() => shutdownTelemetry().catch((err) => console.error(`[telemetry] shutdown error: ${err.message}`)))
   .catch((err) => {
     console.error(red(`Fatal: ${err.message}`));
     process.exit(1);
