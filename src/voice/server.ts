@@ -928,8 +928,10 @@ ${runningContext}`;
 	/** Broadcast a message to all connected browser WebSocket clients */
 	function broadcastToBrowsers(msg: ServerMessage) {
 		const payload = JSON.stringify(msg);
-		for (const client of wss.clients) {
-			if (client.readyState === 1) client.send(payload);
+		for (const client of [...wss.clients]) {
+			if (client.readyState === 1) {
+				try { client.send(payload); } catch { /* client may have disconnected */ }
+			}
 		}
 	}
 
@@ -3238,8 +3240,8 @@ a{color:#58a6ff;}</style></head>
 		// Stop Telegram polling
 		stopTelegramPolling();
 		// Gracefully close WebSocket connections to trigger close handlers (journal, mood, etc.)
-		for (const client of wss.clients) {
-			client.close(1000, "Server shutting down");
+		for (const client of [...wss.clients]) {
+			try { client.close(1000, "Server shutting down"); } catch { /* already closed */ }
 		}
 		// Wait for close handlers to fire, then await their async work (journal writes, etc.)
 		await new Promise((r) => setTimeout(r, 200));
