@@ -1,6 +1,7 @@
-import { appendFile, mkdir } from "fs/promises";
+import { appendFile } from "fs/promises";
 import { join, dirname } from "path";
 import type { HooksConfig } from "./hooks.js";
+import { safeWriteFile } from "./fs-utils.js";
 
 export interface AuditEntry {
 	timestamp: string;
@@ -35,10 +36,11 @@ export class AuditLogger {
 		};
 
 		try {
-			await mkdir(dirname(this.logPath), { recursive: true });
 			await appendFile(this.logPath, JSON.stringify(entry) + "\n", "utf-8");
-		} catch {
-			// Audit logging failures are non-fatal
+		} catch (err: any) {
+			if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+				await safeWriteFile(this.logPath, JSON.stringify(entry) + "\n");
+			}
 		}
 	}
 

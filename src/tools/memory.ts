@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import { join, dirname } from "path";
 import { execSync } from "child_process";
 import { type Static } from "@sinclair/typebox";
@@ -6,6 +6,7 @@ import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { memorySchema, DEFAULT_MEMORY_PATH } from "./shared.js";
 import yaml from "js-yaml";
 import type { MemoryLayerDef } from "../plugin-types.js";
+import { safeWriteFile } from "../fs-utils.js";
 
 interface MemoryLayer {
 	name: string;
@@ -73,8 +74,6 @@ async function archiveOverflow(
 	const archiveFile = `memory/archive/${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}.md`;
 	const archivePath = join(cwd, archiveFile);
 
-	await mkdir(dirname(archivePath), { recursive: true });
-
 	// Append to archive
 	let existing = "";
 	try {
@@ -84,7 +83,7 @@ async function archiveOverflow(
 	}
 
 	const archiveEntry = `\n---\n_Archived: ${now.toISOString()}_\n\n${overflow}\n`;
-	await writeFile(archivePath, existing + archiveEntry, "utf-8");
+	await safeWriteFile(archivePath, existing + archiveEntry);
 
 	// Try to git add the archive
 	try {
@@ -150,8 +149,7 @@ export function createMemoryTool(cwd: string, pluginLayers?: MemoryLayerDef[]): 
 				finalContent = await archiveOverflow(cwd, content, maxLines);
 			}
 
-			await mkdir(dirname(memoryFile), { recursive: true });
-			await writeFile(memoryFile, finalContent, "utf-8");
+			await safeWriteFile(memoryFile, finalContent);
 
 			try {
 				execSync(`git add "${memoryPath}" && git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, {

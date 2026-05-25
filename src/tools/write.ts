@@ -1,8 +1,9 @@
-import { mkdir, writeFile } from "fs/promises";
-import { dirname, resolve } from "path";
+import { writeFile } from "fs/promises";
+import { resolve } from "path";
 import { homedir } from "os";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { writeSchema } from "./shared.js";
+import { safeWriteFile } from "../fs-utils.js";
 
 function resolvePath(path: string, cwd: string): string {
 	if (path.startsWith("~/") || path === "~") {
@@ -27,10 +28,10 @@ export function createWriteTool(cwd: string): AgentTool<typeof writeSchema> {
 			const absolutePath = resolvePath(path, cwd);
 
 			if (createDirs !== false) {
-				await mkdir(dirname(absolutePath), { recursive: true });
+				await safeWriteFile(absolutePath, content);
+			} else {
+				await writeFile(absolutePath, content, "utf-8");
 			}
-
-			await writeFile(absolutePath, content, "utf-8");
 
 			const bytes = Buffer.byteLength(content, "utf-8");
 			return {
