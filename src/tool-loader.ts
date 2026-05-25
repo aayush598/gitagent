@@ -13,8 +13,11 @@ interface ToolDefinition {
 	implementation: {
 		script: string;
 		runtime?: string;
+		timeout?: number;
 	};
 }
+
+const TOOL_DEFAULT_TIMEOUT = 120_000;
 
 export function buildTypeboxSchema(schema: Record<string, any>): any {
 	// Convert a simplified JSON-schema-like object to Typebox properties
@@ -88,10 +91,11 @@ function createDeclarativeTool(
 				child.stdin.write(JSON.stringify(args));
 				child.stdin.end();
 
+				const toolTimeout = def.implementation.timeout ?? TOOL_DEFAULT_TIMEOUT;
 				const timeout = setTimeout(() => {
 					child.kill("SIGTERM");
-					reject(new Error(`Tool "${def.name}" timed out after 120s`));
-				}, 120_000);
+					reject(new Error(`Tool "${def.name}" timed out after ${toolTimeout / 1000}s`));
+				}, toolTimeout);
 
 				const onAbort = () => child.kill("SIGTERM");
 				if (signal) signal.addEventListener("abort", onAbort, { once: true });

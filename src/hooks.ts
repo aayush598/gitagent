@@ -9,7 +9,10 @@ export interface HookDefinition {
 	description?: string;
 	baseDir?: string; // plugin hooks run from their own directory
 	_handler?: (ctx: Record<string, any>) => Promise<HookResult> | HookResult;
+	timeout?: number;
 }
+
+const HOOK_DEFAULT_TIMEOUT = 10_000;
 
 export interface HooksConfig {
 	hooks: {
@@ -90,10 +93,11 @@ async function executeHook(
 		child.stdin.write(JSON.stringify(input));
 		child.stdin.end();
 
+		const hookTimeout = hook.timeout ?? HOOK_DEFAULT_TIMEOUT;
 		const timeout = setTimeout(() => {
 			child.kill("SIGTERM");
-			reject(new Error(`Hook "${hook.script}" timed out after 10s`));
-		}, 10_000);
+			reject(new Error(`Hook "${hook.script}" timed out after ${hookTimeout / 1000}s`));
+		}, hookTimeout);
 
 		child.on("error", (err) => {
 			clearTimeout(timeout);
