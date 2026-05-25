@@ -33,6 +33,23 @@ import {
 
 // ANSI helpers
 const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
+
+// ── Graceful shutdown drain for RACE-010 ───────────────────────────────
+
+const pendingShutdown = new Set<Promise<void>>();
+
+function trackShutdown<T>(p: Promise<T>): Promise<T> {
+	pendingShutdown.add(p);
+	p.finally(() => pendingShutdown.delete(p));
+	return p;
+}
+
+async function drainShutdown(timeoutMs = 5000): Promise<void> {
+	if (pendingShutdown.size === 0) return;
+	const all = Promise.allSettled([...pendingShutdown]);
+	const timer = new Promise<void>((r) => setTimeout(r, timeoutMs));
+	await Promise.race([all, timer]);
+}
 const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
 const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
 const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
@@ -430,7 +447,7 @@ async function main(): Promise<void> {
 			}
 			stopping = true;
 			console.log("\nDisconnecting...");
-			cleanup().finally(() => process.exit(0));
+			cleanup().finally(() => drainShutdown().finally(() => process.exit(0)));
 		});
 
 		// Keep process alive
@@ -811,7 +828,7 @@ async function main(): Promise<void> {
 			try {
 				_session.end({ "gitclaw.cost_usd": _totalCostUsd });
 			} catch { /* ignore */ }
-			stopSandbox().finally(() => process.exit(0));
+			stopSandbox().finally(() => drainShutdown().finally(() => process.exit(0)));
 		}
 	});
 
@@ -820,12 +837,12 @@ async function main(): Promise<void> {
 
 // Flush OpenTelemetry exporters on SIGTERM. No-op when telemetry is disabled.
 process.on("SIGTERM", () => {
-	shutdownTelemetry().catch(() => {}).finally(() => process.exit(0));
+	trackShutdown(shutdownTelemetry()).finally(() => drainShutdown().finally(() => process.exit(0)));
 });
 
 main()
-  .finally(() => shutdownTelemetry().catch(() => {}))
+  .finally(() => trackShutdown(shutdownTelemetry()))
   .catch((err) => {
     console.error(red(`Fatal: ${err.message}`));
-    process.exit(1);
+    drainShutdown().finally(() => process.exit(1));
   });
