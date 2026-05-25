@@ -2,7 +2,7 @@ import { type Static } from "@sinclair/typebox";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import type { SandboxContext } from "../sandbox.js";
 import { memorySchema, DEFAULT_MEMORY_PATH, resolveSandboxPath } from "./shared.js";
-import yaml from "js-yaml";
+import yaml from "yaml";
 
 interface MemoryLayer {
 	name: string;
@@ -21,7 +21,7 @@ async function loadMemoryConfig(ctx: SandboxContext): Promise<MemoryConfig | nul
 		const raw: string = await ctx.machine.readFile(
 			resolveSandboxPath("memory/memory.yaml", ctx.repoPath),
 		);
-		const config = yaml.load(raw) as MemoryConfig;
+		const config = yaml.parse(raw) as MemoryConfig;
 		if (!config?.layers || !Array.isArray(config.layers)) return null;
 		return config;
 	} catch {

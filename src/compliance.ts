@@ -1,6 +1,6 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
-import yaml from "js-yaml";
+import yaml from "yaml";
 import type { AgentManifest } from "./loader.js";
 
 export interface ComplianceConfig {
@@ -125,7 +125,7 @@ export async function loadComplianceContext(agentDir: string): Promise<string> {
 	// Load regulatory map
 	try {
 		const raw = await readFile(join(complianceDir, "regulatory-map.yaml"), "utf-8");
-		const map = yaml.load(raw) as RegulatoryMap;
+		const map = yaml.parse(raw) as RegulatoryMap;
 		if (map?.frameworks) {
 			const frameworks = Object.keys(map.frameworks).join(", ");
 			parts.push(`Regulatory frameworks: ${frameworks}`);
@@ -137,7 +137,7 @@ export async function loadComplianceContext(agentDir: string): Promise<string> {
 	// Load validation schedule
 	try {
 		const raw = await readFile(join(complianceDir, "validation-schedule.yaml"), "utf-8");
-		const schedule = yaml.load(raw) as ValidationSchedule;
+		const schedule = yaml.parse(raw) as ValidationSchedule;
 		if (schedule?.checks && schedule.checks.length > 0) {
 			const checkList = schedule.checks
 				.map((c) => `- ${c.name} (${c.frequency})${c.description ? `: ${c.description}` : ""}`)

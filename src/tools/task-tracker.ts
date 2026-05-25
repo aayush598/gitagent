@@ -5,7 +5,7 @@ import { type Static } from "@sinclair/typebox";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { taskTrackerSchema } from "./shared.js";
 import { adjustConfidence, loadSkillStats, saveSkillStats } from "../learning/reinforcement.js";
-import yaml from "js-yaml";
+import yaml from "yaml";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -100,7 +100,7 @@ async function searchLocalSkills(agentDir: string, objective: string): Promise<S
 		const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
 		if (!fmMatch) continue;
 
-		const frontmatter = yaml.load(fmMatch[1]) as Record<string, any>;
+		const frontmatter = yaml.parse(fmMatch[1]) as Record<string, any>;
 		const name = frontmatter.name as string;
 		const description = (frontmatter.description as string) || "";
 

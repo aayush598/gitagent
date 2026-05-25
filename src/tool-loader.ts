@@ -1,7 +1,7 @@
 import { readFile, readdir, stat } from "fs/promises";
 import { join } from "path";
 import { spawn } from "child_process";
-import yaml from "js-yaml";
+import yaml from "yaml";
 import { Type } from "@sinclair/typebox";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 
@@ -154,7 +154,7 @@ export async function loadDeclarativeTools(agentDir: string): Promise<AgentTool<
 
 		try {
 			const raw = await readFile(join(toolsDir, entry), "utf-8");
-			const def = yaml.load(raw) as ToolDefinition;
+			const def = yaml.parse(raw) as ToolDefinition;
 			if (def?.name && def?.description && def?.input_schema && def?.implementation?.script) {
 				tools.push(createDeclarativeTool(def, agentDir));
 			}

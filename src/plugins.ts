@@ -3,7 +3,7 @@ import { join } from "path";
 import { execFileSync } from "child_process";
 import { createRequire } from "module";
 import { homedir } from "os";
-import yaml from "js-yaml";
+import yaml from "yaml";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import type {
 	PluginManifest,
@@ -182,7 +182,7 @@ async function loadPlugin(
 		return null;
 	}
 
-	const manifest = yaml.load(raw) as any;
+	const manifest = yaml.parse(raw) as any;
 	if (!validatePluginManifest(manifest, pluginDir)) return null;
 
 	// Check engine compatibility
@@ -428,7 +428,7 @@ export async function listAllPlugins(
 			const manifestPath = join(pluginDir, "plugin.yaml");
 			try {
 				const raw = await readFile(manifestPath, "utf-8");
-				const manifest = yaml.load(raw) as any;
+				const manifest = yaml.parse(raw) as any;
 				if (manifest?.id && manifest?.version && manifest?.description) {
 					plugins.push({
 						name: manifest.id,

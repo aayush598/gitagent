@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "fs/promises";
 import { join } from "path";
-import yaml from "js-yaml";
+import yaml from "yaml";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -74,12 +74,12 @@ function parseFrontmatter(content: string): { frontmatter: Record<string, any>; 
 	if (!match) {
 		return { frontmatter: {}, body: content };
 	}
-	const frontmatter = yaml.load(match[1]) as Record<string, any>;
+	const frontmatter = yaml.parse(match[1]) as Record<string, any>;
 	return { frontmatter, body: match[2] };
 }
 
 function serializeFrontmatter(frontmatter: Record<string, any>, body: string): string {
-	const yamlStr = yaml.dump(frontmatter, { lineWidth: -1, noRefs: true }).trimEnd();
+	const yamlStr = yaml.stringify(frontmatter, { lineWidth: -1 }).trimEnd();
 	return `---\n${yamlStr}\n---\n${body}`;
 }
 

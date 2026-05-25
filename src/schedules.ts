@@ -1,7 +1,7 @@
 import { readFile, readdir, stat, writeFile, unlink } from "fs/promises";
 import { join } from "path";
 import { mkdirSync } from "fs";
-import yaml from "js-yaml";
+import yaml from "yaml";
 
 export interface ScheduleDefinition {
 	id: string;
@@ -38,7 +38,7 @@ export async function discoverSchedules(agentDir: string): Promise<ScheduleDefin
 
 		try {
 			const raw = await readFile(filePath, "utf-8");
-			const data = yaml.load(raw) as Record<string, any>;
+			const data = yaml.parse(raw) as Record<string, any>;
 			if (data?.id && data?.prompt && (data?.cron || data?.runAt)) {
 				schedules.push({
 					id: String(data.id),
@@ -62,7 +62,7 @@ export async function discoverSchedules(agentDir: string): Promise<ScheduleDefin
 
 export async function loadSchedule(filePath: string): Promise<ScheduleDefinition> {
 	const raw = await readFile(filePath, "utf-8");
-	const data = yaml.load(raw) as Record<string, any>;
+	const data = yaml.parse(raw) as Record<string, any>;
 	if (!data?.id || !data?.prompt || (!data?.cron && !data?.runAt)) {
 		throw new Error("Invalid schedule definition: missing id, prompt, or cron/runAt");
 	}
@@ -89,7 +89,7 @@ export async function saveSchedule(agentDir: string, schedule: ScheduleDefinitio
 	const schedulesDir = join(agentDir, "schedules");
 	mkdirSync(schedulesDir, { recursive: true });
 	const filePath = join(schedulesDir, `${schedule.id}.yaml`);
-	const content = yaml.dump({
+	const content = yaml.stringify({
 		id: schedule.id,
 		prompt: schedule.prompt,
 		cron: schedule.cron || "",
@@ -112,8 +112,8 @@ export async function deleteSchedule(agentDir: string, id: string): Promise<void
 export async function updateScheduleMeta(agentDir: string, id: string, updates: Partial<Pick<ScheduleDefinition, "lastRunAt" | "lastResult" | "enabled">>): Promise<void> {
 	const filePath = join(agentDir, "schedules", `${id}.yaml`);
 	const raw = await readFile(filePath, "utf-8");
-	const data = yaml.load(raw) as Record<string, any>;
+	const data = yaml.parse(raw) as Record<string, any>;
 	Object.assign(data, updates);
-	const content = yaml.dump(data, { lineWidth: 120 });
+	const content = yaml.stringify(data, { lineWidth: 120 });
 	await writeFile(filePath, content, "utf-8");
 }

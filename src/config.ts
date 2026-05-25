@@ -1,6 +1,6 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
-import yaml from "js-yaml";
+import yaml from "yaml";
 
 export interface EnvConfig {
 	log_level?: string;
@@ -29,7 +29,7 @@ function deepMerge(base: Record<string, any>, override: Record<string, any>): Re
 async function loadYamlFile(path: string): Promise<Record<string, any>> {
 	try {
 		const raw = await readFile(path, "utf-8");
-		return (yaml.load(raw) as Record<string, any>) || {};
+		return (yaml.parse(raw) as Record<string, any>) || {};
 	} catch {
 		return {};
 	}

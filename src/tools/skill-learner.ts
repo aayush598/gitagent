@@ -6,7 +6,7 @@ import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { skillLearnerSchema } from "./shared.js";
 import { loadSkillStats, isSkillFlagged } from "../learning/reinforcement.js";
 import type { TaskRecord } from "./task-tracker.js";
-import yaml from "js-yaml";
+import yaml from "yaml";
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -68,7 +68,7 @@ async function getExistingSkillDescriptions(agentDir: string): Promise<Array<{ n
 			const content = await readFile(skillFile, "utf-8");
 			const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
 			if (!fmMatch) continue;
-			const fm = yaml.load(fmMatch[1]) as Record<string, any>;
+			const fm = yaml.parse(fmMatch[1]) as Record<string, any>;
 			if (fm.description) {
 				result.push({
 					name: fm.name as string,
@@ -236,7 +236,7 @@ export function createSkillLearnerTool(agentDir: string, gitagentDir: string): A
 						body += `\n## What Did NOT Work\n${whatDidNotWork}\n`;
 					}
 
-					const content = `---\n${yaml.dump(frontmatter, { lineWidth: -1, noRefs: true }).trimEnd()}\n---\n${body}`;
+					const content = `---\n${yaml.stringify(frontmatter, { lineWidth: -1 }).trimEnd()}\n---\n${body}`;
 
 					// Write skill
 					const skillDir = join(agentDir, "skills", params.skill_name);
@@ -362,8 +362,8 @@ export function createSkillLearnerTool(agentDir: string, gitagentDir: string): A
 					const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
 					if (!fmMatch) throw new Error("Invalid SKILL.md format");
 
-					const frontmatter = yaml.load(fmMatch[1]) as Record<string, any>;
-					const yamlStr = yaml.dump(frontmatter, { lineWidth: -1, noRefs: true }).trimEnd();
+					const frontmatter = yaml.parse(fmMatch[1]) as Record<string, any>;
+					const yamlStr = yaml.stringify(frontmatter, { lineWidth: -1 }).trimEnd();
 					const updated = `---\n${yamlStr}\n---\n${params.instructions}\n`;
 
 					await writeFile(skillFile, updated, "utf-8");

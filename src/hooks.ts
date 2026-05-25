@@ -1,7 +1,7 @@
 import { spawn } from "child_process";
 import { readFile } from "fs/promises";
 import { join, resolve } from "path";
-import yaml from "js-yaml";
+import yaml from "yaml";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 
 export interface HookDefinition {
@@ -33,7 +33,7 @@ export async function loadHooksConfig(agentDir: string): Promise<HooksConfig | n
 	const hooksPath = join(agentDir, "hooks", "hooks.yaml");
 	try {
 		const raw = await readFile(hooksPath, "utf-8");
-		const config = yaml.load(raw) as HooksConfig;
+		const config = yaml.parse(raw) as HooksConfig;
 		if (!config?.hooks) return null;
 		return config;
 	} catch {

@@ -1,7 +1,7 @@
 import { readFile, readdir, stat, writeFile, unlink } from "fs/promises";
 import { join } from "path";
 import { mkdirSync } from "fs";
-import yaml from "js-yaml";
+import yaml from "yaml";
 
 export interface SkillFlowStep {
 	skill: string;
@@ -29,7 +29,7 @@ function parseFrontmatter(content: string): { frontmatter: Record<string, any>; 
 	if (!match) {
 		return { frontmatter: {}, body: content };
 	}
-	const frontmatter = yaml.load(match[1]) as Record<string, any>;
+	const frontmatter = yaml.parse(match[1]) as Record<string, any>;
 	return { frontmatter, body: match[2] };
 }
 
@@ -54,7 +54,7 @@ export async function discoverWorkflows(agentDir: string): Promise<WorkflowMetad
 		if (entry.endsWith(".yaml") || entry.endsWith(".yml")) {
 			try {
 				const raw = await readFile(filePath, "utf-8");
-				const data = yaml.load(raw) as Record<string, any>;
+				const data = yaml.parse(raw) as Record<string, any>;
 				if (data?.name) {
 					const isFlow = Array.isArray(data.steps) && data.steps.length > 0;
 					workflows.push({
@@ -102,7 +102,7 @@ const KEBAB_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 export async function loadFlowDefinition(filePath: string): Promise<SkillFlowDefinition> {
 	const raw = await readFile(filePath, "utf-8");
-	const data = yaml.load(raw) as Record<string, any>;
+	const data = yaml.parse(raw) as Record<string, any>;
 	if (!data?.name || !data?.steps || !Array.isArray(data.steps)) {
 		throw new Error("Invalid flow definition: missing name or steps");
 	}
@@ -127,7 +127,7 @@ export async function saveFlowDefinition(agentDir: string, flow: SkillFlowDefini
 	const workflowsDir = join(agentDir, "workflows");
 	mkdirSync(workflowsDir, { recursive: true });
 	const filePath = join(workflowsDir, `${flow.name}.yaml`);
-	const content = yaml.dump({
+	const content = yaml.stringify({
 		name: flow.name,
 		description: flow.description || "",
 		steps: flow.steps.map((s) => ({ skill: s.skill, prompt: s.prompt, ...(s.channel ? { channel: s.channel } : {}) })),

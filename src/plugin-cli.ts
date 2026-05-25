@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir, rm, cp, stat } from "fs/promises";
 import { join, resolve } from "path";
 import { execSync } from "child_process";
-import yaml from "js-yaml";
+import yaml from "yaml";
 // "yaml" (v2) is used here instead of js-yaml because parseDocument()
 // preserves comments and formatting when editing agent.yaml.
 import { parseDocument } from "yaml";
@@ -115,7 +115,7 @@ async function handleList(agentDir: string): Promise<void> {
 	let manifest: any = {};
 	try {
 		const raw = await readFile(join(agentDir, "agent.yaml"), "utf-8");
-		manifest = yaml.load(raw) as any;
+		manifest = yaml.parse(raw) as any;
 	} catch { /* no manifest */ }
 
 	console.log(bold("Plugins:"));

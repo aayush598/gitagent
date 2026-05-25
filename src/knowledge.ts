@@ -1,6 +1,6 @@
 import { readFile, readdir } from "fs/promises";
 import { join } from "path";
-import yaml from "js-yaml";
+import yaml from "yaml";
 
 export interface KnowledgeEntry {
 	path: string;
@@ -31,7 +31,7 @@ export async function loadKnowledge(agentDir: string): Promise<LoadedKnowledge> 
 		return { preloaded: [], available: [] };
 	}
 
-	const index = yaml.load(raw) as KnowledgeIndex;
+	const index = yaml.parse(raw) as KnowledgeIndex;
 	if (!index?.entries || !Array.isArray(index.entries)) {
 		return { preloaded: [], available: [] };
 	}

@@ -1,6 +1,6 @@
 import { readFile, readdir, stat } from "fs/promises";
 import { join } from "path";
-import yaml from "js-yaml";
+import yaml from "yaml";
 
 export interface SubAgentMetadata {
 	name: string;
@@ -14,7 +14,7 @@ function parseFrontmatter(content: string): { frontmatter: Record<string, any>; 
 	if (!match) {
 		return { frontmatter: {}, body: content };
 	}
-	const frontmatter = yaml.load(match[1]) as Record<string, any>;
+	const frontmatter = yaml.parse(match[1]) as Record<string, any>;
 	return { frontmatter, body: match[2] };
 }
 
@@ -39,7 +39,7 @@ export async function discoverSubAgents(agentDir: string): Promise<SubAgentMetad
 			const agentYamlPath = join(entryPath, "agent.yaml");
 			try {
 				const raw = await readFile(agentYamlPath, "utf-8");
-				const data = yaml.load(raw) as Record<string, any>;
+				const data = yaml.parse(raw) as Record<string, any>;
 				if (data?.name && data?.description) {
 					agents.push({
 						name: data.name,

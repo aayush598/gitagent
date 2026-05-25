@@ -1,6 +1,6 @@
 import { readFile, readdir, stat } from "fs/promises";
 import { join } from "path";
-import yaml from "js-yaml";
+import yaml from "yaml";
 
 export interface SkillMetadata {
 	name: string;
@@ -26,7 +26,7 @@ function parseFrontmatter(content: string): { frontmatter: Record<string, any>; 
 	if (!match) {
 		return { frontmatter: {}, body: content };
 	}
-	const frontmatter = yaml.load(match[1]) as Record<string, any>;
+	const frontmatter = yaml.parse(match[1]) as Record<string, any>;
 	return { frontmatter, body: match[2] };
 }
 

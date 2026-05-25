@@ -4,7 +4,7 @@ import { execSync } from "child_process";
 import { type Static } from "@sinclair/typebox";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { memorySchema, DEFAULT_MEMORY_PATH } from "./shared.js";
-import yaml from "js-yaml";
+import yaml from "yaml";
 import type { MemoryLayerDef } from "../plugin-types.js";
 
 interface MemoryLayer {
@@ -23,7 +23,7 @@ async function loadMemoryConfig(cwd: string, pluginLayers?: MemoryLayerDef[]): P
 	let config: MemoryConfig | null = null;
 	try {
 		const raw = await readFile(join(cwd, "memory", "memory.yaml"), "utf-8");
-		const parsed = yaml.load(raw) as MemoryConfig;
+		const parsed = yaml.parse(raw) as MemoryConfig;
 		if (parsed?.layers && Array.isArray(parsed.layers)) {
 			config = parsed;
 		}

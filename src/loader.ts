@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { execSync } from "child_process";
 import { getModel } from "@mariozechner/pi-ai";
 import type { Model } from "@mariozechner/pi-ai";
-import yaml from "js-yaml";
+import yaml from "yaml";
 import { discoverSkills, formatSkillsForPrompt } from "./skills.js";
 import type { SkillMetadata } from "./skills.js";
 import { loadKnowledge, formatKnowledgeForPrompt } from "./knowledge.js";
@@ -190,7 +190,7 @@ async function resolveInheritance(
 	let parentManifest: AgentManifest;
 	try {
 		const parentRaw = await readFile(join(parentDir, "agent.yaml"), "utf-8");
-		parentManifest = yaml.load(parentRaw) as AgentManifest;
+		parentManifest = yaml.parse(parentRaw) as AgentManifest;
 	} catch {
 		return { manifest, parentRules: "" };
 	}
@@ -240,7 +240,7 @@ export async function loadAgent(
 ): Promise<LoadedAgent> {
 	// Parse agent.yaml
 	const manifestRaw = await readFile(join(agentDir, "agent.yaml"), "utf-8");
-	let manifest = yaml.load(manifestRaw) as AgentManifest;
+	let manifest = yaml.parse(manifestRaw) as AgentManifest;
 
 	// Load environment config
 	const envConfig = await loadEnvConfig(agentDir, envFlag);
