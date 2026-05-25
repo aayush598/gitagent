@@ -32,6 +32,9 @@ import {
 } from "./telemetry.js";
 
 // ANSI helpers
+const _envName = process.env.GITCLAW_ENV || "production";
+const _isDev = _envName === "development";
+
 const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
 const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
 const red = (s: string) => `\x1b[31m${s}\x1b[0m`;

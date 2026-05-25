@@ -35,6 +35,8 @@ async function loadYamlFile(path: string): Promise<Record<string, any>> {
 	}
 }
 
+const VALID_ENVS = new Set(["development", "staging", "production", "test"]);
+
 /**
  * Load environment configuration.
  * Loads config/default.yaml, then merges config/<env>.yaml on top.
@@ -43,6 +45,10 @@ async function loadYamlFile(path: string): Promise<Record<string, any>> {
 export async function loadEnvConfig(agentDir: string, env?: string): Promise<EnvConfig> {
 	const configDir = join(agentDir, "config");
 	const envName = env || process.env.GITCLAW_ENV;
+
+	if (envName && !VALID_ENVS.has(envName)) {
+		console.warn(`[config] Unknown environment "${envName}". Valid values: ${[...VALID_ENVS].join(", ")}`);
+	}
 
 	const base = await loadYamlFile(join(configDir, "default.yaml"));
 
