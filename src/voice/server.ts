@@ -5,7 +5,7 @@ import type { VoiceServerOptions, ClientMessage, ServerMessage, MultimodalAdapte
 import { readFileSync, readdirSync, statSync, existsSync, writeFileSync, mkdirSync, appendFileSync, rmSync, createReadStream } from "fs";
 import { execSync } from "child_process";
 import { join, dirname, resolve, relative } from "path";
-import { writeFile, readFile, mkdir, stat } from "fs/promises";
+import { writeFile, readFile, mkdir, stat, access } from "fs/promises";
 import { fileURLToPath } from "url";
 import { OpenAIRealtimeAdapter } from "./openai-realtime.js";
 import { GeminiLiveAdapter } from "./gemini-live.js";
@@ -1988,7 +1988,25 @@ return false;
 		}
 
 		if (url.pathname === "/health") {
-			jsonReply(res, 200, { status: "ok" });
+			const checks: Record<string, string> = {};
+
+			try {
+				execSync("git rev-parse HEAD", { cwd: agentRoot, stdio: "pipe" });
+				checks.git = "ok";
+			} catch {
+				checks.git = "corrupt";
+			}
+
+			try {
+				await access(agentRoot);
+				checks.disk = "ok";
+			} catch {
+				checks.disk = "unreadable";
+			}
+
+			const allOk = Object.values(checks).every(v => v === "ok");
+			const status = allOk ? "healthy" : "degraded";
+			jsonReply(res, allOk ? 200 : 503, { status, checks });
 
 		} else if (url.pathname === "/api/vitals") {
 			jsonReply(res, 200, getVitalsSnapshot());
