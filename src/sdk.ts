@@ -83,6 +83,29 @@ function extractContent(msg: AssistantMessage): { text: string; thinking: string
 	return { text, thinking };
 }
 
+// ── Normalize constraints ───────────────────────────────────────────────
+
+const CONSTRAINT_MAPPING: Record<string, string> = {
+	maxTokens: "max_tokens",
+	max_tokens: "max_tokens",
+	topP: "top_p",
+	top_p: "top_p",
+	topK: "top_k",
+	top_k: "top_k",
+	temperature: "temperature",
+	stop_sequences: "stop_sequences",
+	stopSequences: "stop_sequences",
+};
+
+function normalizeConstraints(raw: Record<string, any>): Record<string, any> {
+	const result: Record<string, any> = {};
+	for (const [key, value] of Object.entries(raw)) {
+		const canonical = CONSTRAINT_MAPPING[key];
+		if (canonical) result[canonical] = value;
+	}
+	return result;
+}
+
 // ── query() ────────────────────────────────────────────────────────────
 
 export function query(options: QueryOptions): Query {
@@ -281,13 +304,10 @@ export function query(options: QueryOptions): Query {
 		const modelOptions: Record<string, any> = {};
 		const constraints = options.constraints ?? loaded.manifest.model.constraints;
 		if (constraints) {
-			const c = constraints as any;
+			const c = normalizeConstraints(constraints as any);
 			if (c.temperature !== undefined) modelOptions.temperature = c.temperature;
-			if (c.maxTokens !== undefined) modelOptions.maxTokens = c.maxTokens;
 			if (c.max_tokens !== undefined) modelOptions.maxTokens = c.max_tokens;
-			if (c.topP !== undefined) modelOptions.topP = c.topP;
 			if (c.top_p !== undefined) modelOptions.topP = c.top_p;
-			if (c.topK !== undefined) modelOptions.topK = c.topK;
 			if (c.top_k !== undefined) modelOptions.topK = c.top_k;
 		}
 
