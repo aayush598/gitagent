@@ -55,7 +55,7 @@ function createChannel<T>(): Channel<T> {
 		finish() {
 			done = true;
 			if (resolve) {
-				resolve({ value: undefined as any, done: true });
+				resolve({ value: undefined as unknown as T, done: true });
 				resolve = null;
 			}
 		},
@@ -64,7 +64,7 @@ function createChannel<T>(): Channel<T> {
 				return Promise.resolve({ value: buffer.shift()!, done: false });
 			}
 			if (done) {
-				return Promise.resolve({ value: undefined as any, done: true });
+				return Promise.resolve({ value: undefined as unknown as T, done: true });
 			}
 			return new Promise((r) => { resolve = r; });
 		},
