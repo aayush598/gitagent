@@ -1,15 +1,7 @@
-import { mkdir, writeFile } from "fs/promises";
-import { dirname, resolve } from "path";
-import { homedir } from "os";
+import { mkdir } from "fs/promises";
+import { dirname } from "path";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
-import { writeSchema } from "./shared.js";
-
-function resolvePath(path: string, cwd: string): string {
-	if (path.startsWith("~/") || path === "~") {
-		path = homedir() + path.slice(1);
-	}
-	return path.startsWith("/") ? path : resolve(cwd, path);
-}
+import { writeSchema, safeWriteFile, resolveSafePath, assertNotSymlink } from "./shared.js";
 
 export function createWriteTool(cwd: string): AgentTool<typeof writeSchema> {
 	return {
@@ -24,13 +16,17 @@ export function createWriteTool(cwd: string): AgentTool<typeof writeSchema> {
 		) => {
 			if (signal?.aborted) throw new Error("Operation aborted");
 
-			const absolutePath = resolvePath(path, cwd);
-
 			if (createDirs !== false) {
-				await mkdir(dirname(absolutePath), { recursive: true });
+				const dirPath = dirname(path);
+				if (dirPath && dirPath !== ".") {
+					const resolvedDir = resolveSafePath(dirPath, cwd);
+					await assertNotSymlink(resolvedDir);
+					await mkdir(resolvedDir, { recursive: true });
+				}
 			}
 
-			await writeFile(absolutePath, content, "utf-8");
+			await assertNotSymlink(resolveSafePath(path, cwd));
+			await safeWriteFile(path, content, cwd);
 
 			const bytes = Buffer.byteLength(content, "utf-8");
 			return {
