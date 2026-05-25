@@ -1,15 +1,5 @@
-import { readFile, writeFile } from "fs/promises";
-import { resolve } from "path";
-import { homedir } from "os";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
-import { editSchema } from "./shared.js";
-
-function resolvePath(path: string, cwd: string): string {
-	if (path.startsWith("~/") || path === "~") {
-		path = homedir() + path.slice(1);
-	}
-	return path.startsWith("/") ? path : resolve(cwd, path);
-}
+import { editSchema, safeReadFile, safeWriteFile } from "./shared.js";
 
 function countOccurrences(haystack: string, needle: string): number {
 	if (!needle) return 0;
@@ -43,8 +33,8 @@ export function createEditTool(cwd: string): AgentTool<typeof editSchema> {
 		) => {
 			if (signal?.aborted) throw new Error("Operation aborted");
 
-			const absolutePath = resolvePath(path, cwd);
-			const original = await readFile(absolutePath, "utf-8");
+			const originalBuf = await safeReadFile(path, cwd);
+			const original = originalBuf.toString("utf-8");
 
 			if (old_string === new_string) {
 				throw new Error("old_string and new_string are identical — nothing to change");
@@ -97,7 +87,7 @@ export function createEditTool(cwd: string): AgentTool<typeof editSchema> {
 				throw new Error("No changes applied — replacement produced identical content");
 			}
 
-			await writeFile(absolutePath, updated, "utf-8");
+			await safeWriteFile(path, updated, cwd);
 
 			const applied = replace_all ? replacements : 1;
 			return {

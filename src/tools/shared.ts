@@ -1,5 +1,8 @@
 import { Type } from "@sinclair/typebox";
 import { homedir } from "os";
+import { resolve, relative } from "path";
+import { realpathSync } from "fs";
+import { open, readFile as fsReadFile, writeFile as fsWriteFile } from "fs/promises";
 
 // ── Constants ───────────────────────────────────────────────────────────
 
@@ -17,19 +20,19 @@ export const cliSchema = Type.Object({
 });
 
 export const readSchema = Type.Object({
-	path: Type.String({ description: "Path to the file to read (relative or absolute)" }),
+	path: Type.String({ description: "File path relative to the working directory. Cannot use absolute paths or ../ traversal." }),
 	offset: Type.Optional(Type.Number({ description: "Line number to start from (1-indexed)" })),
 	limit: Type.Optional(Type.Number({ description: "Maximum number of lines to read" })),
 });
 
 export const writeSchema = Type.Object({
-	path: Type.String({ description: "Path to the file to write (relative or absolute)" }),
+	path: Type.String({ description: "File path relative to the working directory. Cannot use absolute paths or ../ traversal." }),
 	content: Type.String({ description: "Content to write to the file" }),
 	createDirs: Type.Optional(Type.Boolean({ description: "Create parent directories if needed (default: true)" })),
 });
 
 export const editSchema = Type.Object({
-	path: Type.String({ description: "Path to the file to edit (relative or absolute)" }),
+	path: Type.String({ description: "File path relative to the working directory. Cannot use absolute paths or ../ traversal." }),
 	old_string: Type.String({ description: "Exact text to find and replace. Must match uniquely unless replace_all is true." }),
 	new_string: Type.String({ description: "Replacement text" }),
 	replace_all: Type.Optional(Type.Boolean({ description: "Replace every occurrence (default: false)" })),
@@ -113,11 +116,146 @@ export function paginateLines(
 	};
 }
 
-/** Resolve a path relative to a sandbox repo root. */
-export function resolveSandboxPath(path: string, repoRoot: string): string {
+/**
+ * Safely resolve a path and verify it stays within the allowed base directory.
+ * Rejects absolute paths and ../ traversal that escape the working directory.
+ * Resolves symlinks via realpathSync to prevent symlink-based traversal.
+ */
+export function resolveSafePath(path: string, cwd: string): string {
+	if (!path || !path.trim()) {
+		throw new Error("Path cannot be empty");
+	}
+
+	if (path.includes("\0")) {
+		throw new Error("Path contains null byte — possible injection attempt");
+	}
+
 	if (path.startsWith("~/") || path === "~") {
 		path = homedir() + path.slice(1);
 	}
-	if (path.startsWith("/")) return path;
-	return repoRoot.endsWith("/") ? repoRoot + path : repoRoot + "/" + path;
+
+	const resolved = path.startsWith("/") ? path : resolve(cwd, path);
+
+	// Reject absolute paths (including after ~ expansion) immediately.
+	// Also reject paths that logically escape cwd before symlink resolution
+	// (catches cases where resolved normalizes outside cwd but target doesn't exist).
+	if (path.startsWith("/") || relative(resolve(cwd), resolved).startsWith("..")) {
+		throw new Error(
+			`Path traversal detected: "${path}" resolves outside the working directory. ` +
+			`Use paths relative to the workspace: ${cwd}`,
+		);
+	}
+
+	// Resolve the allowed base through realpathSync to handle symlinked cwd.
+	let allowedBase = resolve(cwd);
+	try {
+		allowedBase = realpathSync(allowedBase);
+	} catch {
+		// allowedBase doesn't exist yet — keep the normalized path
+	}
+
+	// Resolve symlinks to prevent symlink-based path traversal.
+	// If the resolved path doesn't exist yet (e.g., for write operations),
+	// resolve symlinks along the parent chain by walking from allowedBase.
+	let realResolved: string;
+	try {
+		realResolved = realpathSync(resolved);
+	} catch {
+		// Path doesn't exist — walk up from allowedBase, resolving each
+		// existing component through realpathSync.
+		const relPath = relative(allowedBase, resolved);
+		const parts = relPath.split("/").filter(Boolean);
+		let candidate = allowedBase;
+		for (const part of parts) {
+			candidate = resolve(candidate, part);
+			try {
+				candidate = realpathSync(candidate);
+			} catch {
+				// Component doesn't exist yet (e.g., new file) — keep going
+			}
+		}
+		realResolved = candidate;
+	}
+
+	// Compare real-resolved paths: both allowedBase and realResolved are
+	// resolved through symlinks, so the comparison is symlink-aware.
+	const realRel = relative(allowedBase, realResolved);
+	if (realRel.startsWith("..")) {
+		throw new Error(
+			`Path traversal detected: "${path}" resolves to "${realResolved}" which is outside the working directory ` +
+			`(symlink resolved). Use paths relative to the workspace: ${cwd}`,
+		);
+	}
+
+	return resolved;
 }
+
+/** Resolve a path relative to a sandbox repo root with traversal protection. */
+export function resolveSandboxPath(path: string, repoRoot: string): string {
+	return resolveSafePath(path, repoRoot);
+}
+
+/**
+ * Read a file with TOCTOU-safe path validation.
+ * Opens the file first, resolves its real path through the fd,
+ * verifies it's within the allowed base, then reads the content.
+ */
+export async function safeReadFile(path: string, cwd: string): Promise<Buffer> {
+	if (!path || !path.trim()) throw new Error("Path cannot be empty");
+
+	const absolutePath = resolveSafePath(path, cwd);
+	const fd = await open(absolutePath, "r");
+	try {
+		const realPath = await fd.realpath();
+		const allowedBase = resolve(cwd);
+		const realRel = relative(allowedBase, realPath);
+		if (realRel.startsWith("..")) {
+			throw new Error(
+				`Path traversal detected: "${path}" resolves to "${realPath}" which is outside the working directory. ` +
+				`Use paths relative to the workspace: ${cwd}`,
+			);
+		}
+		return await fd.readFile();
+	} finally {
+		await fd.close();
+	}
+}
+
+/**
+ * Write a file with TOCTOU-safe path validation.
+ * For new files, validates the parent directory's real path.
+ * For existing files, opens first and verifies through the fd.
+ */
+export async function safeWriteFile(path: string, content: string, cwd: string): Promise<void> {
+	if (!path || !path.trim()) throw new Error("Path cannot be empty");
+
+	const absolutePath = resolveSafePath(path, cwd);
+
+	// Try to open existing file for writing (fails if doesn't exist)
+	try {
+		const fd = await open(absolutePath, "r+");
+		try {
+			const realPath = await fd.realpath();
+			const allowedBase = resolve(cwd);
+			const realRel = relative(allowedBase, realPath);
+			if (realRel.startsWith("..")) {
+				throw new Error(
+					`Path traversal detected: "${path}" resolves to "${realPath}" which is outside the working directory.`,
+				);
+			}
+			await fd.writeFile(content, "utf-8");
+			return;
+		} finally {
+			await fd.close();
+		}
+	} catch (err: any) {
+		// File doesn't exist yet — write normally (path was already validated by resolveSafePath)
+		if (err.code === "ENOENT") {
+			await fsWriteFile(absolutePath, content, "utf-8");
+			return;
+		}
+		throw err;
+	}
+}
+
+

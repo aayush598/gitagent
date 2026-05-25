@@ -1,15 +1,5 @@
-import { readFile } from "fs/promises";
-import { resolve } from "path";
-import { homedir } from "os";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
-import { readSchema, MAX_LINES, paginateLines } from "./shared.js";
-
-function resolvePath(path: string, cwd: string): string {
-	if (path.startsWith("~/") || path === "~") {
-		path = homedir() + path.slice(1);
-	}
-	return path.startsWith("/") ? path : resolve(cwd, path);
-}
+import { readSchema, MAX_LINES, paginateLines, safeReadFile } from "./shared.js";
 
 function isBinary(buffer: Buffer): boolean {
 	// Check first 8KB for null bytes
@@ -33,8 +23,7 @@ export function createReadTool(cwd: string): AgentTool<typeof readSchema> {
 		) => {
 			if (signal?.aborted) throw new Error("Operation aborted");
 
-			const absolutePath = resolvePath(path, cwd);
-			const buffer = await readFile(absolutePath);
+			const buffer = await safeReadFile(path, cwd);
 
 			if (isBinary(buffer)) {
 				return {
