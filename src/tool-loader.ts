@@ -116,14 +116,16 @@ function createDeclarativeTool(
 						return;
 					}
 
-					// Try parsing JSON output
+					// Try parsing JSON output — guard against parsing non-JSON or empty output
 					let text = stdout.trim();
-					try {
-						const parsed = JSON.parse(text);
-						if (parsed.text) text = parsed.text;
-						else if (parsed.result) text = typeof parsed.result === "string" ? parsed.result : JSON.stringify(parsed.result);
-					} catch {
-						// Raw text output is fine
+					if (text && (text.startsWith("{") || text.startsWith("["))) {
+						try {
+							const parsed = JSON.parse(text);
+							if (parsed.text) text = parsed.text;
+							else if (parsed.result) text = typeof parsed.result === "string" ? parsed.result : JSON.stringify(parsed.result);
+						} catch {
+							// Raw text output is fine
+						}
 					}
 
 					resolve({
