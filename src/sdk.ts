@@ -281,14 +281,13 @@ export function query(options: QueryOptions): Query {
 		const modelOptions: Record<string, any> = {};
 		const constraints = options.constraints ?? loaded.manifest.model.constraints;
 		if (constraints) {
-			const c = constraints as any;
-			if (c.temperature !== undefined) modelOptions.temperature = c.temperature;
-			if (c.maxTokens !== undefined) modelOptions.maxTokens = c.maxTokens;
-			if (c.max_tokens !== undefined) modelOptions.maxTokens = c.max_tokens;
-			if (c.topP !== undefined) modelOptions.topP = c.topP;
-			if (c.top_p !== undefined) modelOptions.topP = c.top_p;
-			if (c.topK !== undefined) modelOptions.topK = c.topK;
-			if (c.top_k !== undefined) modelOptions.topK = c.top_k;
+			if (constraints.temperature !== undefined) modelOptions.temperature = constraints.temperature;
+			if (constraints.maxTokens !== undefined) modelOptions.maxTokens = constraints.maxTokens;
+			if (constraints.max_tokens !== undefined) modelOptions.maxTokens = constraints.max_tokens;
+			if (constraints.topP !== undefined) modelOptions.topP = constraints.topP;
+			if (constraints.top_p !== undefined) modelOptions.topP = constraints.top_p;
+			if (constraints.topK !== undefined) modelOptions.topK = constraints.topK;
+			if (constraints.top_k !== undefined) modelOptions.topK = constraints.top_k;
 		}
 
 		if (options.maxTurns !== undefined) {

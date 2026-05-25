@@ -148,8 +148,11 @@ export interface QueryOptions {
 	constraints?: {
 		temperature?: number;
 		maxTokens?: number;
+		max_tokens?: number;
 		topP?: number;
+		top_p?: number;
 		topK?: number;
+		top_k?: number;
 	};
 }
 
