@@ -14,6 +14,7 @@ export class ComposioAdapter {
 	private cachedTools: GCToolDefinition[] | null = null;
 	private cacheExpiry = 0;
 	private static CACHE_TTL = 30_000; // 30s
+	private knownNames = new Set<string>();
 
 	constructor(opts: ComposioAdapterOptions) {
 		this.client = new ComposioClient(opts.apiKey);
@@ -99,7 +100,22 @@ export class ComposioAdapter {
 	// ── Private ────────────────────────────────────────────────────────
 
 	private toGCTool(t: ComposioTool): GCToolDefinition {
-		const safeName = `composio_${t.toolkitSlug}_${t.slug}`.replace(/[^a-zA-Z0-9_]/g, "_");
+		const rawName = `composio_${t.toolkitSlug}_${t.slug}`;
+		const rawSlug = `${t.toolkitSlug}:${t.slug}`;
+		let hash = 0;
+		for (let i = 0; i < rawSlug.length; i++) {
+			const char = rawSlug.charCodeAt(i);
+			hash = ((hash << 5) - hash) + char;
+			hash |= 0;
+		}
+		const hashStr = Math.abs(hash).toString(36).slice(0, 6);
+		const safeName = rawName.replace(/[^a-zA-Z0-9_]/g, "_") + "_" + hashStr;
+
+		if (this.knownNames.has(safeName)) {
+			console.error(`[composio] Tool name collision: "${safeName}" (toolkit=${t.toolkitSlug}, slug=${t.slug})`);
+		}
+		this.knownNames.add(safeName);
+
 		let description = `[Composio/${t.toolkitSlug}] ${t.description}`;
 		if (t.slug.includes("SEND_EMAIL")) {
 			description += " — USE THIS to send emails directly.";
