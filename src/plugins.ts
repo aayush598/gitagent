@@ -1,3 +1,4 @@
+import { readFileSync } from "fs";
 import { readFile, readdir, stat, mkdir, rm } from "fs/promises";
 import { join } from "path";
 import { execFileSync } from "child_process";
@@ -308,6 +309,71 @@ async function discoverPluginDirs(
 
 // ── Main entry point ───────────────────────────────────────────────────
 
+// ── Topological sort for plugin dependencies ───────────────────────────
+
+export function topoSortPlugins(
+	pluginEntries: [string, PluginConfig][],
+	pluginDirMap: Map<string, string>,
+): [string, PluginConfig][] {
+	// Build reverse graph: for each dep, track what depends on it
+	const dependents = new Map<string, string[]>();
+	const inDegree = new Map<string, number>();
+	const allNames = new Set(pluginEntries.map(([n]) => n));
+
+	for (const [name] of pluginEntries) {
+		dependents.set(name, []);
+		inDegree.set(name, 0);
+	}
+
+	for (const [name] of pluginEntries) {
+		const dir = pluginDirMap.get(name);
+		if (!dir) continue;
+		const manifestPath = join(dir, "plugin.yaml");
+		try {
+			const raw = readFileSync(manifestPath, "utf-8");
+			const manifest = yaml.load(raw) as any;
+			if (manifest?.dependsOn && Array.isArray(manifest.dependsOn)) {
+				for (const dep of manifest.dependsOn) {
+					if (allNames.has(dep)) {
+						// dep must come before name (name depends on dep)
+						dependents.get(dep)!.push(name);
+						inDegree.set(name, (inDegree.get(name) || 0) + 1);
+					}
+				}
+			}
+		} catch {
+			// skip invalid manifests
+		}
+	}
+
+	// Kahn's algorithm for topological sort
+	const queue: string[] = [];
+	for (const [name] of pluginEntries) {
+		if (inDegree.get(name) === 0) queue.push(name);
+	}
+
+	const sorted: string[] = [];
+	while (queue.length > 0) {
+		const name = queue.shift()!;
+		sorted.push(name);
+		for (const dependent of dependents.get(name) || []) {
+			const deg = inDegree.get(dependent)! - 1;
+			inDegree.set(dependent, deg);
+			if (deg === 0) queue.push(dependent);
+		}
+	}
+
+	// Check for cycles
+	if (sorted.length !== pluginEntries.length) {
+		const unsortedNames = pluginEntries.filter(([n]) => !sorted.includes(n)).map(([n]) => n);
+		console.warn(`[plugins] Cycle detected among plugins: ${unsortedNames.join(", ")}. Loading in arbitrary order.`);
+		const unsortedEntries = pluginEntries.filter(([n]) => unsortedNames.includes(n));
+		return [...sorted.map((n) => pluginEntries.find(([name]) => name === n)!).filter(Boolean), ...unsortedEntries];
+	}
+
+	return sorted.map((n) => pluginEntries.find(([name]) => name === n)!).filter(Boolean);
+}
+
 export async function discoverAndLoadPlugins(
 	agentDir: string,
 	gitagentDir: string,
@@ -320,10 +386,11 @@ export async function discoverAndLoadPlugins(
 	const loaded: LoadedPlugin[] = [];
 	const toolNames = new Set<string>();
 
-	for (const [pluginName, pluginConf] of Object.entries(pluginsConfig)) {
-		// Skip disabled plugins
-		if (pluginConf.enabled === false) continue;
+	// First pass: discover all plugin directories
+	const pluginEntries = Object.entries(pluginsConfig).filter(([, conf]) => conf.enabled !== false);
+	const pluginDirMap = new Map<string, string>();
 
+	for (const [pluginName, pluginConf] of pluginEntries) {
 		// Auto-install from source if needed
 		if (pluginConf.source) {
 			const installDir = join(gitagentDir, "plugins");
@@ -341,6 +408,17 @@ export async function discoverAndLoadPlugins(
 			console.warn(`Plugin "${pluginName}": not found in any plugin directory`);
 			continue;
 		}
+		pluginDirMap.set(pluginName, pluginDir);
+	}
+
+	// Topological sort based on dependency declarations
+	const sortedEntries = topoSortPlugins(
+		[...pluginEntries].filter(([n]) => pluginDirMap.has(n)),
+		pluginDirMap,
+	);
+
+	for (const [pluginName, pluginConf] of sortedEntries) {
+		const pluginDir = pluginDirMap.get(pluginName)!;
 
 		// Load plugin
 		const plugin = await loadPlugin(pluginDir, pluginConf);
