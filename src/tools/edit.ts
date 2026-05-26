@@ -62,7 +62,8 @@ export function createEditTool(cwd: string): AgentTool<typeof editSchema> {
 				} catch (err: any) {
 					throw new Error(`Invalid regex: ${err.message}`);
 				}
-				const matches = original.match(new RegExp(old_string, rxFlags.includes("g") ? rxFlags : rxFlags + "g"));
+				const globalRx = rx.global ? rx : new RegExp(rx.source, rx.flags + "g");
+				const matches = original.match(globalRx);
 				replacements = matches ? matches.length : 0;
 				if (replacements === 0) {
 					throw new Error(`Regex pattern not found in ${path}`);
