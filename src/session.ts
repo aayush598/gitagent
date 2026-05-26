@@ -41,12 +41,14 @@ function getDefaultBranch(cwd: string): string {
 		// e.g. "origin/main" → "main"
 		const ref = git("symbolic-ref refs/remotes/origin/HEAD", cwd);
 		return ref.replace("refs/remotes/origin/", "");
-	} catch {
+	} catch (err: unknown) {
+		console.warn(`[session] git symbolic-ref failed: ${err instanceof Error ? err.message : String(err)}`);
 		// Fallback: try main, then master
 		try {
 			git("rev-parse --verify origin/main", cwd);
 			return "main";
-		} catch {
+		} catch (err2: unknown) {
+			console.warn(`[session] git rev-parse origin/main failed: ${err2 instanceof Error ? err2.message : String(err2)}`);
 			return "master";
 		}
 	}

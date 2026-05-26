@@ -55,16 +55,28 @@ let _sdk: any = null;
 const TRACER_NAME = "gitclaw";
 const METER_NAME = "gitclaw";
 
-// Lazily-cached metric handles. Created on first use; rely on a no-op meter
-// when telemetry is disabled.
-const _slots = {
-	toolCalls: { v: null as Counter | null },
-	toolDuration: { v: null as Histogram | null },
-	sessionDuration: { v: null as Histogram | null },
-	sessionCost: { v: null as Counter | null },
-	genAiToken: { v: null as Counter | null },
-	genAiDuration: { v: null as Histogram | null },
-};
+// Eagerly-created metric handles (no-op meter when telemetry is disabled).
+const _toolCallsCounter: Counter = metrics.getMeter(METER_NAME).createCounter("gitclaw.tool.calls", {
+	description: "Number of tool executions",
+});
+const _toolDurationHistogram: Histogram = metrics.getMeter(METER_NAME).createHistogram("gitclaw.tool.duration_ms", {
+	description: "Tool execution duration in milliseconds",
+	unit: "ms",
+});
+const _sessionDurationHistogram: Histogram = metrics.getMeter(METER_NAME).createHistogram("gitclaw.session.duration_ms", {
+	description: "Agent session duration in milliseconds",
+	unit: "ms",
+});
+const _sessionCostCounter: Counter = metrics.getMeter(METER_NAME).createCounter("gitclaw.session.cost_usd", {
+	description: "Cumulative agent session cost in USD",
+});
+const _genAiTokenCounter: Counter = metrics.getMeter(METER_NAME).createCounter("gen_ai.client.token.usage", {
+	description: "Token usage by GenAI calls",
+});
+const _genAiDurationHistogram: Histogram = metrics.getMeter(METER_NAME).createHistogram("gen_ai.client.operation.duration", {
+	description: "GenAI operation duration in milliseconds",
+	unit: "ms",
+});
 
 // ── Initialization ─────────────────────────────────────────────────────
 
@@ -194,77 +206,28 @@ export function getMeter(): Meter {
 	return metrics.getMeter(METER_NAME);
 }
 
-function lazyCounter(
-	slot: { v: Counter | null },
-	name: string,
-	description: string,
-): Counter {
-	if (!slot.v) {
-		slot.v = getMeter().createCounter(name, { description });
-	}
-	return slot.v;
-}
-
-function lazyHistogram(
-	slot: { v: Histogram | null },
-	name: string,
-	description: string,
-	unit?: string,
-): Histogram {
-	if (!slot.v) {
-		slot.v = getMeter().createHistogram(name, {
-			description,
-			...(unit ? { unit } : {}),
-		});
-	}
-	return slot.v;
-}
-
 function getToolCallCounter(): Counter {
-	return lazyCounter(_slots.toolCalls, "gitclaw.tool.calls", "Number of tool executions");
+	return _toolCallsCounter;
 }
 
 function getToolDurationHistogram(): Histogram {
-	return lazyHistogram(
-		_slots.toolDuration,
-		"gitclaw.tool.duration_ms",
-		"Tool execution duration in milliseconds",
-		"ms",
-	);
+	return _toolDurationHistogram;
 }
 
 function getSessionDurationHistogram(): Histogram {
-	return lazyHistogram(
-		_slots.sessionDuration,
-		"gitclaw.session.duration_ms",
-		"Agent session duration in milliseconds",
-		"ms",
-	);
+	return _sessionDurationHistogram;
 }
 
 function getSessionCostCounter(): Counter {
-	return lazyCounter(
-		_slots.sessionCost,
-		"gitclaw.session.cost_usd",
-		"Cumulative agent session cost in USD",
-	);
+	return _sessionCostCounter;
 }
 
 function getGenAiTokenCounter(): Counter {
-	return lazyCounter(
-		_slots.genAiToken,
-		"gen_ai.client.token.usage",
-		"Token usage by GenAI calls",
-	);
+	return _genAiTokenCounter;
 }
 
 function getGenAiDurationHistogram(): Histogram {
-	return lazyHistogram(
-		_slots.genAiDuration,
-		"gen_ai.client.operation.duration",
-		"GenAI operation duration in milliseconds",
-		"ms",
-	);
+	return _genAiDurationHistogram;
 }
 
 // ── Session span ───────────────────────────────────────────────────────
