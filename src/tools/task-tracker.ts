@@ -127,11 +127,14 @@ async function searchSkillsMP(objective: string): Promise<SkillMatch[]> {
 	const apiKey = process.env.SKILLSMP_API_KEY;
 	if (!apiKey) return [];
 
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), 5000);
+
 	try {
 		const url = `https://api.skillsmp.com/v1/search?q=${encodeURIComponent(objective)}`;
 		const resp = await fetch(url, {
 			headers: { Authorization: `Bearer ${apiKey}` },
-			signal: AbortSignal.timeout(5000),
+			signal: controller.signal,
 		});
 		if (!resp.ok) return [];
 
@@ -144,6 +147,8 @@ async function searchSkillsMP(objective: string): Promise<SkillMatch[]> {
 		}));
 	} catch {
 		return [];
+	} finally {
+		clearTimeout(timeout);
 	}
 }
 
