@@ -798,21 +798,18 @@ async function main(): Promise<void> {
 		}
 	};
 
-	// Handle Ctrl+C during streaming
+	// Handle Ctrl+C during streaming (unconditional abort eliminates TOCTOU race)
 	rl.on("SIGINT", () => {
-		if (agent.state.isStreaming) {
-			agent.abort();
-		} else {
-			console.log("\nBye!");
-			rl.close();
-			if (localSession) {
-				try { localSession.finalize(); } catch { /* best-effort */ }
-			}
-			try {
-				_session.end({ "gitclaw.cost_usd": _totalCostUsd });
-			} catch { /* ignore */ }
-			stopSandbox().finally(() => process.exit(0));
+		agent.abort();
+		console.log("\nBye!");
+		rl.close();
+		if (localSession) {
+			try { localSession.finalize(); } catch { /* best-effort */ }
 		}
+		try {
+			_session.end({ "gitclaw.cost_usd": _totalCostUsd });
+		} catch { /* ignore */ }
+		stopSandbox().finally(() => process.exit(0));
 	});
 
 	ask();
