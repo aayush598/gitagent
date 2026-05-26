@@ -45,6 +45,10 @@ function createChannel<T>(): Channel<T> {
 
 	return {
 		push(v: T) {
+			if (done) {
+				console.warn(`Channel: dropping event pushed after finish`);
+				return;
+			}
 			if (resolve) {
 				resolve({ value: v, done: false });
 				resolve = null;
