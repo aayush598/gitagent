@@ -54,15 +54,26 @@ export function createEditTool(cwd: string): AgentTool<typeof editSchema> {
 			let replacements = 0;
 
 			if (regex) {
-				let rxFlags = flags || "";
-				if (replace_all && !rxFlags.includes("g")) rxFlags += "g";
+				const rxFlags = flags || "";
+				const userWantsGlobal = rxFlags.includes("g");
+
+				let replaceFlags = rxFlags;
+				if (replace_all && !userWantsGlobal) {
+					replaceFlags += "g";
+				}
+
+				let matchFlags = rxFlags;
+				if (!userWantsGlobal) {
+					matchFlags += "g";
+				}
+
 				let rx: RegExp;
 				try {
-					rx = new RegExp(old_string, rxFlags);
+					rx = new RegExp(old_string, replaceFlags);
 				} catch (err: any) {
 					throw new Error(`Invalid regex: ${err.message}`);
 				}
-				const matches = original.match(new RegExp(old_string, rxFlags.includes("g") ? rxFlags : rxFlags + "g"));
+				const matches = original.match(new RegExp(old_string, matchFlags));
 				replacements = matches ? matches.length : 0;
 				if (replacements === 0) {
 					throw new Error(`Regex pattern not found in ${path}`);

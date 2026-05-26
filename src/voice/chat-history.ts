@@ -67,12 +67,23 @@ export function getMessageCount(agentDir: string, branch: string): number {
 	}
 }
 
+/** Tracks branches currently being summarized to prevent recursion */
+const summarizingBranches = new Set<string>();
+
 /** Summarize a branch's chat history using a lightweight query() call */
 export async function summarizeHistory(agentDir: string, branch: string): Promise<string> {
-	const count = getMessageCount(agentDir, branch);
-	if (count < 10) return "";
+	const guardKey = `${agentDir}:${branch}`;
+	if (summarizingBranches.has(guardKey)) {
+		console.error(`[voice] Re-entrant summarization skipped for branch "${branch}"`);
+		return "";
+	}
+	summarizingBranches.add(guardKey);
 
-	const messages = loadHistory(agentDir, branch);
+	try {
+		const count = getMessageCount(agentDir, branch);
+		if (count < 10) return "";
+
+		const messages = loadHistory(agentDir, branch);
 
 	// Extract only transcripts and agent_done results for summarization
 	const lines: string[] = [];
@@ -126,5 +137,8 @@ export async function summarizeHistory(agentDir: string, branch: string): Promis
 	} catch (err: any) {
 		console.error(`[voice] Summarization failed: ${err.message}`);
 		return "";
+	}
+	} finally {
+		summarizingBranches.delete(guardKey);
 	}
 }
