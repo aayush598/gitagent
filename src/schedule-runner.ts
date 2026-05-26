@@ -28,7 +28,12 @@ export async function startScheduler(opts: SchedulerOptions): Promise<void> {
 
 		if (schedule.mode === "once" && schedule.runAt) {
 			// One-time schedule via runAt datetime
-			const delay = new Date(schedule.runAt).getTime() - Date.now();
+			const runAtMs = new Date(schedule.runAt).getTime();
+			if (isNaN(runAtMs)) {
+				console.log(dim(`[scheduler] Invalid runAt for "${schedule.id}": ${schedule.runAt} — skipping`));
+				continue;
+			}
+			const delay = runAtMs - Date.now();
 			if (delay <= 0) {
 				console.log(dim(`[scheduler] "${schedule.id}" runAt is in the past — skipping`));
 				continue;
