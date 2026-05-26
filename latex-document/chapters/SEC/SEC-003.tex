@@ -7,21 +7,22 @@
 \textbf{Severity} & High (CVSS 8.6) \\
 \textbf{Category} & Security \\
 \textbf{CWE} & CWE-200: Exposure of Sensitive Information \\
-\textbf{Affected File} & \srcfile{src/hooks.ts}, \srcfile{src/tool-loader.ts} \\
+\textbf{Affected Files} & \srcfile{src/tools/shared.ts}, \srcfile{src/tools/cli.ts}, \srcfile{src/hooks.ts}, \srcfile{src/tool-loader.ts} \\
 \textbf{Branch} & \branchref{fix/SEC-003-api-key-leakage} \\
 \textbf{Changes} & \branchdiff{fix/SEC-003-api-key-leakage} \\
-\textbf{Commit} & d43127b5313cbad1eb92ba1082a2c91bdd15cefc \\
+\textbf{Commit} & c344e5b \\
 \end{tabular}
 
 \subsection*{Executive Summary}
 When GitAgent starts, it reads the \texttt{.env} file from the agent directory and injects every key-value pair directly into \texttt{process.env} (\srcfile{src/index.ts:379-391}). This global namespace is then inherited by all child processes spawned by the \texttt{cli} tool via \texttt{env: \{ ...process.env \}}. The consequence is that any shell command the LLM executes---including commands that contain injection payloads---has unfettered access to every API key, token, and secret the agent uses: \texttt{OPENAI\_API\_KEY}, \texttt{ANTHROPIC\_API\_KEY}, \texttt{GITHUB\_TOKEN}, and any custom variables the user placed in \texttt{.env}.
 
-The root cause is twofold: \texttt{.env} variables are loaded into the shared global \texttt{process.env} instead of a scoped configuration object, and child processes spawned by both the CLI tool and declarative tool system (via \texttt{tool-loader.ts}) and hook scripts (via \texttt{hooks.ts}) blindly forward \texttt{process.env} instead of constructing a minimal filtered environment. The fix applies the same safe-environment pattern to all three spawn locations.
+The root cause is twofold: \texttt{.env} variables are loaded into the shared global \texttt{process.env} instead of a scoped configuration object, and child processes spawned by the CLI tool, declarative tool system, and hook scripts blindly forward \texttt{process.env} instead of constructing a minimal filtered environment. The fix introduces a shared \texttt{createSafeEnv()} utility in \srcfile{src/tools/shared.ts} that constructs an allowlist of safe system variables, and applies it to all three spawn locations.
 
 \subsection*{Root Cause Analysis}
-The environment forwarding pattern exists in three critical locations. In the CLI tool (\srcfile{src/tools/cli.ts}):
+The environment forwarding pattern existed in three critical locations, of which only two were initially patched. The CLI tool (\srcfile{src/tools/cli.ts}), the most dangerous attack vector since the LLM directly controls its command string, was left unfixed:
 
 \begin{lstlisting}[language=TypeScript]
+// cli.ts — the PRIMARY attack vector (LLM-controlled commands)
 const child = spawn("sh", ["-c", command], {
     cwd,
     stdio: ["ignore", "pipe", "pipe"],
@@ -29,65 +30,51 @@ const child = spawn("sh", ["-c", command], {
 });
 \end{lstlisting}
 
-The same pattern appears in \srcfile{src/hooks.ts} for hook execution:
-
-\begin{lstlisting}[language=TypeScript]
-const child = spawn("sh", [resolvedScript], {
-    cwd: baseDir,
-    stdio: ["pipe", "pipe", "pipe"],
-    env: { ...process.env },
-});
-\end{lstlisting}
-
-And in \srcfile{src/tool-loader.ts} for declarative tools:
-
-\begin{lstlisting}[language=TypeScript]
-const child = spawn(runtime, [scriptPath], {
-    cwd: agentDir,
-    stdio: ["pipe", "pipe", "pipe"],
-    env: { ...process.env },
-});
-\end{lstlisting}
-
-Every variable in \texttt{process.env} is forwarded to each child. The shell can read them via \texttt{\$VAR\_NAME} syntax, the child process can read them via \texttt{process.env} in Node.js, and \texttt{/proc/<pid>/environ} exposes them to any process on the same machine.
+The same pattern appeared in \srcfile{src/hooks.ts} and \srcfile{src/tool-loader.ts}, both previously patched with inline duplicate code. The fix consolidates all three into a single shared utility.
 
 \subsection*{Fix Implementation}
-The fix applies a consistent safe-environment pattern across all three files. A restricted set of safe environment variable keys is defined:
+A shared \texttt{createSafeEnv()} function was extracted into \srcfile{src/tools/shared.ts} to eliminate code duplication and ensure consistent behavior across all spawn locations:
 
 \begin{lstlisting}[language=TypeScript]
-const safeKeys = [
+const SAFE_ENV_KEYS = [
     "PATH", "HOME", "USER", "SHELL", "TERM",
     "LANG", "LC_ALL", "PWD", "TMPDIR", "TEMP", "TMP",
 ];
+
+export function createSafeEnv(): Record<string, string | undefined> {
+    const env: Record<string, string | undefined> = {};
+    for (const key of SAFE_ENV_KEYS) {
+        if (process.env[key] !== undefined) env[key] = process.env[key];
+    }
+    return env;
+}
 \end{lstlisting}
 
-Each spawn call is updated to use a constructed safe environment object instead of forwarding \texttt{process.env}:
+This function returns a fresh object each call, preventing mutation of the shared environment, and only copies the explicitly allowlisted system variables. Each spawn location is updated to a single-line call:
 
 \begin{lstlisting}[language=TypeScript]
-const safeEnv: Record<string, string | undefined> = {};
-for (const key of safeKeys) {
-    if (process.env[key] !== undefined) safeEnv[key] = process.env[key];
-}
-
-const child = spawn("sh", [resolvedScript], {
-    cwd: baseDir,
-    stdio: ["pipe", "pipe", "pipe"],
-    env: safeEnv,
+// cli.ts — the primary attack vector, now protected
+const child = spawn("sh", ["-c", command], {
+    cwd,
+    stdio: ["ignore", "pipe", "pipe"],
+    env: createSafeEnv(),
 });
 \end{lstlisting}
 
-This pattern is applied identically to \srcfile{src/hooks.ts}, \srcfile{src/tool-loader.ts}, and \srcfile{src/tools/cli.ts}. By explicitly constructing an allowlist of safe variables, API keys, tokens, and other sensitive credentials never reach child processes.
+The same pattern replaces the inline duplicate code in \srcfile{src/hooks.ts} and \srcfile{src/tool-loader.ts}. By consolidating into a shared function, future spawn additions automatically get the same protection.
 
 \subsection*{Affected Files}
 \begin{itemize}
-    \item \srcfile{src/hooks.ts} --- Replaced \texttt{env: \{ ...process.env \}} with a constructed \texttt{safeEnv} object containing only safe system variables in the hook execution spawn call.
-    \item \srcfile{src/tool-loader.ts} --- Same replacement in the declarative tool execution spawn call.
+    \item \srcfile{src/tools/shared.ts} --- Added \texttt{createSafeEnv()} utility function with allowlist of 11 safe system variables.
+    \item \srcfile{src/tools/cli.ts} --- Replaced \texttt{env: \{ ...process.env \}} with \texttt{env: createSafeEnv()} in the CLI spawn call. This was the primary attack vector and was missing from the initial fix.
+    \item \srcfile{src/hooks.ts} --- Replaced inline \texttt{safeEnv} construction with shared \texttt{createSafeEnv()} import.
+    \item \srcfile{src/tool-loader.ts} --- Replaced inline \texttt{safeEnv} construction with shared \texttt{createSafeEnv()} import.
 \end{itemize}
 
 \subsection*{Verification}
-Verification is performed by unit tests that set test secret environment variables, execute commands via the CLI tool, and confirm the secret values do not appear in command output. Integration tests verify that essential environment variables like \texttt{PATH} remain available for command execution while sensitive variables like \texttt{OPENAI\_API\_KEY} are excluded.
+Verification is performed by unit tests in \srcfile{test/env.test.ts} that confirm \texttt{createSafeEnv()} includes essential system variables (PATH, HOME) while excluding arbitrary test secret variables. The tests also verify the function returns a new object on each call (no shared mutable state) and does not return a reference to \texttt{process.env}.
 
 \subsection*{Test File}
-\srcfile{src/__tests__/env-redact.test.ts} (see SEC-011)
+\srcfile{test/env.test.ts}
 
-Validates that \texttt{createSafeEnv()} includes safe variables like \texttt{PATH} while excluding sensitive variables like \texttt{OPENAI\_API\_KEY}.
+Four unit tests covering: inclusion of essential vars, exclusion of unknown vars, immutability (new object per call), and isolation (returned object does not reference \texttt{process.env}).
