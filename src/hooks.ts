@@ -137,7 +137,7 @@ export async function runHooks(
 			}
 		} catch (err: any) {
 			console.error(`Hook error: ${err.message}`);
-			// Hook errors don't block execution by default
+			return { action: "block", reason: `Hook "${hook.script}" failed: ${err.message}` };
 		}
 	}
 
