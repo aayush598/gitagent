@@ -111,9 +111,14 @@ function createDeclarativeTool(
 						return;
 					}
 
+					const stderrTrimmed = stderr.trim();
 					if (code !== 0 && code !== null) {
-						reject(new Error(`Tool "${def.name}" exited with code ${code}: ${stderr.trim()}`));
+						reject(new Error(`Tool "${def.name}" exited with code ${code}: ${stderrTrimmed}`));
 						return;
+					}
+
+					if (stderrTrimmed) {
+						console.warn(`[tool:${def.name}] stderr output on exit 0: ${stderrTrimmed.slice(0, 200)}`);
 					}
 
 					// Try parsing JSON output

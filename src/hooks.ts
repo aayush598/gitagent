@@ -102,9 +102,13 @@ async function executeHook(
 
 		child.on("close", (code) => {
 			clearTimeout(timeout);
+			const stderrTrimmed = stderr.trim();
 			if (code !== 0) {
-				reject(new Error(`Hook "${hook.script}" exited with code ${code}: ${stderr.trim()}`));
+				reject(new Error(`Hook "${hook.script}" exited with code ${code}: ${stderrTrimmed}`));
 				return;
+			}
+			if (stderrTrimmed) {
+				console.warn(`[hook:${hook.script}] stderr output on exit 0: ${stderrTrimmed.slice(0, 200)}`);
 			}
 			try {
 				const result = JSON.parse(stdout.trim()) as HookResult;
