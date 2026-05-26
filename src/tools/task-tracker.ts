@@ -37,6 +37,7 @@ async function loadTasks(gitagentDir: string): Promise<TasksStore> {
 	const tasksFile = join(gitagentDir, "learning", "tasks.json");
 	try {
 		const raw = await readFile(tasksFile, "utf-8");
+		if (!raw || !raw.trim()) return { tasks: [] };
 		return JSON.parse(raw) as TasksStore;
 	} catch {
 		return { tasks: [] };
