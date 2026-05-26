@@ -67,64 +67,78 @@ export function getMessageCount(agentDir: string, branch: string): number {
 	}
 }
 
+/** Tracks branches currently being summarized to prevent recursion */
+const summarizingBranches = new Set<string>();
+
 /** Summarize a branch's chat history using a lightweight query() call */
 export async function summarizeHistory(agentDir: string, branch: string): Promise<string> {
-	const count = getMessageCount(agentDir, branch);
-	if (count < 10) return "";
-
-	const messages = loadHistory(agentDir, branch);
-
-	// Extract only transcripts and agent_done results for summarization
-	const lines: string[] = [];
-	for (const msg of messages) {
-		if (msg.type === "transcript") {
-			lines.push(`${msg.role}: ${msg.text}`);
-		} else if (msg.type === "agent_done") {
-			lines.push(`agent result: ${msg.result.slice(0, 500)}`);
-		}
+	const guardKey = `${agentDir}:${branch}`;
+	if (summarizingBranches.has(guardKey)) {
+		console.error(`[voice] Re-entrant summarization skipped for branch "${branch}"`);
+		return "";
 	}
-
-	if (lines.length < 5) return "";
-
-	// Truncate to last ~4000 chars to keep the summarization prompt manageable
-	let transcript = lines.join("\n");
-	if (transcript.length > 4000) {
-		transcript = transcript.slice(-4000);
-	}
-
-	const prompt = `Summarize the following conversation in 200 words or fewer. Focus on: key decisions made, tasks completed or in progress, and current context the user cares about. Be concise and factual.\n\n${transcript}`;
+	summarizingBranches.add(guardKey);
 
 	try {
-		const result = query({
-			prompt,
-			dir: agentDir,
-			maxTurns: 1,
-			replaceBuiltinTools: true,
-			tools: [],
-			systemPrompt: "You are a concise summarizer. Output only the summary, nothing else.",
-		});
+		const count = getMessageCount(agentDir, branch);
+		if (count < 10) return "";
 
-		let summary = "";
-		for await (const msg of result) {
-			if (msg.type === "assistant" && msg.content) {
-				summary += msg.content;
+		const messages = loadHistory(agentDir, branch);
+
+		// Extract only transcripts and agent_done results for summarization
+		const lines: string[] = [];
+		for (const msg of messages) {
+			if (msg.type === "transcript") {
+				lines.push(`${msg.role}: ${msg.text}`);
+			} else if (msg.type === "agent_done") {
+				lines.push(`agent result: ${msg.result.slice(0, 500)}`);
 			}
 		}
 
-		summary = summary.trim();
-		if (!summary) return "";
+		if (lines.length < 5) return "";
 
-		// Write summary to disk
-		const summaryDir = join(agentDir, ".gitagent");
-		mkdirSync(summaryDir, { recursive: true });
-		const safeBranch = sanitizeBranch(branch);
-		const summaryPath = join(summaryDir, `chat-summary-${safeBranch}.md`);
-		writeFileSync(summaryPath, summary, "utf-8");
+		// Truncate to last ~4000 chars to keep the summarization prompt manageable
+		let transcript = lines.join("\n");
+		if (transcript.length > 4000) {
+			transcript = transcript.slice(-4000);
+		}
 
-		console.error(`[voice] Summarized ${count} messages → ${summary.length} chars`);
-		return summary;
-	} catch (err: any) {
-		console.error(`[voice] Summarization failed: ${err.message}`);
-		return "";
+		const prompt = `Summarize the following conversation in 200 words or fewer. Focus on: key decisions made, tasks completed or in progress, and current context the user cares about. Be concise and factual.\n\n${transcript}`;
+
+		try {
+			const result = query({
+				prompt,
+				dir: agentDir,
+				maxTurns: 1,
+				replaceBuiltinTools: true,
+				tools: [],
+				systemPrompt: "You are a concise summarizer. Output only the summary, nothing else.",
+			});
+
+			let summary = "";
+			for await (const msg of result) {
+				if (msg.type === "assistant" && msg.content) {
+					summary += msg.content;
+				}
+			}
+
+			summary = summary.trim();
+			if (!summary) return "";
+
+			// Write summary to disk
+			const summaryDir = join(agentDir, ".gitagent");
+			mkdirSync(summaryDir, { recursive: true });
+			const safeBranch = sanitizeBranch(branch);
+			const summaryPath = join(summaryDir, `chat-summary-${safeBranch}.md`);
+			writeFileSync(summaryPath, summary, "utf-8");
+
+			console.error(`[voice] Summarized ${count} messages → ${summary.length} chars`);
+			return summary;
+		} catch (err: any) {
+			console.error(`[voice] Summarization failed: ${err.message}`);
+			return "";
+		}
+	} finally {
+		summarizingBranches.delete(guardKey);
 	}
 }
