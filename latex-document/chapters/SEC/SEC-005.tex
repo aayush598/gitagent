@@ -7,16 +7,16 @@
 \textbf{Severity} & Medium (CVSS 6.5) \\
 \textbf{Category} & Security \\
 \textbf{CWE} & CWE-22: Path Traversal \\
-\textbf{Affected File} & \srcfile{src/tools/shared.ts}, \srcfile{src/tools/read.ts}, \srcfile{src/tools/write.ts}, \srcfile{src/tools/edit.ts} \\
+\textbf{Affected Files} & \srcfile{src/tools/shared.ts}, \srcfile{src/tools/read.ts}, \srcfile{src/tools/write.ts}, \srcfile{src/tools/edit.ts}, \srcfile{test/path-traversal.test.ts} \\
 \textbf{Branch} & \branchref{fix/SEC-005-path-traversal} \\
 \textbf{Changes} & \branchdiff{fix/SEC-005-path-traversal} \\
-\textbf{Commit} & af00ef89ef52a46a9065a70d25307d550c4aa8ef \\
+\textbf{Commit} & c6c7178 \\
 \end{tabular}
 
 \subsection*{Executive Summary}
 The \texttt{read}, \texttt{write}, and \texttt{edit} tools each contained a duplicate \texttt{resolvePath()} function that resolved user-provided paths by supporting absolute paths (\texttt{/} prefix), home directory expansion (\texttt{\textasciitilde}), and relative paths resolved against the working directory---but none of them validated that the resolved path stays within the agent's working directory. An attacker who can influence the LLM's tool arguments (via prompt injection) can direct the agent to read or write arbitrary files on the system: \texttt{/etc/passwd}, \texttt{$\sim$/.ssh/id\_rsa}, \texttt{/etc/shadow}, and any other file the agent process has permission to access.
 
-The fix consolidates path resolution into a single \texttt{resolveSafePath()} function in \srcfile{src/tools/shared.ts} that performs an allowlist-based validation: it resolves the path relative to the working directory and then verifies the resolved path is within the allowed base directory using a relative-path comparison. Both absolute paths and \texttt{../} traversal sequences that escape the workspace are rejected.
+The fix consolidates path resolution into a single \texttt{resolveSafePath()} function in \srcfile{src/tools/shared.ts} that provides multilevel defence: (1) absolute paths and \texttt{../} traversal are rejected by string comparison, (2) symlink-based traversal is detected via \texttt{realpathSync}, (3) symlinked working directories are handled correctly by resolving both the base and candidate paths through \texttt{realpathSync}, and (4) TOCTOU race conditions are mitigated through fd-based verification (\texttt{safeReadFile}, \texttt{safeWriteFile}) that opens the file first and validates the real path through the open file descriptor.
 
 \subsection*{Root Cause Analysis}
 The duplicate \texttt{resolvePath()} function appeared identically in three files. In \srcfile{src/tools/read.ts}:
@@ -33,54 +33,100 @@ function resolvePath(path: string, cwd: string): string {
 The function handles three path types: home directory expansion (replaces \texttt{\textasciitilde} with \texttt{os.homedir()}), absolute paths (passes the path through unchanged), and relative paths (resolves against \texttt{cwd}). There is no validation that the resolved path is within \texttt{cwd} or any allowed directory. The resolved path is used directly in \texttt{readFile()}, \texttt{writeFile()}, and \texttt{readFile()}/\texttt{writeFile()} pairs, allowing access to SSH private keys, cloud credentials, Kubernetes configuration, and system files.
 
 \subsection*{Fix Implementation}
-The fix introduces a single \texttt{resolveSafePath()} function in \srcfile{src/tools/shared.ts} that validates the resolved path stays within the workspace:
+The fix introduces a comprehensive \texttt{resolveSafePath()} function in \srcfile{src/tools/shared.ts} that validates the resolved path stays within the workspace:
 
 \begin{lstlisting}[language=TypeScript]
 export function resolveSafePath(path: string, cwd: string): string {
-    if (path.startsWith("~/") || path === "~") {
+    if (!path || !path.trim()) throw new Error("Path cannot be empty");
+    if (path.includes("\0")) throw new Error("Path contains null byte");
+
+    if (path.startsWith("~/") || path === "~")
         path = homedir() + path.slice(1);
-    }
 
     const resolved = path.startsWith("/") ? path : resolve(cwd, path);
-    const allowedBase = resolve(cwd);
-    const rel = relative(allowedBase, resolved);
 
-    if (rel.startsWith("..") || path.startsWith("/")) {
-        throw new Error(
-            \texttt{Path traversal detected: "\${path}" resolves outside the working directory. } +
-            \texttt{Use paths relative to the workspace: \${cwd}},
-        );
+    // Reject absolute paths and logical traversal
+    if (path.startsWith("/") || relative(resolve(cwd), resolved).startsWith(".."))
+        throw new Error("Path traversal detected");
+
+    // Resolve allowed base through realpathSync (handles symlinked cwd)
+    let allowedBase = resolve(cwd);
+    try { allowedBase = realpathSync(allowedBase); } catch {}
+
+    // Resolve symlinks via realpathSync; for non-existent paths,
+    // walk the component tree from allowedBase, resolving each part
+    let realResolved: string;
+    try {
+        realResolved = realpathSync(resolved);
+    } catch {
+        const parts = relative(allowedBase, resolved).split("/").filter(Boolean);
+        let candidate = allowedBase;
+        for (const part of parts) {
+            candidate = resolve(candidate, part);
+            try { candidate = realpathSync(candidate); } catch {}
+        }
+        realResolved = candidate;
     }
+
+    // Compare real-resolved paths (both symlink-aware)
+    if (relative(allowedBase, realResolved).startsWith(".."))
+        throw new Error("Path traversal detected (symlink resolved)");
 
     return resolved;
 }
 \end{lstlisting}
 
-The three duplicate \texttt{resolvePath()} functions are removed from \texttt{read.ts}, \texttt{write.ts}, and \texttt{edit.ts} and replaced with a shared import of \texttt{resolveSafePath}. The schema descriptions in \texttt{shared.ts} are updated to document the restriction:
+Additionally, two TOCTOU-safe I/O functions wrap file operations with fd-based verification:
 
 \begin{lstlisting}[language=TypeScript]
-export const readSchema = Type.Object({
-    path: Type.String({
-        description: "File path relative to the working directory. " +
-                     "Cannot use absolute paths or ../ traversal.",
-    }),
-    // ...
-});
+export async function safeReadFile(path: string, cwd: string): Promise<Buffer> {
+    const absolutePath = resolveSafePath(path, cwd);
+    const fd = await open(absolutePath, "r");
+    try {
+        const realPath = await fd.realpath();
+        const allowedBase = resolve(cwd);
+        if (relative(allowedBase, realPath).startsWith(".."))
+            throw new Error("Path traversal detected");
+        return await fd.readFile();
+    } finally { await fd.close(); }
+}
+
+export async function safeWriteFile(path: string, content: string, cwd: string): Promise<void> {
+    const absolutePath = resolveSafePath(path, cwd);
+    try {
+        const fd = await open(absolutePath, "r+");
+        try {
+            const realPath = await fd.realpath();
+            if (relative(resolve(cwd), realPath).startsWith(".."))
+                throw new Error("Path traversal detected");
+            await fd.writeFile(content, "utf-8");
+        } finally { await fd.close(); }
+    } catch (err: any) {
+        if (err.code === "ENOENT") {
+            await writeFile(absolutePath, content, "utf-8");
+            return;
+        }
+        throw err;
+    }
+}
 \end{lstlisting}
+
+The three duplicate \texttt{resolvePath()} functions are removed from \texttt{read.ts}, \texttt{write.ts}, and \texttt{edit.ts} and replaced with imports of \texttt{safeReadFile}, \texttt{safeWriteFile}, and \texttt{resolveSafePath}. The schema descriptions in \texttt{shared.ts} are updated to document the restriction.
 
 \subsection*{Affected Files}
 \begin{itemize}
-    \item \srcfile{src/tools/shared.ts} --- New \texttt{resolveSafePath()} function added; schema descriptions updated to document path restrictions.
-    \item \srcfile{src/tools/read.ts} --- Removed duplicate \texttt{resolvePath()}, replaced with shared \texttt{resolveSafePath()}.
-    \item \srcfile{src/tools/write.ts} --- Removed duplicate \texttt{resolvePath()}, replaced with shared \texttt{resolveSafePath()}.
-    \item \srcfile{src/tools/edit.ts} --- Removed duplicate \texttt{resolvePath()}, replaced with shared \texttt{resolveSafePath()}.
-    \item \srcfile{src/__tests__/path-traversal.test.ts} --- New test suite for \texttt{resolveSafePath()}.
+    \item \srcfile{src/tools/shared.ts} --- New \texttt{resolveSafePath()} function with symlink-aware traversal detection and TOCTOU-safe \texttt{safeReadFile}/\texttt{safeWriteFile} wrappers; \texttt{resolveSandboxPath()} updated to use \texttt{resolveSafePath}; schema descriptions updated.
+    \item \srcfile{src/tools/read.ts} --- Tool now uses \texttt{safeReadFile} for fd-based TOCTOU protection.
+    \item \srcfile{src/tools/write.ts} --- Tool now uses \texttt{safeWriteFile} and validates parent directory through \texttt{resolveSafePath} before \texttt{mkdir}.
+    \item \srcfile{src/tools/edit.ts} --- Tool now uses \texttt{safeReadFile}/\texttt{safeWriteFile} for TOCTOU-protected read-modify-write.
 \end{itemize}
 
 \subsection*{Verification}
-A comprehensive test suite validates all path traversal scenarios: absolute paths (\texttt{/etc/passwd}) are rejected, home directory expansion (\texttt{$\sim$/.ssh/id\_rsa}) is rejected, \texttt{../} traversal sequences (\texttt{../../../etc/passwd}) are rejected, deeply nested traversal (\texttt{subdir/../../other}) is rejected, while valid relative paths (\texttt{file.txt}, \texttt{subdir/file.txt}) and deeply nested valid paths (\texttt{a/b/c/d/file.txt}) are correctly resolved within the workspace.
+The test suite in \texttt{test/path-traversal.test.ts} covers 19 test cases across two suites:
+
+\textbf{resolveSafePath (13 tests)}: validates rejection of absolute paths, home directory expansion, \texttt{../} traversal (both shallow and deep), empty paths, whitespace-only paths, null byte injection, and absolute paths with trailing slashes; validates that relative paths and subdirectory paths are correctly resolved, and that \texttt{..} components within the workspace are normalized.
+
+\textbf{Symlink protection (6 tests)}: validates that symlinks pointing outside the workspace are detected, nested symlink traversal is prevented, symlinks that stay within the workspace are allowed, non-existent file paths (e.g., new files for write operations) are handled without false positives, non-existent parent directories for deep paths are handled, and traversal from a symlinked working directory is correctly detected.
 
 \subsection*{Test File}
-\srcfile{src/__tests__/path-traversal.test.ts}
-
-Contains 10 test cases covering absolute path rejection, home directory expansion rejection, \texttt{../} traversal rejection (both shallow and deeply nested), valid relative path resolution, subdirectory traversal, deeply nested valid paths, tilde-only expansion, and absolute paths with trailing slashes.
+\srcfile{test/path-traversal.test.ts}
