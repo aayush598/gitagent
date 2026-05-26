@@ -83,7 +83,23 @@ async function archiveOverflow(
 		// New archive file
 	}
 
-	const archiveEntry = `\n---\n_Archived: ${now.toISOString()}_\n\n${overflow}\n`;
+	const archivedLine = `_Archived: ${now.toISOString()}_`;
+	const parts: string[] = [];
+
+	if (!existing) {
+		parts.push("---");
+	} else if (existing.endsWith("\n")) {
+		parts.push("---");
+	} else {
+		parts.push("");
+		parts.push("---");
+	}
+
+	parts.push(archivedLine);
+	parts.push("");
+	parts.push(overflow);
+
+	const archiveEntry = parts.join("\n") + "\n";
 	await writeFile(archivePath, existing + archiveEntry, "utf-8");
 
 	// Try to git add the archive
