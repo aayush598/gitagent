@@ -71,6 +71,6 @@ export class AuditLogger {
  * Check if audit logging is enabled via compliance config.
  */
 export function isAuditEnabled(compliance?: Record<string, any>): boolean {
-	if (!compliance) return false;
-	return compliance.recordkeeping?.audit_logging === true;
+	if (!compliance) return true;
+	return compliance.recordkeeping?.audit_logging !== false;
 }
