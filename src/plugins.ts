@@ -324,6 +324,10 @@ async function loadPlugin(
 
 // ── Plugin discovery ───────────────────────────────────────────────────
 
+async function isPluginReady(dir: string): Promise<boolean> {
+	return fileExists(join(dir, "plugin.yaml"));
+}
+
 async function discoverPluginDirs(
 	pluginName: string,
 	agentDir: string,
@@ -331,15 +335,15 @@ async function discoverPluginDirs(
 ): Promise<string | null> {
 	// 1. Local: <agent-dir>/plugins/<name>/
 	const localDir = join(agentDir, "plugins", pluginName);
-	if (await dirExists(localDir)) return localDir;
+	if (await dirExists(localDir) && await isPluginReady(localDir)) return localDir;
 
 	// 2. Global: ~/.gitclaw/plugins/<name>/
 	const globalDir = join(homedir(), ".gitclaw", "plugins", pluginName);
-	if (await dirExists(globalDir)) return globalDir;
+	if (await dirExists(globalDir) && await isPluginReady(globalDir)) return globalDir;
 
 	// 3. Installed: <agent-dir>/.gitagent/plugins/<name>/
 	const installedDir = join(gitagentDir, "plugins", pluginName);
-	if (await dirExists(installedDir)) return installedDir;
+	if (await dirExists(installedDir) && await isPluginReady(installedDir)) return installedDir;
 
 	return null;
 }
