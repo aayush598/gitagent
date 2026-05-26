@@ -1,6 +1,6 @@
-import { readFile, writeFile, mkdir, stat } from "fs/promises";
+import { readFile, writeFile, mkdir, stat, rm } from "fs/promises";
 import { join } from "path";
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { capturePhotoSchema } from "./shared.js";
 
@@ -70,29 +70,41 @@ export function createCapturePhotoTool(cwd: string): AgentTool<typeof capturePho
 			// Write photo
 			await writeFile(photoAbsPath, frameData);
 
-			// Update INDEX.md
+			// Backup original INDEX.md for rollback
 			const indexPath = join(cwd, INDEX_FILE);
-			let indexContent = "";
+			let originalIndex: string | null = null;
 			try {
-				indexContent = await readFile(indexPath, "utf-8");
+				originalIndex = await readFile(indexPath, "utf-8");
 			} catch {
-				indexContent = "# Memorable Moments\n\nPhotos captured during happy and memorable moments.\n\n";
+				// New file
 			}
+
+			// Update INDEX.md
+			let indexContent = originalIndex ?? "# Memorable Moments\n\nPhotos captured during happy and memorable moments.\n\n";
 			const entry = `- **${datePart} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}** — ${reason} → [\`${filename}\`](${filename})\n`;
 			indexContent += entry;
 			await writeFile(indexPath, indexContent, "utf-8");
 
-			// Git add + commit
+			// Git add + commit (shell-injection safe via execFileSync)
 			const commitMsg = `Capture moment: ${reason}`;
 			try {
-				execSync(`git add "${photoRelPath}" "${INDEX_FILE}" && git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, {
-					cwd,
-					stdio: "pipe",
-				});
+				execFileSync("git", ["add", photoRelPath, INDEX_FILE], { cwd, stdio: "pipe" });
+				execFileSync("git", ["commit", "-m", commitMsg], { cwd, stdio: "pipe" });
 			} catch (err: any) {
-				const stderr = err.stderr?.toString() || "";
+				// Rollback on failure
+				try { await rm(photoAbsPath, { force: true }); } catch { /* ignore */ }
+				if (originalIndex !== null) {
+					await writeFile(indexPath, originalIndex, "utf-8");
+				} else {
+					try { await rm(indexPath, { force: true }); } catch { /* ignore */ }
+				}
+				try {
+					execFileSync("git", ["reset", "HEAD", "--", photoRelPath, INDEX_FILE], { cwd, stdio: "pipe" });
+				} catch { /* ignore */ }
+
+				const stderr = err.stderr?.toString() || err.message || "unknown error";
 				return {
-					content: [{ type: "text" as const, text: `Photo saved to ${photoRelPath} but git commit failed: ${stderr.trim() || "unknown error"}` }],
+					content: [{ type: "text" as const, text: `Photo capture failed: ${stderr}. Previous state restored.` }],
 					details: undefined,
 				};
 			}
