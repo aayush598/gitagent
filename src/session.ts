@@ -86,11 +86,12 @@ export function initLocalSession(opts: LocalRepoOptions): LocalSession {
 		// Try local checkout first, fall back to remote tracking
 		try {
 			git(`checkout ${branch}`, dir);
-		} catch {
+		} catch (err: unknown) {
+			console.warn(`[session] git checkout failed: ${err instanceof Error ? err.message : String(err)}`);
 			git(`checkout -b ${branch} origin/${branch}`, dir);
 		}
 		// Pull latest for existing session branch
-		try { git(`pull origin ${branch}`, dir); } catch { /* branch may not exist on remote yet */ }
+		try { git(`pull origin ${branch}`, dir); } catch (err: unknown) { console.warn(`[session] git pull failed: ${err instanceof Error ? err.message : String(err)}`); }
 	} else {
 		// New session — branch off latest default branch
 		sessionId = randomBytes(4).toString("hex"); // 8-char hex
