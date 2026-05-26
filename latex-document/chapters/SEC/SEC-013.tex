@@ -10,7 +10,7 @@
 \textbf{Affected File} & \srcfile{src/plugins.ts} \\
 \textbf{Branch} & \branchref{fix/SEC-013-insecure-deserialization} \\
 \textbf{Changes} & \branchdiff{fix/SEC-013-insecure-deserialization} \\
-\textbf{Commit} & f7b46bcf54d56545d370ca2a2669d7ad944a07ba \\
+\textbf{Commit} & b4a73b0 \\
 \end{tabular}
 
 \subsection*{Executive Summary}
@@ -84,13 +84,8 @@ const manifest = yaml.load(raw) as any;
 \subsection*{Affected Files}
 \begin{itemize}
     \item \srcfile{src/plugins.ts} --- Added \texttt{prevalidateManifest()} function that scans raw YAML for dangerous tag patterns (\texttt{!!js/}, \texttt{!!python/}, \texttt{!!ruby/}, \texttt{!!php/}), applied pre-validation before \texttt{yaml.load()} calls in both \texttt{loadPlugin()} and \texttt{listAllPlugins()}, added try/catch for YAML parse errors.
-    \item \srcfile{src/__tests__/plugin-deserialize.test.ts} --- New comprehensive test suite for deserialization security.
+    \item \srcfile{test/plugin-deserialize.test.ts} --- Standalone test suite (14 tests) with no external dependencies.
 \end{itemize}
 
 \subsection*{Verification}
-Tests verify that YAML with \texttt{!!js/function}, \texttt{!!js/undefined}, and \texttt{!!js/regexp} tags are rejected, that normal plugin YAML (with id, name, version, description, engine, entry) parses correctly, that plugin YAML with nested config schemas parses correctly, that \texttt{!!python/}, \texttt{!!ruby/}, and \texttt{!!php/} tags are rejected, and that empty and invalid YAML are handled gracefully.
-
-\subsection*{Test File}
-\srcfile{src/__tests__/plugin-deserialize.test.ts}
-
-Contains 11 test cases covering JS-specific YAML tag rejection (\texttt{!!js/function}, \texttt{!!js/undefined}, \texttt{!!js/regexp}), normal plugin YAML parsing, nested config schema parsing, foreign language tag rejection (\texttt{!!python/}, \texttt{!!ruby/}, \texttt{!!php/}), empty YAML handling, and invalid YAML syntax handling.
+14 tests: 11 for \texttt{prevalidateManifest} (rejects \texttt{!!js/function}, \texttt{!!js/undefined}, \texttt{!!js/regexp}, \texttt{!!python/}, \texttt{!!ruby/}, \texttt{!!php/}; accepts safe manifest, anchors, base YAML types like \texttt{!!str}/\texttt{!!int}/\texttt{!!bool}, and empty strings) and 3 for manifest parsing (normal plugin, nested config, empty).

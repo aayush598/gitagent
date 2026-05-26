@@ -7,43 +7,38 @@
 \textbf{Severity} & Medium (CVSS 7.1) \\
 \textbf{Category} & Security \\
 \textbf{CWE} & CWE-59: Improper Link Resolution Before File Access \\
-\textbf{Affected File} & \srcfile{src/tools/shared.ts}, \srcfile{src/tools/write.ts}, \srcfile{src/tools/edit.ts} \\
+\textbf{Affected Files} & \srcfile{src/tools/shared.ts}, \srcfile{src/tools/write.ts}, \srcfile{src/tools/edit.ts}, \srcfile{src/tools/read.ts} \\
 \textbf{Branch} & \branchref{fix/SEC-006-symlink-attack} \\
 \textbf{Changes} & \branchdiff{fix/SEC-006-symlink-attack} \\
-\textbf{Commit} & 82ad3dc20b33fdfe9fdd45bd6db874faa4c7cae2 \\
+\textbf{Commit} & 3c16bf3 \\
 \end{tabular}
 
 \subsection*{Executive Summary}
-The \texttt{write} tool (\srcfile{src/tools/write.ts}) writes content to user-specified file paths without verifying whether the path resolves to a symlink. An attacker who can control the file path argument---either directly via loaded agent prompts or indirectly via prompt injection---can instruct the agent to write to a symlink that points to an arbitrary location on the filesystem. The attack works by first creating a symlink in the agent's writable directory that points to a sensitive target (e.g., \texttt{$\sim$/.ssh/authorized\_keys}), then asking the agent to write to that symlink path. The \texttt{writeFile} call follows the symlink and writes the attacker's content to the target.
+The \texttt{write} tool writes content to user-specified file paths without verifying whether the path resolves to a symlink. An attacker who can control the file path argument---either directly via loaded agent prompts or indirectly via prompt injection---can instruct the agent to write to a symlink that points to an arbitrary location on the filesystem. The attack works by first creating a symlink in the agent's writable directory that points to a sensitive target (e.g., \texttt{$\sim$/.ssh/authorized\_keys}), then asking the agent to write to that symlink path. The \texttt{writeFile} call follows the symlink and writes the attacker's content to the target.
 
-The vulnerability is amplified by the fact that the CLI tool can create symlinks (\texttt{ln -s}), and the \texttt{write} tool creates parent directories automatically. The fix adds a symlink detection check (\texttt{assertNotSymlink()}) before both write and edit operations.
+The fix provides defense in depth: (1) \texttt{assertNotSymlink()} uses \texttt{lstat} to detect symlinks at the final path component before any file operation, (2) \texttt{resolveSafePath()} resolves all symlinks in the path via \texttt{realpathSync} and verifies the real target is within the workspace, and (3) TOCTOU-safe I/O wrappers (\texttt{safeReadFile}/\texttt{safeWriteFile}) open the file first and validate through the open file descriptor.
 
 \subsection*{Root Cause Analysis}
 The vulnerable code path in \srcfile{src/tools/write.ts}:
 
 \begin{lstlisting}[language=TypeScript]
 const absolutePath = resolvePath(path, cwd);
-
-if (createDirs !== false) {
-    await mkdir(dirname(absolutePath), { recursive: true });
-}
-
 await writeFile(absolutePath, content, "utf-8");
 \end{lstlisting}
 
-\texttt{writeFile()} in Node.js follows symlinks by default. If \texttt{absolutePath} is a symlink, the write targets the symlink's destination. There is no check before \texttt{mkdir} (directory creation follows symlinks in the path), before \texttt{writeFile} (no \texttt{lstat} call to check for symlinks), or after the write (no verification the written file is where expected). The same pattern exists in \texttt{edit.ts}.
-
-The attack chain is straightforward: (1) the attacker creates a symlink via the CLI tool (\texttt{ln -sf $\sim$/.ssh/authorized\_keys workspace/key}), (2) the agent writes attacker-controlled content to the symlink path via the write tool, and (3) \texttt{writeFile} follows the symlink and writes to the target.
+\texttt{writeFile()} in Node.js follows symlinks by default. If \texttt{absolutePath} is a symlink, the write targets the symlink's destination. There is no \texttt{lstat} call to check for symlinks before the write. The same pattern exists in \texttt{edit.ts}. Additionally, the \texttt{resolvePath} function does not follow or validate symlinks in path components (e.g., a subdirectory that is a symlink to another location).
 
 \subsection*{Fix Implementation}
-The fix adds an \texttt{assertNotSymlink()} function to \srcfile{src/tools/shared.ts}:
+The fix introduces three layers of defence:
+
+\paragraph{Layer 1: \texttt{assertNotSymlink()}} An early-exit check using \texttt{lstat} that detects if the final path component is a symbolic link:
 
 \begin{lstlisting}[language=TypeScript]
 export async function assertNotSymlink(path: string): Promise<void> {
     try {
         const stats = await lstat(path);
         if (stats.isSymbolicLink()) {
-            throw new Error(\texttt{Path is a symbolic link --- blocked for security});
+            throw new Error(`Path is a symbolic link -- blocked for security`);
         }
     } catch (err: any) {
         if (err.message?.includes("symbolic link")) throw err;
@@ -51,31 +46,51 @@ export async function assertNotSymlink(path: string): Promise<void> {
 }
 \end{lstlisting}
 
-This is called in \texttt{write.ts} before the \texttt{writeFile} call:
+\paragraph{Layer 2: \texttt{resolveSafePath()}} A path resolution function that uses \texttt{realpathSync} to follow all symlinks in the path and verifies the ultimate target is within the allowed base directory:
 
 \begin{lstlisting}[language=TypeScript]
-await assertNotSymlink(absolutePath);
-await writeFile(absolutePath, content, "utf-8");
+export function resolveSafePath(path: string, cwd: string): string {
+    // ... validation and symlink resolution ...
+    const realResolved = realpathSync(resolved);
+    if (relative(allowedBase, realResolved).startsWith(".."))
+        throw new Error("Path traversal detected (symlink resolved)");
+    return resolved;
+}
 \end{lstlisting}
 
-And in \texttt{edit.ts} before the \texttt{readFile} call that reads the original content:
+\paragraph{Layer 3: \texttt{safeReadFile}/\texttt{safeWriteFile()}} TOCTOU-safe I/O that opens the file first, resolves the real path through the open file descriptor, and validates it before reading or writing.
+
+\paragraph{Integration:} In \texttt{write.ts}, both \texttt{assertNotSymlink} and \texttt{safeWriteFile} are used:
 
 \begin{lstlisting}[language=TypeScript]
-await assertNotSymlink(absolutePath);
-const original = await readFile(absolutePath, "utf-8");
+// validate directory not a symlink before mkdir
+await assertNotSymlink(resolvedDir);
+// validate final path not a symlink before write
+await assertNotSymlink(resolveSafePath(path, cwd));
+// fd-based TOCTOU-safe write
+await safeWriteFile(path, content, cwd);
 \end{lstlisting}
+
+The same pattern is applied in \texttt{edit.ts} and \texttt{read.ts}.
 
 \subsection*{Affected Files}
 \begin{itemize}
-    \item \srcfile{src/tools/shared.ts} --- Added \texttt{assertNotSymlink()} export function using \texttt{fs/promises.lstat()}.
-    \item \srcfile{src/tools/write.ts} --- Added \texttt{assertNotSymlink()} call before \texttt{writeFile} in the write tool.
-    \item \srcfile{src/tools/edit.ts} --- Added \texttt{assertNotSymlink()} call before \texttt{readFile} in the edit tool.
+    \item \srcfile{src/tools/shared.ts} --- Added \texttt{assertNotSymlink()}, \texttt{resolveSafePath()} with \texttt{realpathSync} symlink resolution, and TOCTOU-safe \texttt{safeReadFile}/\texttt{safeWriteFile} wrappers.
+    \item \srcfile{src/tools/write.ts} --- Added \texttt{assertNotSymlink} before \texttt{mkdir} and \texttt{safeWriteFile}; uses \texttt{resolveSafePath} for directory resolution.
+    \item \srcfile{src/tools/edit.ts} --- Added \texttt{assertNotSymlink} and replaced \texttt{readFile}/\texttt{writeFile} with \texttt{safeReadFile}/\texttt{safeWriteFile}.
+    \item \srcfile{src/tools/read.ts} --- Replaced \texttt{resolvePath}/\texttt{readFile} with \texttt{safeReadFile} for TOCTOU-safe reads.
 \end{itemize}
 
 \subsection*{Verification}
-Tests verify that writing to a symlink path throws an error containing "symbolic link", and that normal file writes to non-symlink paths continue to work correctly. The test creates a symlink to a target file, attempts to write through the symlink, and confirms the target file is not modified while the symlink write is rejected.
+The test suite in \texttt{test/symlink-attack.test.ts} covers 18 test cases across four suites:
+
+\textbf{resolveSafePath (7 tests)}: Validates rejection of absolute paths, home directory expansion, \texttt{../} traversal, and null byte injection; validates resolution of relative and subdirectory paths.
+
+\textbf{assertNotSymlink (5 tests)}: Validates that file symlinks are detected, directory symlinks are detected, and regular files, directories, and non-existent paths are allowed.
+
+\textbf{Symlink protection (3 tests)}: Validates that symlinks pointing outside the workspace are caught, symlinks within the workspace are allowed, and non-existent file paths are handled correctly.
+
+\textbf{Defense-in-depth (3 tests)}: Validates that both \texttt{resolveSafePath} and \texttt{assertNotSymlink} work together, catching both the path-level and component-level symlink attacks.
 
 \subsection*{Test File}
-\srcfile{src/__tests__/symlink.test.ts} (inferred from the shared.ts updates)
-
-Validates that \texttt{assertNotSymlink()} detects symlinks via \texttt{lstat} and throws the expected error, and that non-symlink paths pass through successfully.
+\srcfile{test/symlink-attack.test.ts}

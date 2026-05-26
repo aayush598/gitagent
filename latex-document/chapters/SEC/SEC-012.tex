@@ -10,7 +10,7 @@
 \textbf{Affected File} & \srcfile{src/loader.ts}, \srcfile{src/session.ts} \\
 \textbf{Branch} & \branchref{fix/SEC-012-insecure-randomness} \\
 \textbf{Changes} & \branchdiff{fix/SEC-012-insecure-randomness} \\
-\textbf{Commit} & 2810469d6afdc30cc7aa481abcfb21ce834ed855 \\
+\textbf{Commit} & 91effff \\
 \end{tabular}
 
 \subsection*{Executive Summary}
@@ -80,9 +80,4 @@ sessionId = randomBytes(16).toString("hex"); // 32-char hex (128 bits)
 \end{itemize}
 
 \subsection*{Verification}
-Tests verify that the session ID has at least 256 bits of entropy (64 hex characters), the local session ID has at least 128 bits (32 hex characters), no collisions occur over 10,000 iterations, the IDs use cryptographically secure \texttt{randomBytes} (not \texttt{Math.random}), and the session state includes an \texttt{expires\_at} field set in the future.
-
-\subsection*{Test File}
-\srcfile{test/session-id.test.ts}
-
-Contains five tests: session ID length (256 bits minimum), local session ID length (128 bits minimum), no collisions over 10,000 iterations, cryptographically secure randomness validation (hex character distribution check), and \texttt{expires\_at} field presence with future timestamp.
+12 tests organized into three groups: (1) \textbf{session ID entropy} --- 256-bit main ID, 128-bit local ID, hex-only characters, no collisions over 10,000 iterations (both main and local), non-sequential consecutive IDs; (2) \textbf{session expiry} --- new sessions not expired, past sessions expired, exact-time sessions expired, state object fields validation; (3) \textbf{file permissions} --- state file created with \texttt{chmod 600} and readable back.

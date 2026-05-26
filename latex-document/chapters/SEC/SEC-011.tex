@@ -10,7 +10,7 @@
 \textbf{Affected File} & \srcfile{src/tools/cli.ts}, \srcfile{src/tools/env-redact.ts}, \srcfile{src/tools/sandbox-cli.ts} \\
 \textbf{Branch} & \branchref{fix/SEC-011-env-var-leak} \\
 \textbf{Changes} & \branchdiff{fix/SEC-011-env-var-leak} \\
-\textbf{Commit} & 0ec1493fe791509014c826ad5da4c05a41b9bb17 \\
+\textbf{Commit} & 915f12f \\
 \end{tabular}
 
 \subsection*{Executive Summary}
@@ -103,13 +103,8 @@ The same \texttt{scrubOutput()} is applied in \texttt{sandbox-cli.ts} for sandbo
     \item \srcfile{src/tools/env-redact.ts} --- New file: \texttt{createSafeEnv()} returns a filtered environment with only safe system variables; \texttt{scrubOutput()} redacts known sensitive patterns from command output.
     \item \srcfile{src/tools/cli.ts} --- Replaced \texttt{env: \{ ...process.env \}} with \texttt{env: createSafeEnv()}, added \texttt{scrubOutput()} calls in \texttt{onUpdate} callback and output result construction.
     \item \srcfile{src/tools/sandbox-cli.ts} --- Added \texttt{scrubOutput()} calls in stdout/stderr data handlers and final output truncation.
-    \item \srcfile{src/__tests__/env-redact.test.ts} --- New test suite for both functions.
+    \item \srcfile{test/env-redact.test.ts} --- Standalone test suite (18 tests) with no external dependencies.
 \end{itemize}
 
 \subsection*{Verification}
-Tests verify that \texttt{createSafeEnv()} includes \texttt{PATH} while excluding \texttt{OPENAI\_API\_KEY} and arbitrary test secrets. The \texttt{scrubOutput()} tests confirm redaction of OpenAI API keys, GitHub tokens, AWS access keys, basic auth in URLs, and private key blocks, while preserving safe text unchanged. Integration tests confirm that CLI tool output no longer contains secret environment variable values.
-
-\subsection*{Test File}
-\srcfile{src/__tests__/env-redact.test.ts}
-
-Contains two test groups: \texttt{createSafeEnv} tests (safe vars like PATH are present, sensitive vars like OPENAI\_API\_KEY are excluded, custom secrets are excluded) and \texttt{scrubOutput} tests (OpenAI keys redacted, GitHub tokens redacted, AWS access keys redacted, basic auth in URLs redacted, private key blocks redacted, safe text unchanged).
+18 tests verify: \texttt{createSafeEnv()} includes PATH, TMPDIR, excludes OPENAI\_API\_KEY, ANTHROPIC\_API\_KEY, custom secrets. \texttt{scrubOutput()} redacts OpenAI API keys (\texttt{sk-...}), OpenAI project keys (\texttt{sk-proj-...}), GitHub tokens (\texttt{ghp\_/gho\_/ghs\_/ghu\_}), AWS access keys (\texttt{AKIA...}), basic auth in URLs, private key blocks (RSA, EC, OPENSSH, generic), and redacts multiple sensitive values in the same output while preserving safe text and empty strings.

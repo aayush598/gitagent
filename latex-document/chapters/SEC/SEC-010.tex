@@ -7,106 +7,42 @@
 \textbf{Severity} & Medium (CVSS 5.3) \\
 \textbf{Category} & Security \\
 \textbf{CWE} & CWE-799: Improper Control of Interaction Frequency \\
-\textbf{Affected File} & \srcfile{src/tools/rate-limiter.ts}, \srcfile{src/sdk.ts} \\
+\textbf{Affected Files} & \srcfile{src/tools/rate-limiter.ts}, \srcfile{src/sdk.ts} \\
 \textbf{Branch} & \branchref{fix/SEC-010-rate-limiting-tool-execution} \\
 \textbf{Changes} & \branchdiff{fix/SEC-010-rate-limiting-tool-execution} \\
-\textbf{Commit} & 7aa9616ce7faae65bc2b7c4607dc34d56a462a08 \\
+\textbf{Commit} & 622e971 \\
 \end{tabular}
 
 \subsection*{Executive Summary}
-The agent tool execution pipeline has no rate limiting whatsoever. The LLM can call any tool---\texttt{cli}, \texttt{read}, \texttt{write}, \texttt{memory}, \texttt{edit}---as many times as it wants, as fast as it wants, with no cooldown, no per-session quota, and no concurrency limit. A prompt-injection attack can instruct the LLM to call a tool in a tight loop: the CLI tool can fork-bomb the system by spawning thousands of processes, the write tool can flood the disk with garbage files, and the memory tool can create thousands of git commits.
-
-The absence of rate limiting transforms any single-vulnerability exploit into a denial-of-service attack vector. Even without malicious intent, a bug in the LLM's reasoning loop could cause it to repeat the same tool call indefinitely. The fix introduces a sliding-window rate limiter that enforces per-tool call quotas, integrated into the SDK's tool-wrapping pipeline so all tools are automatically rate-limited.
+The agent tool execution pipeline had no rate limiting whatsoever. The LLM could call any tool---\texttt{cli}, \texttt{read}, \texttt{write}, \texttt{memory}, \texttt{edit}---as many times as it wanted with no cooldown, no per-session quota, and no concurrency limit. This transforms any single-vulnerability exploit into a denial-of-service attack vector. The fix introduces a sliding-window rate limiter with per-tool call quotas, integrated into the SDK's tool-wrapping pipeline.
 
 \subsection*{Root Cause Analysis}
-Each tool's \texttt{execute()} function is called directly with no throttling. The CLI tool spawns a new shell process for each call:
-
-\begin{lstlisting}[language=TypeScript]
-const child = spawn("sh", ["-c", command], {
-    cwd,
-    stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env },
-});
-\end{lstlisting}
-
-With rapid calls, the system can experience process table exhaustion (max 32K processes on Linux), memory exhaustion (each process consumes RAM), file descriptor exhaustion, and disk space exhaustion (write tool in a loop). There is no semaphore or mutex protecting any tool execution and no per-session quota.
+Each tool's \texttt{execute()} function was called directly with no throttling. The CLI tool spawned a new shell process per call. With rapid calls, the system could experience process table exhaustion, memory exhaustion, file descriptor exhaustion, and disk space exhaustion. No semaphore, mutex, or per-session quota existed.
 
 \subsection*{Fix Implementation}
-The fix introduces a \texttt{RateLimiter} class in \srcfile{src/tools/rate-limiter.ts} that implements a sliding-window algorithm:
+The fix introduces a \texttt{RateLimiter} class in \srcfile{src/tools/rate-limiter.ts} implementing a sliding-window algorithm with configurable per-tool defaults:
 
 \begin{lstlisting}[language=TypeScript]
 const DEFAULT_LIMITS: Record<string, RateLimitConfig> = {
-    cli: { maxCalls: 10, windowMs: 60000 },       // 10 CLI calls per minute
-    write: { maxCalls: 30, windowMs: 60000 },      // 30 writes per minute
-    read: { maxCalls: 60, windowMs: 60000 },       // 60 reads per minute
-    edit: { maxCalls: 30, windowMs: 60000 },       // 30 edits per minute
-    memory: { maxCalls: 20, windowMs: 60000 },     // 20 memory ops per minute
+    cli: { maxCalls: 10, windowMs: 60000 },
+    write: { maxCalls: 30, windowMs: 60000 },
+    read: { maxCalls: 60, windowMs: 60000 },
+    edit: { maxCalls: 30, windowMs: 60000 },
+    memory: { maxCalls: 20, windowMs: 60000 },
     task_tracker: { maxCalls: 30, windowMs: 60000 },
     skill_learner: { maxCalls: 10, windowMs: 60000 },
-    // ... sandbox variants with same limits
+    capture_photo: { maxCalls: 10, windowMs: 60000 },
 };
-
-export class RateLimiter {
-    private windows = new Map<string, number[]>();
-
-    check(toolName: string): void {
-        const config = DEFAULT_LIMITS[toolName];
-        if (!config) return;
-
-        const now = Date.now();
-        let calls = this.windows.get(toolName) || [];
-        calls = calls.filter(t => now - t < config.windowMs);
-
-        if (calls.length >= config.maxCalls) {
-            const oldest = calls[0];
-            const retryAfter = Math.ceil((oldest + config.windowMs - now) / 1000);
-            throw new Error(
-                \texttt{Rate limit exceeded for "\${toolName}". } +
-                \texttt{Max \${config.maxCalls} calls per \${config.windowMs / 1000}s. } +
-                \texttt{Retry in \${retryAfter}s.}
-            );
-        }
-
-        calls.push(now);
-        this.windows.set(toolName, calls);
-    }
-}
 \end{lstlisting}
 
-A \texttt{wrapToolWithRateLimit()} function is provided to seamlessly integrate the rate limiter into the tool pipeline:
-
-\begin{lstlisting}[language=TypeScript]
-export function wrapToolWithRateLimit<T extends AgentTool<any>>(tool: T): T {
-    const originalExecute = tool.execute;
-    return {
-        ...tool,
-        execute: async (toolCallId, args, signal, onUpdate) => {
-            rateLimiter.check(tool.name);
-            return originalExecute.call(tool, toolCallId, args, signal, onUpdate);
-        },
-    } as T;
-}
-\end{lstlisting}
-
-The wrapper is applied in \texttt{src/sdk.ts} during tool setup, before OpenTelemetry instrumentation:
-
-\begin{lstlisting}[language=TypeScript]
-// 5b. Wrap every tool with rate limiting. Applied before OpenTelemetry
-// so the rate limit check runs first (outermost wrapper).
-tools = tools.map(wrapToolWithRateLimit);
-\end{lstlisting}
+The \texttt{wrapToolWithRateLimit()} function wraps each tool, calling \texttt{rateLimiter.check(tool.name)} before every execution. It is applied in \texttt{src/sdk.ts} before OpenTelemetry instrumentation, ensuring the rate limit check runs outermost.
 
 \subsection*{Affected Files}
 \begin{itemize}
-    \item \srcfile{src/tools/rate-limiter.ts} --- New file: \texttt{RateLimiter} class with sliding-window algorithm, default per-tool limits, \texttt{check()} method, \texttt{reset()} method, and \texttt{wrapToolWithRateLimit()} wrapper function.
-    \item \srcfile{src/sdk.ts} --- Added rate-limit wrapping step in the tool pipeline, applied before OpenTelemetry instrumentation for defense-in-depth ordering.
-    \item \srcfile{src/__tests__/rate-limit.test.ts} --- New comprehensive test suite for the rate limiter.
+    \item \srcfile{src/tools/rate-limiter.ts} --- \texttt{RateLimiter} class with sliding-window algorithm, per-tool limits, \texttt{check()} and \texttt{reset()} methods, and \texttt{wrapToolWithRateLimit()} wrapper.
+    \item \srcfile{src/sdk.ts} --- Added rate-limit wrapping step in the tool pipeline.
+    \item \srcfile{test/rate-limit.test.ts} --- 8 standalone tests (no external deps).
 \end{itemize}
 
 \subsection*{Verification}
-Tests verify that the rate limiter allows calls under the limit, throws when calls exceed the limit, enforces the default CLI limit (10 calls per 60s), allows different tools to have independent limits, allows unconfigured tools without limiting, and that \texttt{wrapToolWithRateLimit} preserves tool name and properties while blocking execution when the rate limit is exceeded.
-
-\subsection*{Test File}
-\srcfile{src/__tests__/rate-limit.test.ts}
-
-Contains two test groups: \texttt{RateLimiter} tests (calls under limit, calls over limit, tool-specific limits, unconfigured tools pass through) and \texttt{wrapToolWithRateLimit} tests (preserves tool properties, allows normal execution under limit, blocks execution over limit, independent tool limits).
+8 tests verify: calls under the limit succeed, calls over the limit throw, retry-after info in error messages, independent tool limits, unconfigured tools pass through, per-tool \texttt{reset()}, global \texttt{reset()}, and all 8 configured tool types enforce their specific limits independently.
