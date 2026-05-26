@@ -245,9 +245,8 @@ export async function loadAgent(
 	// Load environment config
 	const envConfig = await loadEnvConfig(agentDir, envFlag);
 
-	// Ensure .gitagent/ directory and write session state
+	// Ensure .gitagent/ directory (needed early for dependency resolution)
 	const gitagentDir = await ensureGitagentDir(agentDir);
-	const sessionId = await writeSessionState(gitagentDir);
 
 	// Resolve inheritance (Phase 2.4)
 	let parentRules = "";
@@ -265,6 +264,9 @@ export async function loadAgent(
 
 	// Validate compliance (Phase 3)
 	const complianceWarnings = validateCompliance(manifest);
+
+	// Write session state AFTER all validation passes to avoid orphaned state.json
+	const sessionId = await writeSessionState(gitagentDir);
 
 	// Read identity files
 	const soul = await readFileOr(join(agentDir, "SOUL.md"), "");
@@ -379,28 +381,65 @@ Do NOT track trivial single-command tasks (e.g. "what time is it"). But DO check
 
 	const systemPrompt = parts.join("\n\n");
 
-	// Resolve model — env config model_override > CLI flag > manifest preferred
-	const modelStr = envConfig.model_override || modelFlag || manifest.model.preferred;
-	if (!modelStr) {
+	// Resolve model — env config model_override > CLI flag > manifest preferred > fallbacks
+	const modelCandidates: string[] = [];
+	if (envConfig.model_override) {
+		modelCandidates.push(envConfig.model_override);
+	} else if (modelFlag) {
+		modelCandidates.push(modelFlag);
+	} else {
+		if (manifest.model.preferred) {
+			modelCandidates.push(manifest.model.preferred);
+		}
+		if (manifest.model.fallback?.length) {
+			modelCandidates.push(...manifest.model.fallback);
+		}
+	}
+
+	if (modelCandidates.length === 0) {
 		throw new Error(
-			'No model configured. Either:\n  - Set model.preferred in agent.yaml (e.g., "anthropic:claude-sonnet-4-5-20250929")\n  - Pass --model provider:model on the command line',
+			'No model configured. Either:\n' +
+			'  - Set model.preferred in agent.yaml (e.g., "anthropic:claude-sonnet-4-5-20250929")\n' +
+			'  - Set model.fallback with alternatives\n' +
+			'  - Pass --model provider:model on the command line',
 		);
 	}
 
-	const { provider, modelId } = parseModelString(modelStr);
 	const envBaseUrl = process.env.GITCLAW_MODEL_BASE_URL;
+	const modelErrors: string[] = [];
+	let model: Model<any> | undefined;
+	let resolvedProvider: string = "";
 
-	let model: Model<any>;
-	if (modelId.includes("@")) {
-		// Custom endpoint: provider:model-id@base-url
-		const atIndex = modelId.indexOf("@");
-		model = createCustomModel(provider, modelId.slice(0, atIndex), modelId.slice(atIndex + 1));
-	} else if (envBaseUrl) {
-		// Environment-specified base URL overrides all providers
-		model = createCustomModel(provider, modelId, envBaseUrl);
-	} else {
-		// Standard registered model
-		model = getModel(provider as any, modelId as any);
+	for (const candidate of modelCandidates) {
+		try {
+			const { provider, modelId } = parseModelString(candidate);
+			resolvedProvider = provider;
+
+			if (modelId.includes("@")) {
+				const atIndex = modelId.indexOf("@");
+				model = createCustomModel(provider, modelId.slice(0, atIndex), modelId.slice(atIndex + 1));
+			} else if (envBaseUrl) {
+				model = createCustomModel(provider, modelId, envBaseUrl);
+			} else {
+				model = getModel(provider as any, modelId as any);
+			}
+
+			if (candidate !== modelCandidates[0]) {
+				console.warn(`[loader] Preferred model unavailable. Using fallback: "${candidate}"`);
+			}
+			break;
+		} catch (err: any) {
+			modelErrors.push(`  "${candidate}": ${err.message}`);
+			continue;
+		}
+	}
+
+	if (!model) {
+		throw new Error(
+			`No model could be initialized. Tried ${modelCandidates.length} candidate(s):\n` +
+			modelErrors.join("\n") +
+			'\n\nConfigure a valid model in agent.yaml model.preferred or pass --model on the command line.',
+		);
 	}
 
 	// For custom providers not in pi-ai's env key map, ensure an API key is available.
@@ -408,9 +447,9 @@ Do NOT track trivial single-command tasks (e.g. "what time is it"). But DO check
 	// For unknown providers using openai-completions API, set provider to "openai" so
 	// pi-ai finds OPENAI_API_KEY. The actual auth happens via custom headers on the model.
 	const knownProviders = new Set(["openai", "anthropic", "google", "google-vertex", "groq", "cerebras", "xai", "openrouter", "mistral", "amazon-bedrock", "azure-openai-responses", "huggingface", "opencode", "kimi-coding", "github-copilot"]);
-	if (model.baseUrl && !knownProviders.has(provider)) {
+	if (model.baseUrl && !knownProviders.has(resolvedProvider)) {
 		// Use provider-specific key if available, otherwise use LYZR key or dummy
-		const providerKey = process.env[`${provider.toUpperCase()}_API_KEY`] || process.env.LYZR_API_KEY;
+		const providerKey = process.env[`${resolvedProvider.toUpperCase()}_API_KEY`] || process.env.LYZR_API_KEY;
 		if (providerKey && !process.env.OPENAI_API_KEY) {
 			process.env.OPENAI_API_KEY = providerKey;
 		}

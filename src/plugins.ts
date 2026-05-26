@@ -1,4 +1,4 @@
-import { readFile, readdir, stat, mkdir, rm } from "fs/promises";
+import { readFile, readdir, stat, mkdir, rm, rename } from "fs/promises";
 import { join } from "path";
 import { execFileSync } from "child_process";
 import { createRequire } from "module";
@@ -123,6 +123,26 @@ async function fileExists(path: string): Promise<boolean> {
 	}
 }
 
+// ── File-based locking for plugin directories ──────────────────────────
+
+async function acquirePluginLock(pluginDir: string): Promise<boolean> {
+	const lockFile = pluginDir + ".lock";
+	try {
+		await mkdir(lockFile);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+async function releasePluginLock(pluginDir: string): Promise<void> {
+	try {
+		await rm(pluginDir + ".lock", { recursive: true, force: true });
+	} catch {
+		// best effort
+	}
+}
+
 // ── Plugin installation ────────────────────────────────────────────────
 
 export async function installPlugin(
@@ -137,33 +157,51 @@ export async function installPlugin(
 	const name = source.split("/").pop()?.replace(/\.git$/, "") || "plugin";
 	const pluginDir = join(targetDir, name);
 
-	if (await dirExists(pluginDir)) {
-		// Verify it's a valid plugin directory
-		if (await fileExists(join(pluginDir, "plugin.yaml"))) {
-			if (force) {
-				await rm(pluginDir, { recursive: true, force: true });
-			} else {
-				console.log(`Plugin "${name}" already installed. Use --force to reinstall.`);
-				return pluginDir;
-			}
-		} else {
-			// Stale directory: remove and re-clone
-			await rm(pluginDir, { recursive: true, force: true });
-		}
+	// Acquire lock — retry up to 5 times with 200ms backoff
+	for (let attempt = 0; attempt < 5; attempt++) {
+		if (await acquirePluginLock(pluginDir)) break;
+		if (attempt === 4) throw new Error(`Could not acquire lock for plugin "${name}"`);
+		await new Promise((r) => setTimeout(r, 200));
 	}
 
-	const args = ["clone", "--depth", "1"];
-	if (version) {
-		args.push("--branch", version);
-	}
-	args.push(source, pluginDir);
 	try {
-		execFileSync("git", args, { stdio: "pipe" });
-	} catch (err: any) {
-		throw new Error(`Failed to install plugin from "${source}": ${err.message}`);
-	}
+		if (await dirExists(pluginDir)) {
+			// Verify it's a valid plugin directory
+			if (await fileExists(join(pluginDir, "plugin.yaml"))) {
+				if (force) {
+					await rm(pluginDir, { recursive: true, force: true });
+				} else {
+					console.log(`Plugin "${name}" already installed. Use --force to reinstall.`);
+					return pluginDir;
+				}
+			} else {
+				// Stale directory: remove and re-clone
+				await rm(pluginDir, { recursive: true, force: true });
+			}
+		}
 
-	return pluginDir;
+		// Clone to temp directory first, then atomically rename
+		const tmpDir = pluginDir + ".tmp." + Date.now();
+		const args = ["clone", "--depth", "1"];
+		if (version) {
+			args.push("--branch", version);
+		}
+		args.push(source, tmpDir);
+		try {
+			execFileSync("git", args, { stdio: "pipe" });
+		} catch (err: any) {
+			await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+			throw new Error(`Failed to install plugin from "${source}": ${err.message}`);
+		}
+
+		// Atomic rename — prevents partial reads by other processes
+		await rm(pluginDir, { recursive: true, force: true }).catch(() => {});
+		await rename(tmpDir, pluginDir);
+
+		return pluginDir;
+	} finally {
+		await releasePluginLock(pluginDir);
+	}
 }
 
 // ── Load a single plugin ───────────────────────────────────────────────
