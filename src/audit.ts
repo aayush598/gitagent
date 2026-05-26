@@ -18,7 +18,7 @@ export class AuditLogger {
 	private sessionId: string;
 	private enabled: boolean;
 
-	constructor(gitagentDir: string, sessionId: string, enabled: boolean) {
+	constructor(gitagentDir: string, sessionId: string, enabled: boolean = true) {
 		this.logPath = join(gitagentDir, "audit.jsonl");
 		this.sessionId = sessionId;
 		this.enabled = enabled;

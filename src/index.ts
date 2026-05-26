@@ -152,9 +152,13 @@ function handleEvent(
 				runHooks(hooksConfig.hooks.post_response, agentDir, {
 					event: "post_response",
 					session_id: sessionId,
-				}).catch(() => {});
+				}).catch((err) => {
+					console.error(`[hooks] post_response hook failed: ${(err as Error).message}`);
+				});
 			}
-			auditLogger?.logResponse().catch(() => {});
+			auditLogger?.logResponse().catch((err) => {
+				console.error(`[audit] logResponse failed: ${(err as Error).message}`);
+			});
 			break;
 		}
 		case "tool_execution_start":

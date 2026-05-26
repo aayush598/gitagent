@@ -409,20 +409,24 @@ export function query(options: QueryOptions): Query {
 					accText = "";
 					accThinking = "";
 
-					// Fire post_response hooks (non-blocking)
-					if (hooksConfig?.hooks.post_response) {
-						runHooks(hooksConfig.hooks.post_response, loaded.agentDir, {
-							event: "post_response",
-							session_id: _sessionId,
-						}).catch(() => {});
-					}
-					if (options.hooks?.postResponse) {
-						Promise.resolve(options.hooks.postResponse({
-							sessionId: _sessionId,
-							agentName: loaded.manifest.name,
-							event: "PostResponse",
-						})).catch(() => {});
-					}
+				// Fire post_response hooks (non-blocking)
+				if (hooksConfig?.hooks.post_response) {
+					runHooks(hooksConfig.hooks.post_response, loaded.agentDir, {
+						event: "post_response",
+						session_id: _sessionId,
+					}).catch((err) => {
+						console.error(`[hooks] post_response hook failed: ${(err as Error).message}`);
+					});
+				}
+				if (options.hooks?.postResponse) {
+					Promise.resolve(options.hooks.postResponse({
+						sessionId: _sessionId,
+						agentName: loaded.manifest.name,
+						event: "PostResponse",
+					})).catch((err) => {
+						console.error(`[hooks] postResponse hook failed: ${(err as Error).message}`);
+					});
+				}
 					break;
 				}
 
