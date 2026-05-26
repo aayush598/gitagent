@@ -1,4 +1,4 @@
-import { spawn } from "child_process";
+import { spawn, type ChildProcess } from "child_process";
 import { readFile } from "fs/promises";
 import { join, resolve } from "path";
 import yaml from "js-yaml";
@@ -80,6 +80,13 @@ async function executeHook(
 		let stdout = "";
 		let stderr = "";
 
+		function cleanupChildProcess(): void {
+			try { child.stdin?.destroy(); } catch { /* ignore */ }
+			try { child.stdout?.destroy(); } catch { /* ignore */ }
+			try { child.stderr?.destroy(); } catch { /* ignore */ }
+			child.removeAllListeners();
+		}
+
 		child.stdout.on("data", (data: Buffer) => {
 			stdout += data.toString("utf-8");
 		});
@@ -87,21 +94,28 @@ async function executeHook(
 			stderr += data.toString("utf-8");
 		});
 
-		child.stdin.write(JSON.stringify(input));
-		child.stdin.end();
+		try {
+			child.stdin.write(JSON.stringify(input));
+			child.stdin.end();
+		} catch {
+			// stdin may already be closed if child exited quickly
+		}
 
 		const timeout = setTimeout(() => {
 			child.kill("SIGTERM");
+			cleanupChildProcess();
 			reject(new Error(`Hook "${hook.script}" timed out after 10s`));
 		}, 10_000);
 
 		child.on("error", (err) => {
 			clearTimeout(timeout);
+			cleanupChildProcess();
 			reject(new Error(`Hook "${hook.script}" failed to start: ${err.message}`));
 		});
 
 		child.on("close", (code) => {
 			clearTimeout(timeout);
+			cleanupChildProcess();
 			if (code !== 0) {
 				reject(new Error(`Hook "${hook.script}" exited with code ${code}: ${stderr.trim()}`));
 				return;
