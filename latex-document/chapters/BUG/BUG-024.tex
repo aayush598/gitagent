@@ -20,10 +20,9 @@ The root cause is in the \texttt{diffSnapshots} function at line 997-1003: it on
 
 For the voice server's UI file tree (\texttt{src/voice/server.ts} and \texttt{src/voice/ui.html}), the \texttt{files\_changed} broadcast triggers a \texttt{refreshFileTree()} call on the client — but the client's file tree is built from a live API call (\texttt{/api/files}), so deletions are reflected there. The stale state primarily affects the Telegram/WhatsApp auto-send logic, where deleted files may be re-sent if their mtime hasn't been tracked properly.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -62,7 +61,7 @@ function diffSnapshots(before: Map<string, number>, after: Map<string, number>):
 
 
 
-\#\#\# How Stale State Accumulates
+\subsubsection*{How Stale State Accumulates}
 
 The \texttt{beforeFiles} capture and diff happens in several places:
 
@@ -93,14 +92,16 @@ const newFiles = diffSnapshots(beforeFiles, afterFiles).filter(...);
 
 
 If the agent:
-- \textbf{Creates} \texttt{workspace/report.md} in turn 1 → detected as new, sent to user ✓
-- \textbf{Modifies} \texttt{workspace/report.md} in turn 2 → detected as modified, re-sent ✓
-- \textbf{Deletes} \texttt{workspace/report.md} in turn 3 → NOT detected as deleted ✗
-- \textbf{Creates} \texttt{workspace/report-v2.md} in turn 4 → detected as new ✓
+\begin{itemize}
+    \item \textbf{Creates} \texttt{workspace/report.md} in turn 1 → detected as new, sent to user ✓
+    \item \textbf{Modifies} \texttt{workspace/report.md} in turn 2 → detected as modified, re-sent ✓
+    \item \textbf{Deletes} \texttt{workspace/report.md} in turn 3 → NOT detected as deleted ✗
+    \item \textbf{Creates} \texttt{workspace/report-v2.md} in turn 4 → detected as new ✓
+\end{itemize}
 
 The deleted file \texttt{workspace/report.md} was already sent to the user in turn 1. In turn 3, no notification goes out that the file was deleted. The user has no way to know the file is gone.
 
-\#\#\# File Name Collision on Re-creation
+\subsubsection*{File Name Collision on Re-creation}
 
 If the agent deletes \texttt{workspace/report.md} and then creates it again with different content, the file *might* be detected if its mtime changes. But if the file is deleted and re-created within the same filesystem timestamp granularity (typically 1 second on ext4), the mtime could be identical, and \texttt{diffSnapshots} would miss it:
 
@@ -114,16 +115,15 @@ before.get(path)! < mtime    // ← false if mtime hasn't ticked over
 
 
 
-\#\#\# The Unnecessary \texttt{files\_changed} Broadcast for Non-Existent Files
+\subsubsection*{The Unnecessary \texttt{files\_changed} Broadcast for Non-Existent Files}
 
 When a file is created by the agent and later deleted, but \texttt{snapshotFiles} was never called between creation and deletion (e.g., the agent creates and then immediately cleans up temp files), the file is never detected at all. But if the agent creates a file, then the voice server's \texttt{files\_changed} broadcast causes the UI to do a full file tree refresh, which correctly shows current state. The stale state is primarily a problem for the Telegram/WhatsApp auto-send paths, not the UI file tree.
 
 However, there is a scenario where stale state *does* affect the UI: the \texttt{fileTreeMtimes} object in \texttt{ui.html:3313-3420} caches mtimes from the client side's file tree. If a file is deleted server-side but the client's cache still has it, the UI may show it as "changed" (because it was in the last refresh but is now missing) — or silently keep showing it.
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Add deletion detection to \texttt{diffSnapshots} (Recommended)
+\subsubsection*{Option A: Add deletion detection to \texttt{diffSnapshots} (Recommended)}
 
 
 
@@ -168,7 +168,7 @@ for (const filePath of removedFiles) {
 2. Callers can decide what to do with deleted files (log, notify, or ignore)
 3. Asymmetric diff is fixed to be symmetric
 
-\#\#\# Option B: Use \texttt{<=} instead of \texttt{<} for mtime comparison
+\subsubsection*{Option B: Use \texttt{<=} instead of \texttt{<} for mtime comparison}
 
 
 
@@ -187,7 +187,7 @@ function diffSnapshots(before: Map<string, number>, after: Map<string, number>):
 
 This ensures that re-created files with the same mtime are still detected. However, this could cause false positives if multiple operations occur within the same millisecond.
 
-\#\#\# Option C: Persistent file state tracker with cleanup
+\subsubsection*{Option C: Persistent file state tracker with cleanup}
 
 
 
@@ -232,7 +232,6 @@ class FileTracker {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

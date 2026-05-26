@@ -24,10 +24,9 @@ This creates three concrete problems:
 
 The bug is in \texttt{src/loader.ts:249-250}, where \texttt{ensureGitagentDir()} and \texttt{writeSessionState()} are called before the manifest inheritance resolution (line 254), dependency resolution (line 261), plugin loading (line 264), and compliance validation (line 267).
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -71,7 +70,7 @@ export async function loadAgent(
 
 
 
-\#\#\# The \texttt{writeSessionState} Function
+\subsubsection*{The \texttt{writeSessionState} Function}
 
 
 
@@ -91,7 +90,7 @@ async function writeSessionState(gitagentDir: string): Promise<string> {
 
 
 
-\#\#\# The Problem Sequence
+\subsubsection*{The Problem Sequence}
 
 Here is what happens when \texttt{loadAgent()} is called and the agent specifies an \texttt{extends} field pointing to a git repository that is unreachable:
 
@@ -134,17 +133,16 @@ tools:
 
 The \texttt{yaml.load()} on line 243 succeeds because YAML parsing is lenient. But downstream operations like \texttt{discoverAndLoadPlugins()} (line 264) or \texttt{validateCompliance()} (line 267) may throw if the manifest has missing required fields. At that point, \texttt{state.json} has already been written.
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{State file outlives failed session}: The session state.json represents a session that never completed initialization
 2. \textbf{Monitoring and telemetry distortion}: Session IDs from failed loads pollute session metrics
 3. \textbf{Partial overwrite risk}: If \texttt{writeSessionState} is called while a previous write is in-flight (in concurrent load scenarios), the file may contain partial/corrupt JSON
 4. \textbf{Violates "no side-effects before validation" principle}: A fundamental software engineering best practice is to defer side effects (file writes, network calls) until all preconditions are verified
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Defer Session State Write (Recommended)
+\subsubsection*{Option A: Defer Session State Write (Recommended)}
 
 Move \texttt{writeSessionState()} to the end of \texttt{loadAgent()}, just before the return statement:
 
@@ -199,7 +197,7 @@ export async function loadAgent(
 2. If any step throws, no state.json is written
 3. The session ID returned in \texttt{LoadedAgent} is guaranteed to match the on-disk state
 
-\#\#\# Option B: Remove Before Load + Clean Up on Failure
+\subsubsection*{Option B: Remove Before Load + Clean Up on Failure}
 
 Keep the current position but add a try/catch that deletes the state file if subsequent steps fail:
 
@@ -229,11 +227,10 @@ try {
 
 
 
-\#\#\# Fix Comparison
+\subsubsection*{Fix Comparison}
 
 Option A is the clear winner: it moves one line of code (\texttt{const sessionId = await writeSessionState(gitagentDir);}) from line 250 to just before line 421 (the return statement). This is a zero-risk change that enforces the correct ordering.
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

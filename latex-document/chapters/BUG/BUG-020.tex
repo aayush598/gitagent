@@ -18,10 +18,9 @@ The immediate consequence is that the custom provider key lookup falls through t
 
 For providers like \texttt{huggingface}, the conventional env var is \texttt{HUGGINGFACE\_API\_KEY} — which \texttt{provider.toUpperCase()} would produce as \texttt{HUGGINGFACE\_API\_KEY} — this happens to match. But for providers with abbreviations like \texttt{github-copilot}, the uppercase becomes \texttt{GITHUB-COPILOT\_API\_KEY}, which contains a hyphen and is not a valid environment variable name on most systems. The code does not normalize the env var name to strip hyphens or handle special characters.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -46,7 +45,7 @@ if (model.baseUrl && !knownProviders.has(provider)) {
 
 
 
-\#\#\# The Three Modes of Failure
+\subsubsection*{The Three Modes of Failure}
 
 \textbf{Failure Mode 1: Hyphenated provider names produce invalid env var names}
 
@@ -83,17 +82,16 @@ const providerKey = process.env[`${provider.toUpperCase()}_API_KEY`] || process.
 
 
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{Silent misauthentication}: The agent uses the wrong API key with no diagnostic output
 2. \textbf{Intermittent failure}: Works if \texttt{LYZR\_API\_KEY} happens to match the target service, fails confusingly otherwise
 3. \textbf{No test coverage}: The config loading path has no unit tests for custom provider key resolution
 4. \textbf{Configuration-dependent}: Only affects users configuring custom model providers outside the known set
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Normalize provider name to underscore-separated uppercase (Recommended)
+\subsubsection*{Option A: Normalize provider name to underscore-separated uppercase (Recommended)}
 
 
 
@@ -131,7 +129,7 @@ if (!process.env[envVarName]) {
 3. Non-alphanumeric characters are normalized to underscores
 4. A warning is emitted when the dedicated key is not found
 
-\#\#\# Option B: Accept multiple env var naming conventions
+\subsubsection*{Option B: Accept multiple env var naming conventions}
 
 
 
@@ -167,7 +165,7 @@ const providerKey = resolveProviderApiKey(provider) || process.env.LYZR_API_KEY;
 
 
 
-\#\#\# Option C: Use a mapping table for known provider env vars
+\subsubsection*{Option C: Use a mapping table for known provider env vars}
 
 
 
@@ -195,7 +193,6 @@ function getProviderApiKey(provider: string): string | undefined {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

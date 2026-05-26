@@ -21,10 +21,9 @@ The bug is at \texttt{src/hooks.ts:93-96}, where the timeout handler kills the c
 
 The same issue exists on the \texttt{child.on("error", ...)} path at line 98-101.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -81,7 +80,7 @@ child.on("close", (code) => {
 
 
 
-\#\#\# File Descriptor Allocation
+\subsubsection*{File Descriptor Allocation}
 
 When \texttt{spawn} is called with \texttt{stdio: ["pipe", "pipe", "pipe"]}, Node.js creates:
 
@@ -93,7 +92,7 @@ When \texttt{spawn} is called with \texttt{stdio: ["pipe", "pipe", "pipe"]}, Nod
 
 Each pipe consumes one file descriptor on the parent process side (the readable/writable end). Additionally, the child process has its own FDs, but they will be closed when the child exits. The parent-side FDs must be explicitly closed by the parent.
 
-\#\#\# The Leak Scenario
+\subsubsection*{The Leak Scenario}
 
 
 
@@ -113,17 +112,16 @@ Timeout flow:
 
 
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{Resource exhaustion under load}: If hooks are executed frequently and many time out (e.g., a custom hook that makes network calls to a slow server), the process will accumulate leaked FDs
 2. \textbf{Hard to debug}: FD leaks manifest as "EMFILE: too many open files" errors in seemingly unrelated file operations
 3. \textbf{Process restart required}: Once FD limit is reached, the process cannot open any new files, sockets, or pipes
 4. \textbf{Platform-dependent limits}: Linux default \texttt{ulimit -n} is 1024; macOS is 256; a few hundred leaked hooks can exhaust the limit
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Clean Up Pipes in Timeout and Error Handlers
+\subsubsection*{Option A: Clean Up Pipes in Timeout and Error Handlers}
 
 
 
@@ -166,7 +164,7 @@ child.on("error", (err) => {
 2. Removes listeners to prevent memory leaks from stale closures
 3. Uses try/catch for defensive safety
 
-\#\#\# Option B: Use \texttt{detached} + \texttt{kill} with SIGKILL Fallback
+\subsubsection*{Option B: Use \texttt{detached} + \texttt{kill} with SIGKILL Fallback}
 
 
 
@@ -196,7 +194,6 @@ const timeout = setTimeout(() => {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

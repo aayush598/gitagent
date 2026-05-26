@@ -21,10 +21,9 @@ This means:
 
 The omission is in \texttt{src/tools/sandbox-memory.ts:73} where \texttt{createSandboxMemoryTool} only accepts \texttt{ctx: SandboxContext} — no \texttt{pluginLayers} parameter exists at all.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code (sandbox-memory.ts)
+\subsubsection*{The Code (sandbox-memory.ts)}
 
 
 
@@ -53,7 +52,7 @@ export function createSandboxMemoryTool(ctx: SandboxContext): AgentTool<typeof m
 
 
 
-\#\#\# The Corresponding Local Code (memory.ts)
+\subsubsection*{The Corresponding Local Code (memory.ts)}
 
 
 
@@ -68,7 +67,7 @@ export function createMemoryTool(cwd: string, pluginLayers?: MemoryLayerDef[]): 
 
 
 
-\#\#\# \texttt{loadMemoryConfig} Signature Mismatch
+\subsubsection*{\texttt{loadMemoryConfig} Signature Mismatch}
 
 
 
@@ -113,7 +112,7 @@ async function loadMemoryConfig(ctx: SandboxContext): Promise<MemoryConfig | nul
 
 
 
-\#\#\# How Plugin Memory Layers Flow In
+\subsubsection*{How Plugin Memory Layers Flow In}
 
 From \texttt{src/plugins.ts:239}:
 
@@ -145,7 +144,7 @@ const memoryTool = isSandbox
 
 
 
-\#\#\# The Full Impact
+\subsubsection*{The Full Impact}
 
 When a plugin defines a memory layer (e.g., \texttt{memory-layers: [\{ name: "plugin-data", path: "memory/plugin-data.md" \}]}):
 
@@ -155,10 +154,9 @@ When a plugin defines a memory layer (e.g., \texttt{memory-layers: [\{ name: "pl
 | \textbf{Sandbox (\texttt{sandbox-memory.ts})} | No — \texttt{loadMemoryConfig} doesn't accept them | Plugin memory layer ignored |
 | \textbf{Sandbox with explicit \texttt{memory.yaml}} | Only if user manually configured it | Not automatic |
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Add \texttt{pluginLayers} Parameter to \texttt{createSandboxMemoryTool} (Recommended)
+\subsubsection*{Option A: Add \texttt{pluginLayers} Parameter to \texttt{createSandboxMemoryTool} (Recommended)}
 
 
 
@@ -225,7 +223,7 @@ async function loadMemoryConfig(
 
 
 
-\#\#\# Option B: Pass Plugin Layers Through SandboxContext
+\subsubsection*{Option B: Pass Plugin Layers Through SandboxContext}
 
 
 
@@ -248,7 +246,7 @@ export function createSandboxMemoryTool(ctx: SandboxContext): AgentTool<typeof m
 
 This requires adding \texttt{pluginMemoryLayers} to the \texttt{SandboxContext} type.
 
-\#\#\# Option C: Extract Shared Memory Logic
+\subsubsection*{Option C: Extract Shared Memory Logic}
 
 Extract the common memory config loading into a shared module:
 
@@ -278,7 +276,6 @@ export async function loadMemoryConfigWithPlugins(
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

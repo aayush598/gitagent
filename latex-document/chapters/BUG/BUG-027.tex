@@ -18,10 +18,9 @@ The \texttt{dir} value originates from user-provided CLI arguments (\texttt{--di
 
 This is the same class of vulnerability as \textbf{SEC-001} (Shell Injection in Memory Tool), using \texttt{execSync} with user-influenced path values.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -40,7 +39,7 @@ function isGitRepo(dir: string): boolean {
 
 
 
-\#\#\# How It Is Called
+\subsubsection*{How It Is Called}
 
 
 
@@ -81,7 +80,7 @@ await ensureRepo(agentDir, args.model);
 
 
 
-\#\#\# Why This Is a Vulnerability
+\subsubsection*{Why This Is a Vulnerability}
 
 The \texttt{cwd} option in \texttt{execSync} changes the working directory before spawning the command. While \texttt{execSync("git ...", \{ cwd: dir \})} does \textbf{not} pass \texttt{dir} through a shell (since the command is a string and Node.js uses \texttt{execSync} with a shell by default), the actual risk is:
 
@@ -110,7 +109,7 @@ While Node.js's \texttt{execSync} does properly escape the \texttt{cwd} path whe
 
 The more serious concern is with \texttt{execSync} in the broader \texttt{ensureRepo} function where \texttt{absDir} is used in multiple \texttt{execSync} calls without sanitization. If \texttt{absDir} contains newlines or control characters, they could terminate the \texttt{cwd} early or be interpreted by the shell in unexpected ways.
 
-\#\#\# Comparison with SEC-001
+\subsubsection*{Comparison with SEC-001}
 
 | Aspect | SEC-001 (Memory Tool) | BUG-027 (isGitRepo) |
 |---|---|---|
@@ -120,10 +119,9 @@ The more serious concern is with \texttt{execSync} in the broader \texttt{ensure
 | \textbf{Risk Level} | CRITICAL (direct command execution) | MEDIUM (path-based, indirect) |
 | \textbf{User Control} | Full (commit message) | Partial (directory name) |
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Use \texttt{execFileSync} Instead of \texttt{execSync} (Recommended)
+\subsubsection*{Option A: Use \texttt{execFileSync} Instead of \texttt{execSync} (Recommended)}
 
 
 
@@ -147,7 +145,7 @@ function isGitRepo(dir: string): boolean {
 
 \texttt{execFileSync} does \textbf{not} invoke a shell — it spawns the process directly. The \texttt{cwd} option is passed to \texttt{spawn} as the working directory, which is handled at the OS level and is immune to shell metacharacters. This is the same fix recommended for SEC-001.
 
-\#\#\# Option B: Validate and Sanitize the Directory Path
+\subsubsection*{Option B: Validate and Sanitize the Directory Path}
 
 
 
@@ -175,7 +173,7 @@ function isGitRepo(dir: string): boolean {
 
 
 
-\#\#\# Option C: Check Directory Existence First with \texttt{fs.stat}
+\subsubsection*{Option C: Check Directory Existence First with \texttt{fs.stat}}
 
 
 
@@ -200,7 +198,6 @@ function isGitRepo(dir: string): boolean {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

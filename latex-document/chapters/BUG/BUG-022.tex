@@ -18,10 +18,9 @@ The root cause is that \texttt{yaml.dump()} is called without an explicit schema
 
 This is particularly dangerous for schedule \texttt{prompt} fields (which contain LLM-facing text that may include "true", "false", "null", "yes", "no", "2024-01-01", or numbers), \texttt{lastResult} fields (which may contain status strings), and \texttt{lastRunAt} fields (which are ISO date strings). A \texttt{lastRunAt} of \texttt{"2024-01-15T10:30:00.000Z"} is read back as \texttt{Date} object, which is then serialized via \texttt{String()} in \texttt{loadSchedule} into a different format.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -75,7 +74,7 @@ export async function loadSchedule(filePath: string): Promise<ScheduleDefinition
 
 
 
-\#\#\# The YAML Round-Trip Problem
+\subsubsection*{The YAML Round-Trip Problem}
 
 The issue is that \texttt{yaml.dump()} with default options does not quote values that look like YAML primitives:
 
@@ -94,7 +93,7 @@ Input string "1.0"      → YAML output: 1.0         → Read back: number 1.0  
 
 
 
-\#\#\# Concrete Examples for Schedule Fields
+\subsubsection*{Concrete Examples for Schedule Fields}
 
 \textbf{Scenario: \texttt{lastResult} contains "null"}
 
@@ -148,7 +147,7 @@ prompt: Say yes to everything
 
 \texttt{yaml.load()} reads \texttt{yes} as boolean \texttt{true}, corrupting the prompt to \texttt{Say true to everything}.
 
-\#\#\# Why \texttt{updateScheduleMeta} Makes It Worse
+\subsubsection*{Why \texttt{updateScheduleMeta} Makes It Worse}
 
 
 
@@ -169,10 +168,9 @@ export async function updateScheduleMeta(agentDir: string, id: string, updates: 
 
 Each call to \texttt{updateScheduleMeta} (which is called every time a schedule runs to update \texttt{lastRunAt} and \texttt{lastResult}) performs a YAML round-trip that can progressively corrupt data. If \texttt{lastRunAt} was originally an ISO string, after one round-trip it becomes a \texttt{Date} object, which \texttt{yaml.dump()} then serializes as a different date format. After a second round-trip, it may change again.
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Use \texttt{yaml.dump} with \texttt{quotingType: "\""} and \texttt{forceQuotes} (Recommended)
+\subsubsection*{Option A: Use \texttt{yaml.dump} with \texttt{quotingType: "\""} and \texttt{forceQuotes} (Recommended)}
 
 
 
@@ -208,7 +206,7 @@ const content = yaml.dump(
 
 \textbf{Trade-off}: YAML files become slightly more verbose (all strings quoted).
 
-\#\#\# Option B: Use \texttt{DEFAULT\_SCHEMA} with \texttt{noCompatMode}
+\subsubsection*{Option B: Use \texttt{DEFAULT\_SCHEMA} with \texttt{noCompatMode}}
 
 
 
@@ -232,7 +230,7 @@ const content = yaml.dump(data, {
 
 
 
-\#\#\# Option C: Custom serialization layer with typed YAML tags
+\subsubsection*{Option C: Custom serialization layer with typed YAML tags}
 
 
 
@@ -260,7 +258,6 @@ function escapeYamlString(s: string): string {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

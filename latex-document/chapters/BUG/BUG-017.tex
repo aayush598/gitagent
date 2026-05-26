@@ -20,10 +20,9 @@ The bug is at \texttt{src/loader.ts:180-183} (for inheritance) and at \texttt{sr
 
 This is a diagnostic integrity issue: the errors exist but are discarded. When an agent operator sees unexpected behavior — missing parent rules, unresolved dependencies, or incomplete manifests — there is no error trail to investigate.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -63,7 +62,7 @@ for (const dep of manifest.dependencies) {
 
 
 
-\#\#\# The Shell Redirection Anatomy
+\subsubsection*{The Shell Redirection Anatomy}
 
 The command string \texttt{git clone --depth 1 "..." "..." 2>/dev/null || true} breaks down as follows:
 
@@ -75,7 +74,7 @@ The command string \texttt{git clone --depth 1 "..." "..." 2>/dev/null || true} 
 
 The \texttt{|| true} is the critical piece: it ensures that \texttt{execSync} itself never sees a non-zero exit code. Without \texttt{|| true}, \texttt{execSync} would throw an error when git clone fails. With \texttt{|| true}, \texttt{execSync} always returns successfully, and the try/catch block is \textbf{dead code} — it never executes.
 
-\#\#\# The Two Failure Points
+\subsubsection*{The Two Failure Points}
 
 \textbf{Point 1: \texttt{resolveInheritance} (line 180)}
 
@@ -100,7 +99,7 @@ When a dependency source is unreachable:
 5. No dependency files exist on disk
 6. Any agent functionality that depends on the mounted dependency files silently breaks
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{Complete diagnostic blindness}: Every git clone failure — network error, auth failure, missing repo, invalid URL — is invisible
 2. \textbf{Dead code}: The try/catch blocks are misleading; the catch will never execute
@@ -108,10 +107,9 @@ When a dependency source is unreachable:
 4. \textbf{Hard to debug}: Operators must inspect the actual \texttt{deps/} directory and compare with \texttt{agent.yaml} to detect missing clones
 5. \textbf{Compounds other bugs}: BUG-015 (stale session state) and BUG-018 (duplicate dependency names) become harder to diagnose when the underlying git failure is hidden
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Remove \texttt{|| true} and Log Stderr (Recommended)
+\subsubsection*{Option A: Remove \texttt{|| true} and Log Stderr (Recommended)}
 
 Remove the \texttt{|| true} construct to allow \texttt{execSync} to throw on failure, and log the actual git error:
 
@@ -159,7 +157,7 @@ for (const dep of manifest.dependencies) {
 3. Operators can see exactly why a clone failed
 4. The application continues gracefully (clone failures are still non-fatal)
 
-\#\#\# Option B: Use \texttt{execFile} for Shell-Injection Safety
+\subsubsection*{Option B: Use \texttt{execFile} for Shell-Injection Safety}
 
 Replace \texttt{execSync} with \texttt{execFileSync} to avoid shell injection while preserving error output:
 
@@ -194,9 +192,8 @@ try {
 1. Slightly more verbose (array arguments)
 2. \texttt{--branch} with empty version string requires conditionals
 
-\#\#\# Fix Comparison
+\subsubsection*{Fix Comparison}
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

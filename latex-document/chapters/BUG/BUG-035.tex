@@ -21,10 +21,9 @@ Specifically:
 
 The impact is that the original \texttt{base} object's nested structures may be mutated when \texttt{override} provides nested values — a violation of the expected pure-functional merge semantics.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -52,7 +51,7 @@ function deepMerge(base: Record<string, any>, override: Record<string, any>): Re
 
 
 
-\#\#\# The Caller
+\subsubsection*{The Caller}
 
 
 
@@ -74,7 +73,7 @@ export async function loadEnvConfig(agentDir: string, env?: string): Promise<Env
 
 
 
-\#\#\# The Bug Step by Step
+\subsubsection*{The Bug Step by Step}
 
 
 
@@ -112,7 +111,7 @@ const override = {
 
 
 
-\#\#\# The Mutation Chain
+\subsubsection*{The Mutation Chain}
 
 
 
@@ -129,7 +128,7 @@ base.model.settings (original)
 
 
 
-\#\#\# Real-World Scenario
+\subsubsection*{Real-World Scenario}
 
 In \texttt{loadEnvConfig}, the \texttt{base} object comes from \texttt{loadYamlFile} which reads from disk. If \texttt{base} is used elsewhere in the application (e.g., cached, referenced by another module), that shared reference will see mutated values after \texttt{deepMerge} is called. This can cause:
 
@@ -137,10 +136,9 @@ In \texttt{loadEnvConfig}, the \texttt{base} object comes from \texttt{loadYamlF
 2. \textbf{Race conditions}: If two merges happen concurrently on the same base
 3. \textbf{Hard-to-debug state}: The original \texttt{default.yaml} values are silently overwritten
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Deep Clone at Every Level (Recommended)
+\subsubsection*{Option A: Deep Clone at Every Level (Recommended)}
 
 
 
@@ -178,7 +176,7 @@ function deepMerge(base: Record<string, any>, override: Record<string, any>): Re
 
 
 
-\#\#\# Option B: Use \texttt{structuredClone} (Node 17+)
+\subsubsection*{Option B: Use \texttt{structuredClone} (Node 17+)}
 
 
 
@@ -206,7 +204,7 @@ function deepMerge(base: Record<string, any>, override: Record<string, any>): Re
 
 
 
-\#\#\# Option C: Pure Recursive Merge Without Mutation
+\subsubsection*{Option C: Pure Recursive Merge Without Mutation}
 
 
 
@@ -247,7 +245,6 @@ function deepMerge(base: Record<string, any>, override: Record<string, any>): Re
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

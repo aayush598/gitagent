@@ -16,10 +16,9 @@ The \texttt{SIGINT} handler in \texttt{src/index.ts:802-816} is responsible for 
 
 The root cause is a classic TOCTOU (time-of-check-time-of-use) race: \texttt{agent.state.isStreaming} is read once, evaluated, and then acted upon — but the state is mutated asynchronously by the agent's own completion path. The fix must eliminate the race by either (a) buffering the abort signal until the agent is in a consistent state, or (b) using a state-machine approach where the abort is unconditional and idempotent.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -46,7 +45,7 @@ rl.on("SIGINT", () => {
 
 
 
-\#\#\# The Race Condition
+\subsubsection*{The Race Condition}
 
 The agent transitions \texttt{isStreaming} from \texttt{true} to \texttt{false} when the LLM streaming response completes naturally. This transition happens asynchronously, on a different microtask. The race window is:
 
@@ -101,17 +100,16 @@ isStreaming = false  →  Ctrl+C  →  logs "Bye!"  →  exits  ✓
 
 
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{User-facing hang}: The user presses Ctrl+C expecting the program to stop, but it appears to freeze
 2. \textbf{Non-deterministic}: The race window is small but real — it depends on exact timing of the LLM response completion
 3. \textbf{No error message}: The process enters a zombie-like state where stdin is still being read but no output is produced
 4. \textbf{Process must be killed externally}: The user must resort to \texttt{SIGKILL} (\texttt{kill -9}) to terminate
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Guarded Abort with State Check Inside
+\subsubsection*{Option A: Guarded Abort with State Check Inside}
 
 Move the streaming state check *inside* the abort path:
 
@@ -158,7 +156,7 @@ rl.on("SIGINT", () => {
 2. A safety timeout prevents infinite hang if the agent never settles
 3. Backward compatible — existing behavior unchanged for non-race scenarios
 
-\#\#\# Option B: Always Exit with Abort Attempt
+\subsubsection*{Option B: Always Exit with Abort Attempt}
 
 Make the SIGINT handler unconditional — always attempt to abort (idempotent) and always exit:
 
@@ -189,7 +187,6 @@ rl.on("SIGINT", () => {
 2. \texttt{agent.abort()} must be idempotent (safe to call when not streaming)
 3. Simpler code, fewer edge cases
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

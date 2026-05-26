@@ -18,10 +18,9 @@ The root cause is that the entire plugin lifecycle — discovery, installation, 
 
 For a stateless CLI tool that terminates quickly, this race window is tiny. But for a long-running voice server (\texttt{src/voice/server.ts}) or a cloud deployment where multiple agents share plugin storage, the race window expands significantly. The voice server calls \texttt{discoverAndLoadPlugins()} on every new WebSocket connection, making the race reliably triggerable under moderate concurrency.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Race Window
+\subsubsection*{The Race Window}
 
 The race involves three sequential operations in \texttt{installPlugin()}:
 
@@ -99,7 +98,7 @@ async function discoverPluginDirs(
 
 
 
-\#\#\# The Consequence
+\subsubsection*{The Consequence}
 
 When \texttt{discoverPluginDirs()} returns a partial directory, the subsequent \texttt{loadPlugin()} call (\texttt{plugins.ts:346}) tries to read \texttt{plugin.yaml}:
 
@@ -125,7 +124,7 @@ async function loadPlugin(pluginDir: string, userConfig: PluginConfig | undefine
 
 If \texttt{plugin.yaml} doesn't exist yet (clone in progress), the plugin is silently skipped. If the file exists but is partially written (git is still populating it), \texttt{yaml.load()} may throw, again silently skipping the plugin. Worst case: \texttt{plugin.yaml} is fully written but a dependency file (e.g., a required script or config) is missing, causing a runtime error later.
 
-\#\#\# Timeline of the Race
+\subsubsection*{Timeline of the Race}
 
 
 
@@ -148,7 +147,7 @@ git clone COMPLETE
 
 
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{Silent plugin skip}: The plugin is silently not loaded — no error, no warning in the normal flow
 2. \textbf{Partial YAML read}: Could cause \texttt{yaml.load()} to throw with a confusing parse error
@@ -156,10 +155,9 @@ git clone COMPLETE
 4. \textbf{Voice server amplification}: The voice server calls \texttt{discoverAndLoadPlugins()} on every WebSocket connection
 5. \textbf{Cloud deployment risk}: Shared filesystems in containerized deployments amplify the race window
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Atomic Plugin Installation with Lock File (Recommended)
+\subsubsection*{Option A: Atomic Plugin Installation with Lock File (Recommended)}
 
 
 
@@ -240,7 +238,7 @@ export async function installPlugin(
 2. Temp-directory-then-rename ensures the plugin dir is never partially populated
 3. Lock retry with backoff prevents livelock
 
-\#\#\# Option B: Add a \texttt{.plugin\_ready} marker file
+\subsubsection*{Option B: Add a \texttt{.plugin\_ready} marker file}
 
 
 
@@ -267,7 +265,7 @@ async function discoverPluginDirs(...) {
 
 
 
-\#\#\# Option C: In-memory registry with mutex (for single-process)
+\subsubsection*{Option C: In-memory registry with mutex (for single-process)}
 
 For single-process scenarios (voice server), use an in-memory \texttt{Map<string, Promise>}:
 
@@ -301,7 +299,6 @@ export async function installPlugin(
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

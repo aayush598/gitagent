@@ -18,10 +18,9 @@ This means that if a critical security hook (e.g., \texttt{pre\_tool\_use} that 
 
 The bug is at \texttt{src/hooks.ts:138-141}, where \texttt{catch} discards the error and allows the for-loop to continue, ultimately returning \texttt{\{ action: "allow" \}} if all hooks either pass or error.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -58,7 +57,7 @@ export async function runHooks(
 
 
 
-\#\#\# The executeHook Function
+\subsubsection*{The executeHook Function}
 
 The \texttt{executeHook} function (lines 44-117) can fail for many reasons:
 
@@ -118,7 +117,7 @@ async function executeHook(
 
 
 
-\#\#\# Failure Scenarios That Bypass Security
+\subsubsection*{Failure Scenarios That Bypass Security}
 
 \textbf{Scenario A: Pre-tool-use security hook script is missing}
 
@@ -169,17 +168,16 @@ executeHook: JSON.parse throws → catches → returns { action: "allow" }
 
 Scenario C is actually in \texttt{executeHook} itself (line 110-114), where JSON parse failure defaults to \texttt{allow}. This compounds the problem.
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{Security hooks are the last line of defense}: If a security-critical hook fails, the agent operates with no guardrails
 2. \textbf{Silent failure}: Only visible in \texttt{console.error}, which is not programmatically checked
 3. \textbf{Compound risk}: A single faulty hook script (or a filesystem glitch) disables the entire hook chain without warning
 4. \textbf{False sense of security}: Deployments configure hooks believing they provide protection, but a runtime failure silently removes that protection
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Fail-Closed on Hook Error
+\subsubsection*{Option A: Fail-Closed on Hook Error}
 
 Change \texttt{runHooks} to block execution when a hook errors:
 
@@ -227,7 +225,7 @@ export async function runHooks(
 2. Security policy cannot be silently bypassed
 3. Error message is propagated to the caller (not just console)
 
-\#\#\# Option B: Configurable Failure Mode
+\subsubsection*{Option B: Configurable Failure Mode}
 
 Add an \texttt{onError} field to \texttt{HookDefinition}:
 
@@ -261,7 +259,6 @@ try {
 
 This preserves backward compatibility while allowing security hooks to opt into fail-closed behavior.
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

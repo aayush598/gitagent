@@ -18,10 +18,9 @@ This silent-skip behavior has three problems: (1) invalid cron schedules are dis
 
 The bug is at \texttt{src/schedule-runner.ts:45-48} and \texttt{src/schedule-runner.ts:56-58}, where \texttt{cron.validate()} is called but the result is only checked with a log message, and no try/catch protects against an unexpected throw from the validation function.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -55,7 +54,7 @@ The bug is at \texttt{src/schedule-runner.ts:45-48} and \texttt{src/schedule-run
 
 
 
-\#\#\# The \texttt{dim} Function
+\subsubsection*{The \texttt{dim} Function}
 
 
 
@@ -69,7 +68,7 @@ const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
 
 \texttt{\x1b[2m} is the ANSI "dim" escape code. In most terminals, dimmed text is rendered at reduced intensity or grayed out, making it easy to miss in a stream of log output.
 
-\#\#\# The Three Problems
+\subsubsection*{The Three Problems}
 
 \textbf{Problem 1: \texttt{cron.validate()} may throw}
 
@@ -93,17 +92,16 @@ When a schedule is invalid, the only indication is a \texttt{console.log} with d
 
 The validation check is duplicated in two branches (once-mode and repeat-mode) with identical logic. Any fix must be applied in both places.
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{Schedules silently disabled}: A critical scheduled job (e.g., daily maintenance, health check, data sync) stops running with no alert
 2. \textbf{No error aggregation}: If multiple schedules are invalid, the admin sees multiple dimmed lines they may miss
 3. \textbf{Potential crash}: If \texttt{schedule.cron} is not a string, \texttt{cron.validate()} may throw, crashing the scheduler entirely
 4. \textbf{Scheduler continues}: The scheduler continues loading other (valid) schedules, masking the failure of the invalid one
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Validate with Throw and Error Aggregation
+\subsubsection*{Option A: Validate with Throw and Error Aggregation}
 
 
 
@@ -153,7 +151,7 @@ function validateSchedule(schedule: ScheduleDefinition): ValidationResult {
 2. Catches and reports errors from \texttt{cron.validate()} throws
 3. Provides structured error list instead of a single log line
 
-\#\#\# Option B: Fail-Stop on Invalid Schedule
+\subsubsection*{Option B: Fail-Stop on Invalid Schedule}
 
 
 
@@ -182,7 +180,6 @@ for (const schedule of schedules) {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

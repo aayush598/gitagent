@@ -19,10 +19,9 @@ The \texttt{task\_tracker} tool's \texttt{"list"} action in \texttt{src/tools/ta
 3. \textbf{Causes context overflow}: A large task list can push other critical context out of the window
 4. \textbf{Provides no navigation mechanism}: Users cannot request "next page" or "show only tasks matching X"
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -50,7 +49,7 @@ case "list": {
 
 
 
-\#\#\# The Full Task Tracker Context
+\subsubsection*{The Full Task Tracker Context}
 
 The task store is loaded from JSON at session start:
 
@@ -94,7 +93,7 @@ interface TaskRecord {
 
 
 
-\#\#\# What Happens with Many Tasks
+\subsubsection*{What Happens with Many Tasks}
 
 Consider an agent that has been running for weeks, creating tasks for each user request:
 
@@ -128,7 +127,7 @@ Active tasks:
 
 At roughly 80 characters per line + overhead, 150 tasks = $\sim$12,000 characters of tool result. This consumes roughly \textbf{3,000 tokens} of the LLM's context window — just for the task list. If the context window is 128K tokens, this is $\sim$2.3\%. If the window is smaller (e.g., 32K), it's $\sim$9.4\%.
 
-\#\#\# The Pagination Pattern
+\subsubsection*{The Pagination Pattern}
 
 The task tracker schema (\texttt{src/tools/shared.js}) likely defines the \texttt{list} action without pagination params:
 
@@ -149,10 +148,9 @@ The task tracker schema (\texttt{src/tools/shared.js}) likely defines the \textt
 
 Without these, the LLM has no way to request a subset of tasks.
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Add Pagination Parameters (Recommended)
+\subsubsection*{Option A: Add Pagination Parameters (Recommended)}
 
 
 
@@ -211,7 +209,7 @@ case "list": {
 
 
 
-\#\#\# Option B: Simple Truncation (Quick Fix)
+\subsubsection*{Option B: Simple Truncation (Quick Fix)}
 
 
 
@@ -247,7 +245,7 @@ case "list": {
 
 
 
-\#\#\# Option C: Smart Summary with Detail Drill-Down
+\subsubsection*{Option C: Smart Summary with Detail Drill-Down}
 
 
 
@@ -287,7 +285,6 @@ case "list": {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

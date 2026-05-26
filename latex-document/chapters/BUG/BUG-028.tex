@@ -21,10 +21,9 @@ The absence of caching means:
 2. \textbf{No memoization}: Identical plugin configurations are re-resolved and re-validated every time
 3. \textbf{No change detection}: The system has no way to know if plugins changed between calls, so it must assume they always changed
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -80,7 +79,7 @@ export async function discoverAndLoadPlugins(
 
 
 
-\#\#\# The Discovery Pipeline (No Cache)
+\subsubsection*{The Discovery Pipeline (No Cache)}
 
 
 
@@ -112,7 +111,7 @@ async function discoverPluginDirs(
 
 Each call to \texttt{discoverPluginDirs} performs up to \textbf{3 \texttt{fs.stat} calls} (one per scope). For a config with 10 plugins, that's up to \textbf{30 \texttt{stat} calls} per invocation.
 
-\#\#\# The Load Pipeline (No Cache)
+\subsubsection*{The Load Pipeline (No Cache)}
 
 
 
@@ -168,7 +167,7 @@ async function loadPlugin(
 
 Every single call to \texttt{loadPlugin} re-reads the manifest, re-validates, re-resolves config, and re-imports the entry module. No result is memoized.
 
-\#\#\# Cost Analysis
+\subsubsection*{Cost Analysis}
 
 | Operation | Cost per Plugin | 10 Plugins | 20 Plugins |
 |---|---|---|---|
@@ -181,10 +180,9 @@ Every single call to \texttt{loadPlugin} re-reads the manifest, re-validates, re
 | Programmatic entry import | $\sim$50-200ms | $\sim$500-2000ms | $\sim$1000-4000ms |
 | \textbf{Total (estimated)} | \textbf{$\sim$70-260ms} | \textbf{$\sim$700-2600ms} | \textbf{$\sim$1400-5200ms} |
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: In-Memory Cache with TTL (Recommended)
+\subsubsection*{Option A: In-Memory Cache with TTL (Recommended)}
 
 
 
@@ -230,7 +228,7 @@ export async function discoverAndLoadPlugins(
 
 
 
-\#\#\# Option B: File-Content Hash-Based Cache
+\subsubsection*{Option B: File-Content Hash-Based Cache}
 
 
 
@@ -270,7 +268,7 @@ async function loadPluginCached(
 
 
 
-\#\#\# Option C: Module-Level Singleton Cache for Programmatic Entry
+\subsubsection*{Option C: Module-Level Singleton Cache for Programmatic Entry}
 
 
 
@@ -302,7 +300,6 @@ async function loadProgrammaticEntry(
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

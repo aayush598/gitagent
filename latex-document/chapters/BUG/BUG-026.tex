@@ -18,10 +18,9 @@ This is an uninitialized variable access pattern: the \texttt{\_message} paramet
 
 The \texttt{throw(err)} method at line 565 exhibits a related problem: it finishes the channel immediately before returning a rejected promise, meaning consumers using \texttt{for await...of} see a clean \texttt{done: true} instead of the error. Combined, these two methods represent half-implemented async-generator protocol surface.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -77,7 +76,7 @@ const generator: Query = {
 
 
 
-\#\#\# Why This Is a Bug
+\subsubsection*{Why This Is a Bug}
 
 \textbf{The \texttt{steer()} method is declared to accept a \texttt{\_message: string} parameter but does nothing with it.} The \texttt{Query} interface (defined in \texttt{src/sdk-types.ts}) likely documents this method as a way to inject a message into the ongoing conversation, similar to how an AbortController's \texttt{abort()} signal works but for adding context mid-query. The empty body means:
 
@@ -87,7 +86,7 @@ const generator: Query = {
 
 \textbf{The \texttt{throw()} method at line 565-568} has a subtler bug: it calls \texttt{channel.finish()} before returning \texttt{Promise.reject(err)}. The \texttt{channel.finish()} call resolves any pending \texttt{pull()} with \texttt{\{done: true\}}, so consumers using \texttt{for await...of} see a clean end-of-stream instead of the error. The rejected promise is returned to the caller who invoked \texttt{throw()}, but that caller is often the runtime's \texttt{for await...of} desugaring (which calls \texttt{return()}, not \texttt{throw()}) or an external caller who may not await the result.
 
-\#\#\# The Query Interface (from sdk-types.ts)
+\subsubsection*{The Query Interface (from sdk-types.ts)}
 
 
 
@@ -108,17 +107,16 @@ export interface Query extends AsyncGenerator<GCMessage> {
 
 The interface defines \texttt{steer} as a \texttt{void} return — so the implementation can't signal failure through the return type. The only way a caller would discover the bug is by observing that the agent never responded to the steering message.
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{API contract violation}: The method exists in the public interface but does not fulfill its documented purpose
 2. \textbf{Silent failure}: No error, warning, or log indicates that the steering was ignored
 3. \textbf{Feature unusable}: Any feature built on top of \texttt{steer()} (e.g., mid-conversation context injection, user interrupts, priority overrides) will silently fail
 4. \textbf{Prevents advanced patterns}: Dynamic steering is essential for multi-turn orchestration, human-in-the-loop workflows, and interrupt-driven agents
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Implement \texttt{steer()} to Queue a System Message (Recommended)
+\subsubsection*{Option A: Implement \texttt{steer()} to Queue a System Message (Recommended)}
 
 
 
@@ -141,7 +139,7 @@ steer(message: string) {
 2. The agent event handler would need to watch for \texttt{subtype: "steer"} messages and inject the text into the conversation context
 3. Errors in steer (e.g., after channel is finished) are silently ignored
 
-\#\#\# Option B: Implement \texttt{steer()} with a Dedicated Message Queue
+\subsubsection*{Option B: Implement \texttt{steer()} with a Dedicated Message Queue}
 
 
 
@@ -166,7 +164,7 @@ async function processSteerQueue() {
 
 
 
-\#\#\# Option C: Fix \texttt{throw()} to Properly Propagate Errors
+\subsubsection*{Option C: Fix \texttt{throw()} to Properly Propagate Errors}
 
 
 
@@ -189,7 +187,6 @@ throw(err?: any) {
 
 This ensures consumers see the error message during iteration rather than having it swallowed.
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

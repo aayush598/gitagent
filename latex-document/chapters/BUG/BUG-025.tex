@@ -20,10 +20,9 @@ The \texttt{installConsoleIntercept()} function in \texttt{src/voice/server.ts:7
 
 The most serious consequence is \textbf{information leakage}: if a library logs an error that contains a stack trace with file paths, user home directories, or environment variable names, those details are forwarded to the browser UI. In the context of a voice server that also has the Telegram integration active, the console intercept is the same code path that handles agent messages — creating an unintended side channel.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -57,16 +56,18 @@ installConsoleIntercept();  // ← Called at module scope — applies immediatel
 
 
 
-\#\#\# Problem 1: Global Scope Mutation
+\subsubsection*{Problem 1: Global Scope Mutation}
 
 The global \texttt{console} object is shared across the entire Node.js process. When \texttt{console.log} is replaced, \textbf{every} module in the process sees the replacement. This includes:
 
-- \textbf{Internal libraries}: \texttt{ws} (WebSocket library), \texttt{node-cron} (scheduler), \texttt{js-yaml} (YAML parsing)
-- \textbf{pi-ai} (the AI model library imported in \texttt{loader.ts})
-- \textbf{Node.js built-in modules}: \texttt{stream}, \texttt{http}, \texttt{fs} may all emit warnings or errors via \texttt{console.error}/\texttt{console.warn}
-- \textbf{Any user-loaded plugins} (via \texttt{src/plugins.ts}): Plugin code may log its own diagnostics
+\begin{itemize}
+    \item \textbf{Internal libraries}: \texttt{ws} (WebSocket library), \texttt{node-cron} (scheduler), \texttt{js-yaml} (YAML parsing)
+    \item \textbf{pi-ai} (the AI model library imported in \texttt{loader.ts})
+    \item \textbf{Node.js built-in modules}: \texttt{stream}, \texttt{http}, \texttt{fs} may all emit warnings or errors via \texttt{console.error}/\texttt{console.warn}
+    \item \textbf{Any user-loaded plugins} (via \texttt{src/plugins.ts}): Plugin code may log its own diagnostics
+\end{itemize}
 
-\#\#\# Problem 2: The \texttt{extractSource} Logic is Fragile
+\subsubsection*{Problem 2: The \texttt{extractSource} Logic is Fragile}
 
 
 
@@ -83,17 +84,19 @@ function extractSource(msg: string): { source: string; cleaned: string } {
 
 This function assumes log messages start with \texttt{[source]} tag. For messages that don't match this pattern, the source defaults to \texttt{"system"}, which is ambiguous. Library log messages that accidentally start with \texttt{[something]} will be incorrectly attributed.
 
-\#\#\# Problem 3: No Way to Disable or Filter
+\subsubsection*{Problem 3: No Way to Disable or Filter}
 
 Once \texttt{installConsoleIntercept()} runs, there is no mechanism to:
-- Pause the intercept (e.g., during sensitive operations)
-- Filter out messages from specific sources
-- Uninstall the intercept and restore the original \texttt{console} methods
-- Set a log level threshold for the intercept
+\begin{itemize}
+    \item Pause the intercept (e.g., during sensitive operations)
+    \item Filter out messages from specific sources
+    \item Uninstall the intercept and restore the original \texttt{console} methods
+    \item Set a log level threshold for the intercept
+\end{itemize}
 
 The original \texttt{console.log}, \texttt{console.error}, and \texttt{console.warn} references are captured in closure variables (\texttt{origLog}, \texttt{origError}, \texttt{origWarn}) and are never exposed for restoration.
 
-\#\#\# Problem 4: Performance Overhead for Every Log Call
+\subsubsection*{Problem 4: Performance Overhead for Every Log Call}
 
 Every single \texttt{console.log} call — even from third-party libraries — now runs through:
 1. \texttt{Function.prototype.bind()} result invocation
@@ -105,10 +108,9 @@ Every single \texttt{console.log} call — even from third-party libraries — n
 
 This adds non-trivial overhead to every log statement, even when no browser is connected.
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Namespace-Specific Logger Instead of Global Patch (Recommended)
+\subsubsection*{Option A: Namespace-Specific Logger Instead of Global Patch (Recommended)}
 
 Replace the global monkey-patch with a structured logging system that libraries can opt into:
 
@@ -186,7 +188,7 @@ function installConsoleIntercept(sources?: Set<string>) {
 2. The global patch is either removed or restricted to an allowlist of sources
 3. Third-party library logs are NOT captured
 
-\#\#\# Option B: Source-Based Filtering with Allowlist
+\subsubsection*{Option B: Source-Based Filtering with Allowlist}
 
 
 
@@ -232,7 +234,7 @@ function installConsoleIntercept() {
 
 
 
-\#\#\# Option C: Restorable Patch with Uninstall
+\subsubsection*{Option C: Restorable Patch with Uninstall}
 
 
 
@@ -269,7 +271,6 @@ uninstall(); // Restore original console methods
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

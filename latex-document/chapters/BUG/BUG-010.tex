@@ -24,10 +24,9 @@ If step 3 fails, the photo file and index entry are on disk, and if \texttt{git 
 
 The severity matches BUG-001 but is scoped to photo capture rather than memory. However, the impact is slightly lower because photos are less frequent and less semantically critical than memory content. Additionally, the photo file itself is not lost — it remains on disk — but the git tracking and commit message context are lost.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -52,7 +51,7 @@ try {
 
 
 
-\#\#\# The Full Write Sequence
+\subsubsection*{The Full Write Sequence}
 
 
 
@@ -86,7 +85,7 @@ try {
 
 
 
-\#\#\# The Three Failure Scenarios
+\subsubsection*{The Three Failure Scenarios}
 
 \textbf{Scenario A: \texttt{git add} fails entirely (git not initialized, repo corrupted)}
 
@@ -131,14 +130,13 @@ Result:        Files orphaned on disk, no git tracking at all
 
 
 
-\#\#\# Comparison with BUG-001
+\subsubsection*{Comparison with BUG-001}
 
 The capture\_photo tool has the same rollback gap as the memory tool. However, the \texttt{archiveOverflow} function in memory.ts does a \texttt{git add} for the archive file separately (line 91) and catches failures silently — it doesn't even report the failure. The main save's git operation uses \texttt{execSync} with shell command concatenation, just like capture\_photo.
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Full Rollback (Recommended — same pattern as BUG-001)
+\subsubsection*{Option A: Full Rollback (Recommended — same pattern as BUG-001)}
 
 
 
@@ -189,7 +187,7 @@ try {
 
 
 
-\#\#\# Option B: Use \texttt{execFile} to Prevent Shell Injection
+\subsubsection*{Option B: Use \texttt{execFile} to Prevent Shell Injection}
 
 
 
@@ -208,7 +206,6 @@ try {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

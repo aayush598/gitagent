@@ -55,10 +55,9 @@ However, the more fundamental issue is that }AbortSignal.timeout()\texttt{ is a 
 
 The analysis file says the severity is MEDIUM, which is appropriate: the catch block prevents a crash, but the silent failure means the agent loses access to skill marketplace search without knowing why. This could cause the agent to miss relevant skills and proceed with a suboptimal approach to a task.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -94,7 +93,7 @@ async function searchSkillsMP(objective: string): Promise<SkillMatch[]> {
 
 
 
-\#\#\# The Problem Chain
+\subsubsection*{The Problem Chain}
 
 
 
@@ -117,13 +116,13 @@ Agent installs MySQL manually  ← Missed opportunity to use a verified skill
 
 
 
-\#\#\# Why It Wasn't Caught in Testing
+\subsubsection*{Why It Wasn't Caught in Testing}
 
 1. The dev environment uses Node.js 20+ where \texttt{AbortSignal.timeout()} exists
 2. No CI/CD test matrix tests against Node.js 18 or 19
 3. The catch block hides the error — there's no console.error or logging
 
-\#\#\# Alternative Approaches Available in All Node.js 18+ Versions
+\subsubsection*{Alternative Approaches Available in All Node.js 18+ Versions}
 
 \textbf{Option 1: \texttt{AbortController} with \texttt{setTimeout}}
 
@@ -169,10 +168,9 @@ const resp = await Promise.race([
 
 
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: AbortController with setTimeout (Recommended)
+\subsubsection*{Option A: AbortController with setTimeout (Recommended)}
 
 
 
@@ -213,7 +211,7 @@ async function searchSkillsMP(objective: string): Promise<SkillMatch[]> {
 
 
 
-\#\#\# Option B: Feature-Detection Wrapper
+\subsubsection*{Option B: Feature-Detection Wrapper}
 
 
 
@@ -253,7 +251,7 @@ async function searchSkillsMP(objective: string): Promise<SkillMatch[]> {
 
 
 
-\#\#\# Option C: Feature-Detection + Native Fallback
+\subsubsection*{Option C: Feature-Detection + Native Fallback}
 
 
 
@@ -280,7 +278,6 @@ function getTimeoutSignal(ms: number): {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

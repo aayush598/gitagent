@@ -20,10 +20,9 @@ The root problem is twofold:
 1. \texttt{loadMemoryConfig()} creates a synthetic config when plugin layers exist but \texttt{memory.yaml} doesn't, losing the ability to distinguish "no config" from "config with only plugin layers"
 2. \texttt{getWorkingLayer()} has no fallback logic that considers plugin layers independently of the config file's layer definitions
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -72,7 +71,7 @@ function getWorkingLayer(config: MemoryConfig | null): { path: string; maxLines?
 
 
 
-\#\#\# The Two Failure Modes
+\subsubsection*{The Two Failure Modes}
 
 \textbf{Failure Mode A: \texttt{memory.yaml} has no \texttt{layers} field}
 
@@ -157,24 +156,23 @@ But what if plugin layers exist but are passed as undefined due to a code path i
 
 
 
-\#\#\# The Root Cause Chain
+\subsubsection*{The Root Cause Chain}
 
 1. \texttt{loadMemoryConfig()} conflates "no config file" with "no useful config data" by using \texttt{null} for both
 2. The function silently catches file read errors, so there is no diagnostic when the config is missing
 3. \texttt{getWorkingLayer()} has no visibility into whether plugin layers were provided to the caller — it only sees the resolved \texttt{MemoryConfig | null}
 4. There is no validation that a "working" layer exists when plugin layers are present
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{Silent configuration loss}: If \texttt{memory.yaml} has only \texttt{archive\_policy}, that policy is discarded when plugin layers are merged
 2. \textbf{Wrong working layer}: Plugin-specific domain layers may become the default memory file, causing general memories to be mixed with task-specific data
 3. \textbf{No error or warning}: The agent receives no indication that its memory configuration was altered
 4. \textbf{Plugin contract breakage}: Plugins that register memory layers have no guarantee those layers will be used
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Separate Plugin Layer Resolution from Config File (Recommended)
+\subsubsection*{Option A: Separate Plugin Layer Resolution from Config File (Recommended)}
 
 Refactor \texttt{getWorkingLayer} to accept plugin layers separately and ensure a "working" layer always exists:
 
@@ -228,7 +226,7 @@ function getWorkingLayer(
 3. Layer name collision is avoided with \texttt{plugin:} prefix
 4. Plugin layers are returned separately so callers can iterate them
 
-\#\#\# Option B: Validate and Create Default Working Layer
+\subsubsection*{Option B: Validate and Create Default Working Layer}
 
 When plugin layers are present and no working layer exists, auto-create a default working layer:
 
@@ -273,9 +271,8 @@ function ensureWorkingLayer(config: MemoryConfig | null, pluginLayers?: MemoryLa
 
 
 
-\#\#\# Fix Comparison
+\subsubsection*{Fix Comparison}
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

@@ -18,10 +18,9 @@ This is a silent data loss issue: the first dependency's files are replaced by t
 
 The bug is at \texttt{src/loader.ts:223-234}, where the loop writes to \texttt{join(depsDir, dep.name)} without checking for name collisions. The \texttt{AgentManifest.dependencies} type allows duplicate \texttt{name} values — there is no type-level or runtime validation that prevents this.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -54,7 +53,7 @@ async function resolveDependencies(
 
 
 
-\#\#\# The Type Definition
+\subsubsection*{The Type Definition}
 
 
 
@@ -73,7 +72,7 @@ export interface AgentManifest {
 
 The \texttt{name} field is a plain \texttt{string}. There is no \texttt{uniqueItems} constraint, no Set-based deduplication, and no validation step that checks for duplicates.
 
-\#\#\# The Overwrite Sequence
+\subsubsection*{The Overwrite Sequence}
 
 Consider this agent.yaml:
 
@@ -140,13 +139,15 @@ dependencies:
 
 
 Then:
-- v2 is cloned to \texttt{.gitagent/deps/toolkit/}
-- v1 fails to clone (directory exists)
-- The mount is \texttt{/tools/v1} but the files are from v2
+\begin{itemize}
+    \item v2 is cloned to \texttt{.gitagent/deps/toolkit/}
+    \item v1 fails to clone (directory exists)
+    \item The mount is \texttt{/tools/v1} but the files are from v2
+\end{itemize}
 
 \textbf{The result is always wrong}: either the second clone fails (leaving stale files from the first) or, if the user cleans up between loads, the last successful clone wins. Either way, the manifest's mount/directory mapping is inconsistent with the actual files.
 
-\#\#\# The Real Scenario for Overwrite
+\subsubsection*{The Real Scenario for Overwrite}
 
 If \texttt{resolveDependencies} is called multiple times (e.g., during hot-reload or subagent loading), the directory already exists from the first call. But more importantly, if two dependencies have names that differ only in case on a case-insensitive filesystem:
 
@@ -169,7 +170,7 @@ dependencies:
 
 On macOS or Windows, \texttt{deps/ToolKit} and \texttt{deps/toolkit} refer to the same directory. The second clone overwrites the first. The agent expects different code for different platforms but gets only one.
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{Silent configuration error}: No error or warning is produced when duplicate names are detected
 2. \textbf{Inconsistent state}: The on-disk dependency files may not match the manifest definition
@@ -177,10 +178,9 @@ On macOS or Windows, \texttt{deps/ToolKit} and \texttt{deps/toolkit} refer to th
 4. \textbf{Case-insensitive FS issues}: On macOS/Windows, case-differing names collide silently
 5. \textbf{Debugging nightmare}: Operators may spend hours trying to understand why a dependency has the wrong behavior, unaware that it was overwritten
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Deduplicate and Warn on Duplicates (Recommended)
+\subsubsection*{Option A: Deduplicate and Warn on Duplicates (Recommended)}
 
 Add a name deduplication step at the start of \texttt{resolveDependencies()}:
 
@@ -232,7 +232,7 @@ async function resolveDependencies(
 
 
 
-\#\#\# Option B: Name + Source Uniqueness Check
+\subsubsection*{Option B: Name + Source Uniqueness Check}
 
 Treat \texttt{name} and \texttt{source} together as a composite key:
 
@@ -271,9 +271,8 @@ async function resolveDependencies(...) {
 
 
 
-\#\#\# Fix Comparison
+\subsubsection*{Fix Comparison}
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

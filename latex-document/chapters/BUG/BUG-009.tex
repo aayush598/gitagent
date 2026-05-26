@@ -18,10 +18,9 @@ More critically, the discrepancy between the flags used for the match-counting r
 
 The core issue is the lack of a centralized, single code path for constructing the regex flags, leading to two different flag-building strategies in the same function.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -48,7 +47,7 @@ if (regex) {
 
 
 
-\#\#\# The Two Flag-Building Paths
+\subsubsection*{The Two Flag-Building Paths}
 
 \textbf{Path A: Replacement regex (line 58 + line 61)}
 
@@ -64,8 +63,10 @@ const rx = new RegExp(old_string, rxFlags);
 
 
 This builds \texttt{rxFlags} with the \texttt{g} flag added only if:
-- \texttt{replace\_all} is \texttt{true}
-- \texttt{g} is not already in the flags
+\begin{itemize}
+    \item \texttt{replace\_all} is \texttt{true}
+    \item \texttt{g} is not already in the flags
+\end{itemize}
 
 \textbf{Path B: Match-counting regex (line 65)}
 
@@ -81,7 +82,7 @@ const matches = original.match(new RegExp(old_string, matchFlags));
 
 This builds \texttt{matchFlags} by adding \texttt{g} if it's NOT already present in \texttt{rxFlags}, regardless of \texttt{replace\_all}.
 
-\#\#\# The Asymmetry
+\subsubsection*{The Asymmetry}
 
 | Scenario | \texttt{rxFlags} (line 57-58) | Replacement \texttt{rx} (line 61) | Match regex (line 65) | Match count vs Replace count |
 |---|---|---|---|---|
@@ -113,7 +114,7 @@ So the check on line 70 would throw an error before the replacement. If \texttt{
 
 This is the deeper issue: the \texttt{g} flag from user flags is not properly separated from the \texttt{replace\_all} semantics.
 
-\#\#\# Why It's Technically a Defect
+\subsubsection*{Why It's Technically a Defect}
 
 JavaScript \texttt{RegExp} duplicate flags are silently ignored, so \texttt{"gg"} works the same as \texttt{"g"}. The "double-adding" described in the analysis is technically harmless at runtime but represents:
 
@@ -121,10 +122,9 @@ JavaScript \texttt{RegExp} duplicate flags are silently ignored, so \texttt{"gg"
 2. \textbf{Semantic confusion}: User-provided \texttt{g} flag and \texttt{replace\_all=true} have overlapping but not identical semantics
 3. \textbf{Maintenance risk}: Future changes to one flag path won't automatically apply to the other
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Centralized Flag Construction (Recommended)
+\subsubsection*{Option A: Centralized Flag Construction (Recommended)}
 
 
 
@@ -178,7 +178,7 @@ if (regex) {
 2. Separates match-counting flags from replacement flags
 3. Handles the edge case where user provides \texttt{g} without \texttt{replace\_all}
 
-\#\#\# Option B: Strip Duplicate Flags
+\subsubsection*{Option B: Strip Duplicate Flags}
 
 
 
@@ -200,7 +200,6 @@ if (regex) {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

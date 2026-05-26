@@ -16,10 +16,9 @@ The event channel implementation in \texttt{src/sdk.ts:41-72} uses a hand-rolled
 
 Worse, if the consumer is blocked on \texttt{pull()} waiting for data when \texttt{finish()} is called, the \texttt{resolve} callback has already been consumed by the \texttt{finish()} call. A subsequent \texttt{push()} will buffer the value, but the consumer has already received \texttt{\{ done: true \}} and will not call \texttt{pull()} again. The pushed event is orphaned.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Channel Implementation
+\subsubsection*{The Channel Implementation}
 
 
 
@@ -62,7 +61,7 @@ function createChannel<T>(): Channel<T> {
 
 
 
-\#\#\# The Race Sequence
+\subsubsection*{The Race Sequence}
 
 The channel is used in the main agent query loop (lines 370-460). The agent emits events asynchronously via \texttt{agent.on("message", callback)}. The channel is finalized with \texttt{channel.finish()} at line 490 in the \texttt{finally} block:
 
@@ -132,7 +131,7 @@ T5                                          — NEVER PULLS AGAIN —        DAT
 
 
 
-\#\#\# The Bug in \texttt{push()}
+\subsubsection*{The Bug in \texttt{push()}}
 
 The \texttt{push()} function has \textbf{no guard against the \texttt{done} flag}. When \texttt{push()} is called after \texttt{finish()}:
 
@@ -141,17 +140,16 @@ The \texttt{push()} function has \textbf{no guard against the \texttt{done} flag
 
 The data is buffered but unreachable — a silent memory leak and data loss.
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{Silent data loss}: Events pushed after \texttt{finish()} are silently dropped
 2. \textbf{Timing-dependent}: Only occurs when the agent emits events after the natural completion point
 3. \textbf{Frustrating debugging}: Developers adding new event types may not realize they fire after official "end"
 4. \textbf{Potential for partial state}: If a final tool result or error message is the late event, the consumer may miss critical diagnostic information
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Guard \texttt{push()} Against \texttt{done}
+\subsubsection*{Option A: Guard \texttt{push()} Against \texttt{done}}
 
 
 
@@ -179,7 +177,7 @@ push(v: T) {
 2. Warns in console for debugging (can be removed in production)
 3. Minimal change, preserves all existing behavior
 
-\#\#\# Option B: Reject with Error on Push After Finish
+\subsubsection*{Option B: Reject with Error on Push After Finish}
 
 
 
@@ -206,7 +204,7 @@ push(v: T) {
 2. Forces callers to fix their ordering
 3. May break existing code that accidentally depends on the silent-drop behavior
 
-\#\#\# Option C: Buffer After Finish for Late Consumers
+\subsubsection*{Option C: Buffer After Finish for Late Consumers}
 
 
 
@@ -232,7 +230,6 @@ push(v: T) {
 
 This doesn't fix the problem — the data is still buffered and the consumer has already stopped.
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

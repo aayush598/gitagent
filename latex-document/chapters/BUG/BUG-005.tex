@@ -16,10 +16,9 @@ The task tracker tool (\texttt{src/tools/task-tracker.ts}) persists task records
 
 The bug is at \texttt{src/tools/task-tracker.ts:39-40}, where the raw file content is parsed without any validation or recovery strategy. The try/catch at line 41-43 treats all parse errors the same — returning \texttt{\{ tasks: [] \}} — permanently losing any tasks that were correctly stored before the partial write corrupted the file.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -39,7 +38,7 @@ async function loadTasks(gitagentDir: string): Promise<TasksStore> {
 
 
 
-\#\#\# The Write Path
+\subsubsection*{The Write Path}
 
 
 
@@ -56,7 +55,7 @@ async function saveTasks(gitagentDir: string, store: TasksStore): Promise<void> 
 
 
 
-\#\#\# The Partial Write Problem
+\subsubsection*{The Partial Write Problem}
 
 \texttt{writeFile} is not atomic for large files. The OS writes data in chunks:
 
@@ -82,24 +81,23 @@ T4      loadTasks is called
 
 
 
-\#\#\# The Silent Data Loss
+\subsubsection*{The Silent Data Loss}
 
 The try/catch at line 41-43 is well-intentioned — it handles the case where \texttt{tasks.json} doesn't exist yet (first run). But it conflates two very different scenarios:
 
 1. \textbf{File doesn't exist} → \texttt{readFile} throws \texttt{ENOENT} → caught → \texttt{\{ tasks: [] \}} ✓ Correct
 2. \textbf{File exists but is corrupt} → \texttt{JSON.parse} throws → caught → \texttt{\{ tasks: [] \}} ✗ Data loss
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{Permanent data loss}: Tasks are the agent's persistent to-do list; losing them means lost work items
 2. \textbf{Partial writes are realistic}: Process crashes, power failures, disk full, or concurrent writes can all truncate files
 3. \textbf{No recovery mechanism}: The old data is overwritten by the empty default with no backup
 4. \textbf{No warning}: The error is silently swallowed — the agent continues with an empty task list, unaware that data was lost
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Atomic Write with Backup
+\subsubsection*{Option A: Atomic Write with Backup}
 
 
 
@@ -147,7 +145,7 @@ async function loadTasks(gitagentDir: string): Promise<TasksStore> {
 2. Backup file provides recovery if the main file is corrupted
 3. Console warnings inform about the recovery
 
-\#\#\# Option B: Validate Before Parse with Repair
+\subsubsection*{Option B: Validate Before Parse with Repair}
 
 
 
@@ -205,7 +203,6 @@ function repairTruncatedJson(raw: string): string | null {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

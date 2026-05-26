@@ -20,10 +20,9 @@ This is a resiliency gap, not a crash bug per se: the application behaves as doc
 
 The affected code is \texttt{src/loader.ts:383-404}, where the model string is resolved and \texttt{getModel()} is called without any retry or fallback loop.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Type Definition (Promise)
+\subsubsection*{The Type Definition (Promise)}
 
 
 
@@ -50,10 +49,12 @@ export interface AgentManifest {
 
 
 The \texttt{fallback: string[]} field clearly signals intent: users can specify a prioritized list of alternative models. The array could contain multiple provider:model strings like:
-- \texttt{["openai:gpt-4o", "anthropic:claude-sonnet-4-5-20250929"]}
-- \texttt{["groq:mixtral-8x7b", "openai:gpt-4o-mini"]}
+\begin{itemize}
+    \item \texttt{["openai:gpt-4o", "anthropic:claude-sonnet-4-5-20250929"]}
+    \item \texttt{["groq:mixtral-8x7b", "openai:gpt-4o-mini"]}
+\end{itemize}
 
-\#\#\# The Actual Model Resolution (No Fallback)
+\subsubsection*{The Actual Model Resolution (No Fallback)}
 
 
 
@@ -86,7 +87,7 @@ if (modelId.includes("@")) {
 
 The variable \texttt{modelStr} is assigned once. The \texttt{manifest.model.fallback} array is never consulted. If \texttt{getModel()} throws (invalid provider, unregistered model, API unavailable) or if the model later fails during inference, there is no retry with a different model.
 
-\#\#\# The \texttt{getModel} Function (External Library)
+\subsubsection*{The \texttt{getModel} Function (External Library)}
 
 \texttt{getModel} is imported from \texttt{@mariozechner/pi-ai}:
 
@@ -102,7 +103,7 @@ import type { Model } from "@mariozechner/pi-ai";
 
 This function returns a \texttt{Model} object with a specific provider and model ID. If the provider string is unknown to \texttt{pi-ai}, it throws an error. The error propagates up through \texttt{loadAgent()} and crashes the agent startup.
 
-\#\#\# What the fallback Array Was Meant For
+\subsubsection*{What the fallback Array Was Meant For}
 
 The \texttt{fallback} array was likely designed for this scenario:
 
@@ -120,7 +121,7 @@ The \texttt{fallback} array was likely designed for this scenario:
 
 But this loop was never implemented. The array is parsed from YAML, stored in the \texttt{AgentManifest} type, and then completely ignored.
 
-\#\#\# A Grep Confirmation
+\subsubsection*{A Grep Confirmation}
 
 A grep for \texttt{fallback} across the entire codebase:
 
@@ -141,7 +142,7 @@ The only occurrences are:
 
 This confirms the field is defined but never consumed.
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{Broken contract}: The type system and manifest format promise fallback capability that doesn't exist
 2. \textbf{Single point of failure}: A provider outage takes down the entire agent with no graceful degradation
@@ -149,10 +150,9 @@ This confirms the field is defined but never consumed.
 4. \textbf{User confusion}: Users who configure \texttt{fallback} will believe they have redundancy but don't
 5. \textbf{Low effort to fix}: Implementing the fallback loop is straightforward
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Implement Fallback Loop (Recommended)
+\subsubsection*{Option A: Implement Fallback Loop (Recommended)}
 
 Add a fallback resolution loop that iterates through \texttt{manifest.model.fallback} if the preferred model resolution fails:
 
@@ -217,7 +217,7 @@ function resolveModel(manifest: AgentManifest, modelFlag?: string, envConfig: En
 3. Env override still has highest priority and bypasses fallback
 4. Warning logs indicate which models failed and which fallback is being tried
 
-\#\#\# Option B: Runtime Fallback During Inference
+\subsubsection*{Option B: Runtime Fallback During Inference}
 
 Extend fallback to operate at runtime, not just at initialization:
 
@@ -256,9 +256,8 @@ class ModelRouter {
 
 
 
-\#\#\# Fix Comparison
+\subsubsection*{Fix Comparison}
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

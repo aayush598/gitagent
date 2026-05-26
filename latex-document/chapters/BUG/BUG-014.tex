@@ -18,10 +18,9 @@ When a user or plugin defines a schedule using one of these non-standard aliases
 
 The bug is in \texttt{src/schedule-runner.ts:45-47} (and identically at lines 56-58), where \texttt{cron.validate()} is used as a gate without considering that the expression might be a valid non-standard alias that \texttt{node-cron} does not support.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -55,7 +54,7 @@ The bug is in \texttt{src/schedule-runner.ts:45-47} (and identically at lines 56
 
 
 
-\#\#\# Why This Happens
+\subsubsection*{Why This Happens}
 
 \texttt{node-cron} is a lightweight cron parser that implements only the standard 5-field POSIX cron format (\texttt{minute hour day-of-month month day-of-week}). The \texttt{validate()} function performs a strict regex check against this format. Non-standard expressions that are valid in other contexts:
 
@@ -72,7 +71,7 @@ The bug is in \texttt{src/schedule-runner.ts:45-47} (and identically at lines 56
 
 The \texttt{node-cron} library's \texttt{cron.schedule()} function also does \textbf{not} support these aliases at runtime — even if validation were bypassed, the schedule call would throw. The library has no built-in alias expansion.
 
-\#\#\# The Two Rejection Points
+\subsubsection*{The Two Rejection Points}
 
 There are two identical validation gates in \texttt{startScheduler()}:
 
@@ -105,7 +104,7 @@ Will be silently skipped with the log message:
 
 
 
-\#\#\# Why This Is Medium Severity
+\subsubsection*{Why This Is Medium Severity}
 
 1. \textbf{Silent failure}: The schedule is dropped with only a dim (low-visibility) log line
 2. \textbf{No error propagation}: The function returns normally; the caller has no way to know a schedule was skipped
@@ -113,10 +112,9 @@ Will be silently skipped with the log message:
 4. \textbf{Common expectation}: \texttt{@daily}, \texttt{@hourly} are widely recognized cron aliases — users will naturally try them
 5. \textbf{Low effort to fix}: Adding an alias expansion map resolves the issue completely
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Cron Alias Expansion (Recommended)
+\subsubsection*{Option A: Cron Alias Expansion (Recommended)}
 
 Add an alias expansion map that converts non-standard aliases to standard 5-field expressions before validation:
 
@@ -161,7 +159,7 @@ const task = cron.schedule(expandedCron, () => {
 
 
 
-\#\#\# Option B: Support \texttt{@every N (seconds|minutes|hours)} Syntax
+\subsubsection*{Option B: Support \texttt{@every N (seconds|minutes|hours)} Syntax}
 
 For the \texttt{@every} pattern used in tools like \texttt{node-cron} and \texttt{cron} npm package, add a separate handler that converts relative intervals to cron expressions or uses \texttt{setInterval}:
 
@@ -221,9 +219,8 @@ if (parsed.type === "interval") {
 
 
 
-\#\#\# Fix Comparison
+\subsubsection*{Fix Comparison}
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

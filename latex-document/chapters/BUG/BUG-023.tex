@@ -18,10 +18,9 @@ Each tool call generates at minimum two audit entries (one for \texttt{logToolUs
 
 The root cause is twofold: (1) \texttt{appendFile} is called without any size check before writing, and (2) there is no rotation mechanism — neither time-based (daily) nor size-based (per-N-bytes). The class has no configuration options for max file size, retention count, or compression.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -85,7 +84,7 @@ export class AuditLogger {
 
 
 
-\#\#\# Growth Projection
+\subsubsection*{Growth Projection}
 
 Each audit entry is approximately 200-500 bytes. For an active session:
 
@@ -101,7 +100,7 @@ Each audit entry is approximately 200-500 bytes. For an active session:
 
 A voice server session handling 100k turns (not unrealistic for a 24-hour deployment) generates $\sim$170 MB of audit data. In a container with a 1 GB ephemeral disk, this can fill the disk in $\sim$6 hours.
 
-\#\#\# The \texttt{catch} Block Swallows Disk-Full Errors
+\subsubsection*{The \texttt{catch} Block Swallows Disk-Full Errors}
 
 
 
@@ -119,19 +118,20 @@ try {
 
 When the disk is full, \texttt{appendFile} throws \texttt{ENOSPC}. The catch block silently discards this error. The audit data is lost with no indication to the operator. Meanwhile, the file system is full, which may cause other parts of the application to fail.
 
-\#\#\# No Existing Rotation Infrastructure
+\subsubsection*{No Existing Rotation Infrastructure}
 
 The \texttt{audit.jsonl} file is never:
-- Rotated by size (e.g., split at 10 MB)
-- Rotated by time (e.g., daily)
-- Compressed (old rotations could be gzipped)
-- Checked for available disk space before writing
-- Capped at a maximum number of rotation files
+\begin{itemize}
+    \item Rotated by size (e.g., split at 10 MB)
+    \item Rotated by time (e.g., daily)
+    \item Compressed (old rotations could be gzipped)
+    \item Checked for available disk space before writing
+    \item Capped at a maximum number of rotation files
+\end{itemize}
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Size-Based Rotation with Retention Limit (Recommended)
+\subsubsection*{Option A: Size-Based Rotation with Retention Limit (Recommended)}
 
 
 
@@ -250,7 +250,7 @@ export class AuditLogger {
 3. Retention limit (default 5 compressed files = $\sim$50 MB max total)
 4. Non-fatal error handling that still logs the failure
 
-\#\#\# Option B: Simple Truncation (Ring Buffer)
+\subsubsection*{Option B: Simple Truncation (Ring Buffer)}
 
 
 
@@ -287,7 +287,7 @@ export class AuditLogger {
 
 
 
-\#\#\# Option C: Daily Rotation with Size Cap
+\subsubsection*{Option C: Daily Rotation with Size Cap}
 
 
 
@@ -319,7 +319,6 @@ export class AuditLogger {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

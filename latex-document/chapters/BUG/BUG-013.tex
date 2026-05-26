@@ -33,10 +33,9 @@ If the agent's internal message processing during the }query()\texttt{ call gene
 
 The analysis file identifies this as a MEDIUM severity issue. While the recursion requires specific conditions (the }query()` call must generate enough messages to trigger another summarization), the lack of any guard makes it a latent bug that could manifest unpredictably depending on the agent's behavior during summarization.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -86,7 +85,7 @@ export async function summarizeHistory(agentDir: string, branch: string): Promis
 
 
 
-\#\#\# The Recursion Path
+\subsubsection*{The Recursion Path}
 
 
 
@@ -132,7 +131,7 @@ export async function summarizeHistory(agentDir: string, branch: string): Promis
 
 
 
-\#\#\# How \texttt{query()} Could Trigger \texttt{appendMessage()}
+\subsubsection*{How \texttt{query()} Could Trigger \texttt{appendMessage()}}
 
 The \texttt{query()} function in \texttt{../sdk.js} is the main agent execution pipeline. It:
 
@@ -143,7 +142,7 @@ The \texttt{query()} function in \texttt{../sdk.js} is the main agent execution 
 
 Each \texttt{transcript} or \texttt{agent\_done} message that \texttt{query()} emits gets passed through \texttt{appendMessage()} on the server side. If the summarization prompt itself generates enough back-and-forth to produce 10+ server messages (e.g., the LLM calls a tool, the tool result creates more messages), then the message count threshold is hit, and \texttt{summarizeHistory()} is called recursively.
 
-\#\#\# Why There Is No Guard
+\subsubsection*{Why There Is No Guard}
 
 The \texttt{summarizeHistory()} function has a guard at line 73:
 
@@ -163,7 +162,7 @@ But this guard only checks if the \textbf{current} message count is below the th
 2. \textbf{The call depth} (no recursion counter)
 3. \textbf{Whether the current execution context is already inside a summarization} (no reentrancy check)
 
-\#\#\# Concrete Scenario
+\subsubsection*{Concrete Scenario}
 
 1. User sends 20 messages to the agent during a conversation
 2. When the 15th message arrives, \texttt{appendMessage()} is called
@@ -176,10 +175,9 @@ But this guard only checks if the \textbf{current} message count is below the th
 9. \texttt{summarizeHistory()} is called AGAIN from inside \texttt{query()}
 10. The same cycle repeats
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Reentrancy Guard with Set (Recommended)
+\subsubsection*{Option A: Reentrancy Guard with Set (Recommended)}
 
 
 
@@ -259,7 +257,7 @@ export async function summarizeHistory(agentDir: string, branch: string): Promis
 
 
 
-\#\#\# Option B: Recursion Counter (Simple Depth Limit)
+\subsubsection*{Option B: Recursion Counter (Simple Depth Limit)}
 
 
 
@@ -287,7 +285,6 @@ export async function summarizeHistory(agentDir: string, branch: string): Promis
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}

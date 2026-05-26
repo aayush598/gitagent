@@ -21,10 +21,9 @@ When a tool fails, its duration is still recorded — but it's aggregated into t
 
 The fix is to add \texttt{"tool.status": toolCallStatus} as an attribute to both the counter and the histogram, where \texttt{toolCallStatus} tracks whether the call succeeded or errored.
 
----
 
 \subsection*{Root Cause Analysis}
-\#\#\# The Code
+\subsubsection*{The Code}
 
 
 
@@ -57,7 +56,7 @@ try {
 
 
 
-\#\#\# The Full Wrapper Context
+\subsubsection*{The Full Wrapper Context}
 
 
 
@@ -116,7 +115,7 @@ function wrapToolWithOtel<T extends AgentTool<any>>(tool: T, sessionId: string):
 
 
 
-\#\#\# What Is Missing
+\subsubsection*{What Is Missing}
 
 The span itself has a \texttt{status} attribute (set via \texttt{span.setStatus()}), but the metrics (counter + histogram) do not. The error counter (\texttt{getToolCallErrorCounter}) does track errors separately, but:
 
@@ -124,13 +123,15 @@ The span itself has a \texttt{status} attribute (set via \texttt{span.setStatus(
 2. \textbf{The call counter} (\texttt{getToolCallCounter}) records ALL calls with ONLY \texttt{tool.name}
 3. \textbf{There is no way to correlate} the error counter with the duration histogram because they have different attribute sets
 
-\#\#\# OTel Best Practice
+\subsubsection*{OTel Best Practice}
 
 The OpenTelemetry semantic conventions for metrics specify that:
 
-- Counter metrics SHOULD include status attributes when the operation can succeed or fail
-- Histogram metrics SHOULD include status attributes to enable filtered latency analysis
-- Metrics and spans SHOULD share consistent attribute sets for correlation
+\begin{itemize}
+    \item Counter metrics SHOULD include status attributes when the operation can succeed or fail
+    \item Histogram metrics SHOULD include status attributes to enable filtered latency analysis
+    \item Metrics and spans SHOULD share consistent attribute sets for correlation
+\end{itemize}
 
 Current state:
 
@@ -161,10 +162,9 @@ Histogram{ tool.name = "edit", tool.status = "error" } → durations: [3000ms, .
 
 Now: "What is the p95 latency of successful edits?" → \texttt{histogram\_quantile(0.95, rate(edit\_duration\{tool.status="ok"\}[5m]))}
 
----
 
 \subsection*{Fix Implementation}
-\#\#\# Option A: Add \texttt{tool.status} Attribute to Both Metrics (Recommended)
+\subsubsection*{Option A: Add \texttt{tool.status} Attribute to Both Metrics (Recommended)}
 
 
 
@@ -199,7 +199,7 @@ try {
 
 
 
-\#\#\# Option B: Separate Success/Error Histograms
+\subsubsection*{Option B: Separate Success/Error Histograms}
 
 
 
@@ -225,7 +225,7 @@ try {
 
 
 
-\#\#\# Option C: Use Span Status Instead of Separate Attribute
+\subsubsection*{Option C: Use Span Status Instead of Separate Attribute}
 
 Leverage the existing span status:
 
@@ -245,7 +245,6 @@ finally {
 
 
 
----
 
 \subsection*{Affected Files}
 \begin{itemize}
