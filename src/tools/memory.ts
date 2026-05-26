@@ -1,6 +1,6 @@
-import { readFile, writeFile, mkdir } from "fs/promises";
+import { readFile, writeFile, mkdir, rm } from "fs/promises";
 import { join, dirname } from "path";
-import { execSync } from "child_process";
+import { execSync, execFileSync } from "child_process";
 import { type Static } from "@sinclair/typebox";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { memorySchema, DEFAULT_MEMORY_PATH } from "./shared.js";
@@ -88,7 +88,7 @@ async function archiveOverflow(
 
 	// Try to git add the archive
 	try {
-		execSync(`git add "${archiveFile}"`, { cwd, stdio: "pipe" });
+		execFileSync("git", ["add", archiveFile], { cwd, stdio: "pipe" });
 	} catch {
 		// Not in git, that's fine
 	}
@@ -150,21 +150,38 @@ export function createMemoryTool(cwd: string, pluginLayers?: MemoryLayerDef[]): 
 				finalContent = await archiveOverflow(cwd, content, maxLines);
 			}
 
+			// Read backup of current content for rollback
+			let backup: string | null = null;
+			try {
+				backup = await readFile(memoryFile, "utf-8");
+			} catch {
+				// File doesn't exist yet — no backup needed
+			}
+
 			await mkdir(dirname(memoryFile), { recursive: true });
 			await writeFile(memoryFile, finalContent, "utf-8");
 
 			try {
-				execSync(`git add "${memoryPath}" && git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, {
-					cwd,
-					stdio: "pipe",
-				});
+				execFileSync("git", ["add", memoryPath], { cwd, stdio: "pipe" });
+				execFileSync("git", ["commit", "-m", commitMsg], { cwd, stdio: "pipe" });
 			} catch (err: any) {
-				const stderr = err.stderr?.toString() || "";
+				// Rollback: restore original content
+				if (backup !== null) {
+					await writeFile(memoryFile, backup, "utf-8");
+				} else {
+					try { await rm(memoryFile, { force: true }); } catch { /* */ }
+				}
+				// Unstage
+				try {
+					execFileSync("git", ["reset", "HEAD", "--", memoryPath], { cwd, stdio: "pipe" });
+				} catch { /* */ }
+
+				const stderr = err.stderr?.toString() || err.message || "unknown error";
 				return {
 					content: [
 						{
 							type: "text",
-							text: `Memory saved to ${memoryPath} but git commit failed: ${stderr.trim() || "unknown error"}. The file was still written.`,
+							text: `Memory save failed: ${stderr.trim()}. Previous content preserved.`,
 						},
 					],
 					details: undefined,
